@@ -793,6 +793,12 @@ function ScreenSwitch({
     return <FactPage {...f} onNext={next} />;
   }
 
+  if (screen.startsWith("intro")) {
+    const i = INTROS[screen as keyof typeof INTROS];
+    if (!i) return null;
+    return <IntroPage {...i} onNext={next} />;
+  }
+
   if (screen === "dashboard") return <Report d={d} />;
 
   return null;
