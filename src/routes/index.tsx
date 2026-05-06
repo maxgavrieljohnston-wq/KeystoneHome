@@ -667,7 +667,7 @@ function ScreenSwitch({
       <Question
         kicker="Style"
         title="What kind of home?"
-        sub="Pick all that interest you. Each one shifts the price and monthly cost."
+        sub="Pick the one that fits best — it shifts the price and monthly cost."
       >
         <div
           style={{
@@ -678,18 +678,11 @@ function ScreenSwitch({
           }}
         >
           {HOME_STYLES.map((s) => {
-            const active = d.homeStyles.includes(s.id);
+            const active = d.homeStyle === s.id;
             return (
               <button
                 key={s.id}
-                onClick={() =>
-                  set(
-                    "homeStyles",
-                    active
-                      ? d.homeStyles.filter((x) => x !== s.id)
-                      : [...d.homeStyles, s.id],
-                  )
-                }
+                onClick={() => set("homeStyle", s.id)}
                 style={{
                   background: active ? C.ink : "transparent",
                   color: active ? C.cream : C.ink,
@@ -724,7 +717,7 @@ function ScreenSwitch({
             );
           })}
         </div>
-        <Cta onClick={next} disabled={d.homeStyles.length === 0}>
+        <Cta onClick={next} disabled={!d.homeStyle}>
           Continue
         </Cta>
       </Question>
@@ -735,18 +728,24 @@ function ScreenSwitch({
       <Question
         kicker="When"
         title="When do you want to buy?"
-        sub="A realistic timeline shapes the whole plan."
+        sub="We'll tailor the plan to fit your window."
       >
-        <Slider
-          value={d.timelineYears}
-          min={1}
-          max={10}
-          step={1}
-          format={(v) => `${v}`}
-          onChange={(v) => set("timelineYears", v)}
-          unit={d.timelineYears === 1 ? "year from now" : "years from now"}
+        <Choices
+          options={TIMELINE_BUCKETS.map((b) => ({
+            val: b.id,
+            label: b.label,
+            desc: b.desc,
+          }))}
+          value={d.timelineBucket}
+          onSelect={(v) => {
+            const b = TIMELINE_BUCKETS.find((x) => x.id === v);
+            set("timelineBucket", v as string);
+            if (b) set("timelineYears", b.years);
+          }}
         />
-        <Cta onClick={next}>Continue</Cta>
+        <Cta onClick={next} disabled={!d.timelineBucket}>
+          Continue
+        </Cta>
       </Question>
     );
 
@@ -756,7 +755,7 @@ function ScreenSwitch({
     const q = RISK_QS[idx];
     const value = d.riskAnswers[idx];
     return (
-      <Question kicker={`Risk · ${idx + 1} of 4`} title={q.q}>
+      <Question kicker={`Risk · ${idx + 1} of 4`} title={q.q} sub={q.sub}>
         <Choices
           options={q.opts.map((o) => ({ val: o.val, label: o.label }))}
           value={value ?? null}
@@ -768,37 +767,6 @@ function ScreenSwitch({
           Continue
         </Cta>
       </Question>
-    );
-  }
-
-  if (screen === "factDown") {
-    const reinforcement: Record<number, { headline: string; body: string }> = {
-      3.5: {
-        headline: "3.5% down — a smart way in.",
-        body: "FHA opens the door with the lowest barrier. You'll carry PMI for a while, but you're buying years sooner than waiting for 20%.",
-      },
-      5: {
-        headline: "5% down — solid first move.",
-        body: "Conventional 5% gets you in without a huge upfront hit. You'll drop PMI faster than FHA once you cross 20% equity.",
-      },
-      10: {
-        headline: "10% down — strong middle ground.",
-        body: "You're cutting your monthly payment meaningfully and your PMI window is short. Lenders like this profile.",
-      },
-      20: {
-        headline: "20% down — the gold standard.",
-        body: "No PMI, the best rates available, and the lowest monthly payment. It takes longer to save, but the math is undeniable.",
-      },
-    };
-    const r = reinforcement[d.downPct] ?? reinforcement[10];
-    return (
-      <FactPage
-        kicker="No. 02 — Your Down Payment"
-        fact={r.headline}
-        context={`The median first-time down payment is just 9% — your ${d.downPct}% choice is right in the realistic zone. ${r.body}`}
-        source="NAR, 2024"
-        onNext={next}
-      />
     );
   }
 
