@@ -837,26 +837,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        Find your
+        The
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Keystone.</em>
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Foundation</em>
         <br />
-        Build the rest.
+        for your first home.
       </h1>
-
-      <p
-        style={{
-          fontSize: 15,
-          color: C.inkSoft,
-          lineHeight: 1.55,
-          maxWidth: 380,
-          marginBottom: 42,
-        }}
-      >
-        Tell us about your money in five minutes. We'll print a personal report
-        for the path to your first home — what to save, what to invest, what
-        you can afford.
-      </p>
 
       <Cta onClick={onStart} large>
         Begin the plan
