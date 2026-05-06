@@ -12,6 +12,7 @@ import {
   fmt,
   getPriceByZip,
   styleAdjustments,
+  rateFromCredit,
 } from "@/lib/heimili";
 
 export const Route = createFileRoute("/")({
@@ -1105,7 +1106,7 @@ function Screens({
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
 function Dashboard({ d }: { d: Data }) {
-  const [tab, setTab] = useState<"invest" | "afford" | "ready">("invest");
+  const [tab, setTab] = useState<"save" | "invest" | "afford" | "ready">("save");
 
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
@@ -1127,7 +1128,8 @@ function Dashboard({ d }: { d: Data }) {
   const savingsOnly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
   // Affordability
-  const mortgage = calcMortgage(avgPrice, effectiveDownPct);
+  const mortgageRate = rateFromCredit(qualifyingCredit);
+  const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
   const taxIns = (avgPrice * 0.018) / 12; // ~1.8% annual property tax + insurance
   const pmi = effectiveDownPct < 20 ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12 : 0;
   const hoa = styleAdj.hoa;
@@ -1205,6 +1207,7 @@ function Dashboard({ d }: { d: Data }) {
         }}
       >
         {[
+          { key: "save", label: "Save" },
           { key: "invest", label: "Invest" },
           { key: "afford", label: "Afford" },
           { key: "ready", label: "Ready" },
@@ -1232,6 +1235,55 @@ function Dashboard({ d }: { d: Data }) {
           </button>
         ))}
       </div>
+
+      {tab === "save" && (
+        <div>
+          <StatCard
+            label={`Save only · ${d.timelineYears}-year goal`}
+            value={fmt(savingsOnly) + "/mo"}
+            sub={`Stash this monthly in a regular account to reach ${fmt(downPayment)} in ${d.timelineYears} years — no investment growth assumed.`}
+            color="#a8d5e2"
+          >
+            {savingsOnly > primaryMonthly && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.55)",
+                  marginTop: 10,
+                  fontWeight: 500,
+                  lineHeight: 1.5,
+                }}
+              >
+                That's {fmt(savingsOnly - primaryMonthly)}/mo more than the {risk.label.toLowerCase()} investing plan. Check the <strong style={{ color: "#a8d5e2" }}>Invest</strong> tab to see how compounding shrinks the burden.
+              </div>
+            )}
+          </StatCard>
+
+          <SectionHeader>Why saving alone is hard</SectionHeader>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1.5px solid rgba(255,255,255,0.06)",
+              borderRadius: 12,
+              padding: 16,
+              fontSize: 13,
+              color: "rgba(255,255,255,0.6)",
+              lineHeight: 1.55,
+            }}
+          >
+            With{" "}
+            <strong style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>
+              {fmt(d.saved)}
+            </strong>{" "}
+            saved today and a target of{" "}
+            <strong style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>
+              {fmt(downPayment)}
+            </strong>
+            , you need to set aside {fmt(savingsOnly)} every month for{" "}
+            {d.timelineYears} years. Inflation also eats at cash sitting still — investing protects against that.
+          </div>
+        </div>
+      )}
 
       {tab === "invest" && (
         <div>
@@ -1372,6 +1424,9 @@ function Dashboard({ d }: { d: Data }) {
               {affordable
                 ? "Lenders prefer under 28% — you're in good shape."
                 : "Lenders prefer under 28%."}
+              <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                Based on a {(mortgageRate * 100).toFixed(2)}% / 30-yr fixed rate from your credit tier.
+              </div>
             </div>
             <div
               style={{

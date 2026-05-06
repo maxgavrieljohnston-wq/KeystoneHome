@@ -103,11 +103,20 @@ export function styleAdjustments(ids: string[]) {
 }
 
 export const CREDIT_BUCKETS = [
-  { label: "Excellent", range: "740–850", value: 795, color: "#4ade80", desc: "Qualifies for the best rates available" },
-  { label: "Good", range: "670–739", value: 704, color: "#a8d5e2", desc: "Solid options across most lenders" },
-  { label: "Fair", range: "580–669", value: 624, color: "#fbbf24", desc: "Some loan options — rates will be higher" },
-  { label: "Poor", range: "300–579", value: 450, color: "#f87171", desc: "Limited options — improving this helps most" },
+  { label: "Excellent", range: "740–850", value: 795, color: "#4ade80", desc: "Qualifies for the best rates available", rate: 0.0625 },
+  { label: "Good",      range: "670–739", value: 704, color: "#a8d5e2", desc: "Solid options across most lenders",      rate: 0.0700 },
+  { label: "Fair",      range: "580–669", value: 624, color: "#fbbf24", desc: "Some loan options — rates will be higher", rate: 0.0800 },
+  { label: "Poor",      range: "300–579", value: 450, color: "#f87171", desc: "Limited options — improving this helps most", rate: 0.0925 },
 ];
+
+/** 30-yr fixed mortgage rate by FICO. Illustrative tiers, not live quotes. */
+export function rateFromCredit(score?: number | null): number {
+  if (!score) return 0.07;
+  if (score >= 740) return 0.0625;
+  if (score >= 670) return 0.0700;
+  if (score >= 580) return 0.0800;
+  return 0.0925;
+}
 
 export const RISK_QS = [
   {
