@@ -160,7 +160,7 @@ function KeystoneApp() {
         link.id = id;
         link.rel = "stylesheet";
         link.href =
-          "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+          "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
         document.head.appendChild(link);
       }
     }
@@ -327,7 +327,7 @@ function Wordmark({ small }: { small?: boolean }) {
   return (
     <span
       style={{
-        fontFamily: "'Fraunces', Georgia, serif",
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
         fontWeight: 600,
         fontSize: small ? 16 : 22,
         letterSpacing: "-0.01em",
@@ -385,7 +385,7 @@ function ScreenSwitch({
             borderBottom: `1.5px solid ${C.ink}`,
             padding: "12px 0",
             fontSize: 22,
-            fontFamily: "'Fraunces', serif",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
             color: C.ink,
             outline: "none",
             marginBottom: 28,
@@ -684,7 +684,7 @@ function ScreenSwitch({
               >
                 <div
                   style={{
-                    fontFamily: "'Fraunces', serif",
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: 18,
                     fontWeight: 600,
                     marginBottom: 4,
@@ -816,7 +816,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
 
       <h1
         style={{
-          fontFamily: "'Fraunces', Georgia, serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 400,
           fontSize: 56,
           lineHeight: 0.98,
@@ -888,7 +888,7 @@ function Question({
       )}
       <h2
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 400,
           fontSize: 34,
           lineHeight: 1.05,
@@ -978,7 +978,7 @@ function Slider({
     <div style={{ marginBottom: 36 }}>
       <div
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 400,
           fontSize: 56,
           lineHeight: 1,
@@ -1109,7 +1109,7 @@ function Choices({
             <div>
               <div
                 style={{
-                  fontFamily: "'Fraunces', serif",
+                  fontFamily: "'Cormorant Garamond', Georgia, serif",
                   fontSize: 20,
                   fontWeight: 500,
                   marginBottom: o.desc ? 4 : 0,
@@ -1178,7 +1178,7 @@ function ZipCallout({ city, avg }: { city: string; avg: number }) {
         </div>
         <div
           style={{
-            fontFamily: "'Fraunces', serif",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontSize: 16,
             color: C.ink,
           }}
@@ -1188,7 +1188,7 @@ function ZipCallout({ city, avg }: { city: string; avg: number }) {
       </div>
       <div
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontSize: 28,
           color: C.ember,
         }}
@@ -1236,7 +1236,7 @@ function FactPage({
       />
       <p
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 400,
           fontSize: 38,
           lineHeight: 1.1,
@@ -1303,7 +1303,7 @@ function IntroPage({
       </div>
       <div
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontStyle: "italic",
           fontWeight: 400,
           fontSize: 16,
@@ -1316,7 +1316,7 @@ function IntroPage({
       <div style={{ height: 1, background: C.ink, marginBottom: 32 }} />
       <h2
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 400,
           fontSize: 36,
           lineHeight: 1.08,
@@ -1597,7 +1597,7 @@ function Report({ d }: { d: Data }) {
 
       <h1
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 400,
           fontSize: 42,
           lineHeight: 1.02,
@@ -1666,7 +1666,7 @@ function Report({ d }: { d: Data }) {
               borderLeft: `2px solid ${C.ember}`,
               paddingLeft: 14,
               fontStyle: "italic",
-              fontFamily: "'Fraunces', serif",
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
               fontSize: 15,
               color: C.inkSoft,
             }}
@@ -1700,7 +1700,7 @@ function Report({ d }: { d: Data }) {
                     <td
                       style={{
                         padding: "12px 0",
-                        fontFamily: "'Fraunces', serif",
+                        fontFamily: "'Cormorant Garamond', Georgia, serif",
                         fontSize: 16,
                         fontWeight: isMatch ? 600 : 400,
                         color: isMatch ? C.ember : C.ink,
@@ -1826,7 +1826,7 @@ function Report({ d }: { d: Data }) {
         >
           <div
             style={{
-              fontFamily: "'Fraunces', serif",
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
               fontSize: 56,
               fontWeight: 400,
               letterSpacing: "-0.03em",
@@ -1886,7 +1886,7 @@ function Report({ d }: { d: Data }) {
         <div style={{ margin: "28px 0 22px" }}>
           <div
             style={{
-              fontFamily: "'Fraunces', serif",
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
               fontSize: 96,
               lineHeight: 1,
               letterSpacing: "-0.04em",
@@ -1995,7 +1995,7 @@ function Section({
         </span>
         <h2
           style={{
-            fontFamily: "'Fraunces', serif",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontWeight: 400,
             fontSize: 28,
             lineHeight: 1.1,
@@ -2060,7 +2060,7 @@ function Stat({
       </div>
       <div
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontSize: 22,
           color: C.ink,
         }}
@@ -2105,7 +2105,7 @@ function PathCard({
       </div>
       <div
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontSize: 28,
           fontWeight: 500,
           lineHeight: 1,
@@ -2155,7 +2155,7 @@ function LineRow({
     >
       <span
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontSize: bold ? 16 : 14,
           color: C.ink,
           fontWeight: bold ? 600 : 400,
@@ -2198,7 +2198,7 @@ function ReadyRow({
       >
         <span
           style={{
-            fontFamily: "'Fraunces', serif",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontSize: 15,
             color: C.ink,
           }}
