@@ -68,6 +68,7 @@ const FLOW = [
   "debt",
   "savings",
   "credit",
+  "partnerAge",
   "partnerEmployment",
   "partnerIncome",
   "partnerExpenses",
