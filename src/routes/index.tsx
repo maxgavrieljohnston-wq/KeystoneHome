@@ -1316,7 +1316,153 @@ function IntroPage({
     </div>
   );
 }
-function Report({ d }: { d: Data }) {
+
+function ZipScreen({
+  d,
+  set,
+  next,
+}: {
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  next: () => void;
+}) {
+  const [status, setStatus] = useState<"idle" | "asking" | "denied" | "manual" | "located">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const requestLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setStatus("manual");
+      return;
+    }
+    setStatus("asking");
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+          );
+          const j = await res.json();
+          const zip: string | undefined = j?.address?.postcode;
+          if (zip && /^\d{5}/.test(zip)) {
+            const z = zip.slice(0, 5);
+            set("zip", z);
+            set("zipData", getPriceByZip(z));
+            setStatus("located");
+          } else {
+            setStatus("manual");
+            setError("Couldn't pin a ZIP from that location.");
+          }
+        } catch {
+          setStatus("manual");
+          setError("Lookup failed. Enter a ZIP instead.");
+        }
+      },
+      () => {
+        setStatus("manual");
+      },
+      { timeout: 8000 },
+    );
+  };
+
+  return (
+    <Question
+      kicker="Where"
+      title="Where are you buying?"
+      sub="We use your area to set the local price benchmark."
+    >
+      {status === "idle" && (
+        <div style={{ marginBottom: 28 }}>
+          <button
+            onClick={requestLocation}
+            style={{
+              background: "transparent",
+              color: C.ink,
+              border: `1.5px solid ${C.ink}`,
+              padding: "16px 18px",
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              width: "100%",
+              marginBottom: 12,
+            }}
+          >
+            ◎ Use my location
+          </button>
+          <button
+            onClick={() => setStatus("manual")}
+            style={{
+              background: "transparent",
+              color: C.inkMute,
+              border: "none",
+              padding: "8px 0",
+              fontSize: 12,
+              cursor: "pointer",
+              width: "100%",
+              textDecoration: "underline",
+              textUnderlineOffset: 4,
+            }}
+          >
+            Enter a ZIP instead
+          </button>
+        </div>
+      )}
+
+      {status === "asking" && (
+        <div style={{ marginBottom: 28, color: C.inkMute, fontSize: 13 }}>
+          Asking your browser for permission…
+        </div>
+      )}
+
+      {(status === "manual" || status === "located") && (
+        <>
+          {error && (
+            <div style={{ fontSize: 12, color: C.ember, marginBottom: 10 }}>{error}</div>
+          )}
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="00000"
+            maxLength={5}
+            value={d.zip}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 5);
+              set("zip", v);
+              if (v.length === 5) set("zipData", getPriceByZip(v));
+              else set("zipData", null);
+            }}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 32,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.2em",
+              color: C.ink,
+              outline: "none",
+              marginBottom: 18,
+            }}
+          />
+        </>
+      )}
+
+      {d.zipData !== null && (
+        <ZipCallout city={d.zipData!.city} avg={d.zipData!.avg} />
+      )}
+
+      <Cta onClick={next} disabled={d.zip.length !== 5}>
+        Continue
+      </Cta>
+    </Question>
+  );
+}
+
+
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
