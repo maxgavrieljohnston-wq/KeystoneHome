@@ -75,7 +75,6 @@ const FLOW = [
   "partnerCredit",
   "introPartnerSummary",
   "factDemo",
-  "introHome",
   "zip",
   "homeStyle",
   "timeline",
