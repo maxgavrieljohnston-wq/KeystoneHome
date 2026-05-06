@@ -1382,13 +1382,18 @@ function Dashboard({ d }: { d: Data }) {
               }}
             >
               {[
-                { label: "P & I", val: fmt(mortgage) },
+                { label: "P & I", val: fmt(mortgage), show: true },
                 {
-                  label: d.downPct < 20 ? "PMI" : "No PMI",
-                  val: d.downPct < 20 ? fmt(pmi) : "—",
+                  label: effectiveDownPct < 20 ? "PMI" : "No PMI",
+                  val: effectiveDownPct < 20 ? fmt(pmi) : "—",
+                  show: true,
                 },
-                { label: "Tax & Ins", val: fmt(taxIns) },
-              ].map((item) => (
+                { label: "Tax & Ins", val: fmt(taxIns), show: true },
+                { label: "HOA", val: fmt(hoa), show: hoa > 0 },
+                { label: "Maint.", val: fmt(reserve), show: reserve > 0 },
+              ]
+                .filter((i) => i.show)
+                .map((item) => (
                 <div
                   key={item.label}
                   style={{
