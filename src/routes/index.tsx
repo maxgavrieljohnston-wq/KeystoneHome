@@ -64,26 +64,27 @@ const FLOW = [
   "expenses",
   "debt",
   "credit",
-  "factDemo",
   "savings",
+  "factDemo",
   "introHousehold",
   "partner",
   "partnerIncome",
   "partnerExpenses",
   "partnerDebt",
   "partnerCredit",
+  "introPartnerSummary",
   "introHome",
-  "factDown",
   "zip",
   "homeStyle",
   "timeline",
   "downPct",
+  "factDown",
   "introRisk",
-  "factCompound",
   "risk0",
   "risk1",
   "risk2",
   "risk3",
+  "factCompound",
   "dashboard",
 ] as const;
 type Screen = (typeof FLOW)[number];
@@ -164,25 +165,24 @@ function KeystoneApp() {
 
   const next = () => {
     let nextIdx = screenIdx + 1;
-    // Skip partner sub-questions if no partner
-    if (
-      d.hasPartner === false &&
-      ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(
-        FLOW[nextIdx],
-      )
-    ) {
-      while (
-        nextIdx < FLOW.length &&
-        ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(
-          FLOW[nextIdx],
-        )
-      ) {
+    const partnerOnly = ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    if (d.hasPartner === false) {
+      while (nextIdx < FLOW.length && partnerOnly.includes(FLOW[nextIdx])) {
         nextIdx += 1;
       }
     }
     setScreenIdx(Math.min(FLOW.length - 1, nextIdx));
   };
-  const back = () => setScreenIdx(Math.max(0, screenIdx - 1));
+  const back = () => {
+    let prevIdx = screenIdx - 1;
+    const partnerOnly = ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    if (d.hasPartner === false) {
+      while (prevIdx > 0 && partnerOnly.includes(FLOW[prevIdx])) {
+        prevIdx -= 1;
+      }
+    }
+    setScreenIdx(Math.max(0, prevIdx));
+  };
 
   return (
     <Shell>
@@ -789,6 +789,37 @@ function ScreenSwitch({
     );
   }
 
+  if (screen === "factDown") {
+    const reinforcement: Record<number, { headline: string; body: string }> = {
+      3.5: {
+        headline: "3.5% down — a smart way in.",
+        body: "FHA opens the door with the lowest barrier. You'll carry PMI for a while, but you're buying years sooner than waiting for 20%.",
+      },
+      5: {
+        headline: "5% down — solid first move.",
+        body: "Conventional 5% gets you in without a huge upfront hit. You'll drop PMI faster than FHA once you cross 20% equity.",
+      },
+      10: {
+        headline: "10% down — strong middle ground.",
+        body: "You're cutting your monthly payment meaningfully and your PMI window is short. Lenders like this profile.",
+      },
+      20: {
+        headline: "20% down — the gold standard.",
+        body: "No PMI, the best rates available, and the lowest monthly payment. It takes longer to save, but the math is undeniable.",
+      },
+    };
+    const r = reinforcement[d.downPct] ?? reinforcement[10];
+    return (
+      <FactPage
+        kicker="No. 02 — Your Down Payment"
+        fact={r.headline}
+        context={`The median first-time down payment is just 9% — your ${d.downPct}% choice is right in the realistic zone. ${r.body}`}
+        source="NAR, 2024"
+        onNext={next}
+      />
+    );
+  }
+
   if (screen.startsWith("fact")) {
     const f = FACTS[screen as keyof typeof FACTS];
     if (!f) return null;
@@ -856,11 +887,11 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        Your first
+        Find your
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>front door,</em>
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Keystone.</em>
         <br />
-        in focus.
+        Build the rest.
       </h1>
 
       <p
