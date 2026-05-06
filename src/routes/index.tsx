@@ -1185,7 +1185,7 @@ function Dashboard({ d }: { d: Data }) {
           {styleNames || "Your Home"} in {zipData.city}
         </h2>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>
-          {fmt(avgPrice)} avg · {d.downPct}% down ={" "}
+          {fmt(avgPrice)} est · {effectiveDownPct}% down ={" "}
           <span style={{ color: "#a8d5e2", fontWeight: 700 }}>{fmt(downPayment)}</span>
           {hasPartner && (
             <span style={{ color: "rgba(255,255,255,0.35)" }}> · Buying together</span>
