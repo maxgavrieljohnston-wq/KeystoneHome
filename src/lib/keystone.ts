@@ -139,15 +139,6 @@ export const CREDIT_BUCKETS = [
 // ── Risk quiz ──────────────────────────────────────────────────────────────
 export const RISK_QS = [
   {
-    q: "If your investments dropped 20% in a month, you'd…",
-    opts: [
-      { label: "Sell everything immediately", val: 0 },
-      { label: "Sell some to limit losses", val: 1 },
-      { label: "Hold steady and wait", val: 2 },
-      { label: "Buy more at the lower price", val: 3 },
-    ],
-  },
-  {
     q: "How would you describe your investing experience?",
     opts: [
       { label: "Never invested before", val: 0 },
@@ -166,14 +157,32 @@ export const RISK_QS = [
     ],
   },
   {
-    q: "Your timeline if markets crash before you buy?",
+    q: "If your investments dropped 20% in a month, you'd…",
     opts: [
-      { label: "Buy on time no matter what", val: 0 },
-      { label: "Delay 6 months", val: 1 },
-      { label: "Delay 1–2 years for recovery", val: 2 },
-      { label: "Wait as long as it takes", val: 3 },
+      { label: "Sell everything immediately", val: 0 },
+      { label: "Sell some to limit losses", val: 1 },
+      { label: "Hold steady and wait", val: 2 },
+      { label: "Buy more at the lower price", val: 3 },
     ],
   },
+  {
+    q: "Outside this home goal, how do you invest for retirement?",
+    opts: [
+      { label: "I don't yet", val: 0 },
+      { label: "A default 401(k), set and forget", val: 1 },
+      { label: "Regular contributions to index funds", val: 2 },
+      { label: "Actively managed portfolio", val: 3 },
+    ],
+  },
+];
+
+// ── Employment ─────────────────────────────────────────────────────────────
+export const EMPLOYMENT_TYPES = [
+  { id: "w2",       label: "W-2 employee",   desc: "Salaried or hourly. Lenders love 2+ years steady." },
+  { id: "self",     label: "Self-employed",  desc: "1099 / freelance. Plan for 2 years of tax returns." },
+  { id: "owner",    label: "Business owner", desc: "K-1 / S-corp income. Underwriting is stricter." },
+  { id: "contract", label: "Contractor",     desc: "Project-based. Document the income trail." },
+  { id: "other",    label: "Other",          desc: "Retired, student, between roles." },
 ];
 
 // ── Editorial fact cards ───────────────────────────────────────────────────
