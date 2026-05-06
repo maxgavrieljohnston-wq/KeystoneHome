@@ -74,7 +74,6 @@ const FLOW = [
   "partnerExpenses",
   "partnerDebt",
   "partnerCredit",
-  "introPartnerSummary",
   "factDemo",
   "zip",
   "homeStyle",
