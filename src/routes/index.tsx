@@ -68,6 +68,7 @@ const FLOW = [
   "debt",
   "savings",
   "credit",
+  "partnerAge",
   "partnerEmployment",
   "partnerIncome",
   "partnerExpenses",
@@ -93,7 +94,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "email",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
-  "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
+  "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
   "zip", "homeStyle", "timeline",
   "risk0", "risk1", "risk2", "risk3",
 ];
@@ -108,6 +109,7 @@ type Data = {
   credit: number | null;
   saved: number;
   hasPartner: boolean | null;
+  partnerAge: number;
   partnerEmployment: string | null;
   partnerIncome: number;
   partnerExpenses: number;
@@ -131,6 +133,7 @@ const INITIAL: Data = {
   credit: null,
   saved: 15000,
   hasPartner: null,
+  partnerAge: 32,
   partnerEmployment: null,
   partnerIncome: 0,
   partnerExpenses: 0,
@@ -169,7 +172,7 @@ function KeystoneApp() {
 
   const next = () => {
     let nextIdx = screenIdx + 1;
-    const partnerOnly = ["partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false) {
       while (nextIdx < FLOW.length && partnerOnly.includes(FLOW[nextIdx])) {
         nextIdx += 1;
@@ -179,7 +182,7 @@ function KeystoneApp() {
   };
   const back = () => {
     let prevIdx = screenIdx - 1;
-    const partnerOnly = ["partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false) {
       while (prevIdx > 0 && partnerOnly.includes(FLOW[prevIdx])) {
         prevIdx -= 1;
@@ -558,6 +561,22 @@ function ScreenSwitch({
         <Cta onClick={next} disabled={d.hasPartner === null}>
           Continue
         </Cta>
+      </Question>
+    );
+
+  if (screen === "partnerAge")
+    return (
+      <Question kicker="Partner" title="How old is your partner?">
+        <Slider
+          value={d.partnerAge}
+          min={18}
+          max={75}
+          step={1}
+          format={(v) => `${v}`}
+          onChange={(v) => set("partnerAge", v)}
+          unit="years old"
+        />
+        <Cta onClick={next}>Continue</Cta>
       </Question>
     );
 
