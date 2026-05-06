@@ -847,11 +847,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        The
+        An investment account
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Foundation</em>
-        <br />
-        for your first home.
+        with a <em style={{ fontStyle: "italic", fontWeight: 600 }}>zip code</em>.
       </h1>
 
       <p
