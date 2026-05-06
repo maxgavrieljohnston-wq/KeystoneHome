@@ -854,11 +854,11 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        The piece that
+        Your first
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>holds it all</em>
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>front door,</em>
         <br />
-        together.
+        in focus.
       </h1>
 
       <p
