@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
+  EMPLOYMENT_TYPES,
   FACTS,
   HOME_STYLES,
+  INTROS,
   RISK_QS,
   STRATEGIES,
   calcMortgage,
@@ -55,25 +57,29 @@ const C = {
 const FLOW = [
   "welcome",
   "email",
+  "introFinances",
   "age",
-  "fact1",
+  "employment",
   "income",
   "expenses",
   "debt",
   "credit",
+  "factDemo",
   "savings",
-  "fact2",
+  "introHousehold",
   "partner",
   "partnerIncome",
   "partnerExpenses",
   "partnerDebt",
   "partnerCredit",
-  "fact3",
+  "introHome",
+  "factDown",
   "zip",
   "homeStyle",
   "timeline",
   "downPct",
-  "fact4",
+  "introRisk",
+  "factCompound",
   "risk0",
   "risk1",
   "risk2",
@@ -83,7 +89,7 @@ const FLOW = [
 type Screen = (typeof FLOW)[number];
 
 const PROGRESS_SCREENS: Screen[] = [
-  "email", "age", "income", "expenses", "debt", "credit", "savings",
+  "email", "age", "employment", "income", "expenses", "debt", "credit", "savings",
   "partner", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
   "zip", "homeStyle", "timeline", "downPct",
   "risk0", "risk1", "risk2", "risk3",
@@ -92,6 +98,7 @@ const PROGRESS_SCREENS: Screen[] = [
 type Data = {
   email: string;
   age: number;
+  employment: string | null;
   income: number;
   expenses: number;
   debt: number;
@@ -113,6 +120,7 @@ type Data = {
 const INITIAL: Data = {
   email: "",
   age: 32,
+  employment: null,
   income: 75000,
   expenses: 3000,
   debt: 400,
@@ -281,7 +289,7 @@ function TopBar({
             color: C.inkFaint,
           }}
         >
-          {screen.startsWith("risk") ? "Risk" : screen.startsWith("partner") ? "Partner" : screen.startsWith("fact") ? "Reading" : "Step"}
+          {screen.startsWith("risk") ? "Risk" : screen.startsWith("partner") ? "Partner" : screen.startsWith("fact") ? "Reading" : screen.startsWith("intro") ? "Chapter" : "Step"}
         </span>
       </div>
       {progress !== null && (
@@ -399,7 +407,27 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "income")
+  if (screen === "employment")
+    return (
+      <Question
+        kicker="Work"
+        title="How do you earn your income?"
+        sub="Lenders typically want 2 years in the same line of work. Self-employed buyers usually need 2 years of tax returns."
+      >
+        <Choices
+          options={EMPLOYMENT_TYPES.map((e) => ({
+            val: e.id,
+            label: e.label,
+            desc: e.desc,
+          }))}
+          value={d.employment}
+          onSelect={(v) => set("employment", v as string)}
+        />
+        <Cta onClick={next} disabled={!d.employment}>
+          Continue
+        </Cta>
+      </Question>
+    );
     return (
       <Question
         kicker="Income"
@@ -621,8 +649,8 @@ function ScreenSwitch({
             marginBottom: 18,
           }}
         />
-        {d.zipData && (
-          <ZipCallout city={d.zipData.city} avg={d.zipData.avg} />
+        {d.zipData !== null && (
+          <ZipCallout city={d.zipData!.city} avg={d.zipData!.avg} />
         )}
         <Cta onClick={next} disabled={d.zip.length !== 5}>
           Continue
@@ -765,6 +793,12 @@ function ScreenSwitch({
     return <FactPage {...f} onNext={next} />;
   }
 
+  if (screen.startsWith("intro")) {
+    const i = INTROS[screen as keyof typeof INTROS];
+    if (!i) return null;
+    return <IntroPage {...i} onNext={next} />;
+  }
+
   if (screen === "dashboard") return <Report d={d} />;
 
   return null;
@@ -820,11 +854,11 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        The piece that
+        Your first
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>holds it all</em>
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>front door,</em>
         <br />
-        together.
+        in focus.
       </h1>
 
       <p
@@ -1087,9 +1121,9 @@ function Choices({
   value,
   onSelect,
 }: {
-  options: { val: number; label: string; tag?: string; desc?: string }[];
-  value: number | null;
-  onSelect: (v: number) => void;
+  options: { val: number | string; label: string; tag?: string; desc?: string }[];
+  value: number | string | null;
+  onSelect: (v: number | string) => void;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 28 }}>
@@ -1283,7 +1317,74 @@ function FactPage({
   );
 }
 
-// ── Report (single scrollable dashboard) ─────────────────────────────────────
+function IntroPage({
+  chapter,
+  kicker,
+  title,
+  body,
+  onNext,
+}: {
+  chapter: string;
+  kicker: string;
+  title: string;
+  body: string;
+  onNext: () => void;
+}) {
+  return (
+    <div style={{ paddingTop: 30 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 12,
+        }}
+      >
+        {chapter}
+      </div>
+      <div
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontStyle: "italic",
+          fontWeight: 400,
+          fontSize: 16,
+          color: C.inkMute,
+          marginBottom: 28,
+        }}
+      >
+        — {kicker}
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 32 }} />
+      <h2
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontWeight: 400,
+          fontSize: 36,
+          lineHeight: 1.08,
+          letterSpacing: "-0.02em",
+          margin: "0 0 22px",
+          color: C.ink,
+        }}
+      >
+        {title}
+      </h2>
+      <p
+        style={{
+          fontSize: 15,
+          lineHeight: 1.6,
+          color: C.inkSoft,
+          margin: "0 0 40px",
+          maxWidth: 420,
+        }}
+      >
+        {body}
+      </p>
+      <Cta onClick={onNext}>Begin</Cta>
+    </div>
+  );
+}
 function Report({ d }: { d: Data }) {
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);

@@ -139,15 +139,6 @@ export const CREDIT_BUCKETS = [
 // ── Risk quiz ──────────────────────────────────────────────────────────────
 export const RISK_QS = [
   {
-    q: "If your investments dropped 20% in a month, you'd…",
-    opts: [
-      { label: "Sell everything immediately", val: 0 },
-      { label: "Sell some to limit losses", val: 1 },
-      { label: "Hold steady and wait", val: 2 },
-      { label: "Buy more at the lower price", val: 3 },
-    ],
-  },
-  {
     q: "How would you describe your investing experience?",
     opts: [
       { label: "Never invested before", val: 0 },
@@ -166,40 +157,81 @@ export const RISK_QS = [
     ],
   },
   {
-    q: "Your timeline if markets crash before you buy?",
+    q: "If your investments dropped 20% in a month, you'd…",
     opts: [
-      { label: "Buy on time no matter what", val: 0 },
-      { label: "Delay 6 months", val: 1 },
-      { label: "Delay 1–2 years for recovery", val: 2 },
-      { label: "Wait as long as it takes", val: 3 },
+      { label: "Sell everything immediately", val: 0 },
+      { label: "Sell some to limit losses", val: 1 },
+      { label: "Hold steady and wait", val: 2 },
+      { label: "Buy more at the lower price", val: 3 },
+    ],
+  },
+  {
+    q: "Outside this home goal, how do you invest for retirement?",
+    opts: [
+      { label: "I don't yet", val: 0 },
+      { label: "A default 401(k), set and forget", val: 1 },
+      { label: "Regular contributions to index funds", val: 2 },
+      { label: "Actively managed portfolio", val: 3 },
     ],
   },
 ];
 
+// ── Employment ─────────────────────────────────────────────────────────────
+export const EMPLOYMENT_TYPES = [
+  { id: "w2",       label: "W-2 employee",   desc: "Salaried or hourly. Lenders love 2+ years steady." },
+  { id: "self",     label: "Self-employed",  desc: "1099 / freelance. Plan for 2 years of tax returns." },
+  { id: "owner",    label: "Business owner", desc: "K-1 / S-corp income. Underwriting is stricter." },
+  { id: "contract", label: "Contractor",     desc: "Project-based. Document the income trail." },
+  { id: "other",    label: "Other",          desc: "Retired, student, between roles." },
+];
+
 // ── Editorial fact cards ───────────────────────────────────────────────────
 export const FACTS = {
-  fact1: {
+  factDemo: {
     kicker: "No. 01 — Demographics",
     fact: "The average first-time buyer is now 38 years old.",
     context: "Up from 28 in 1991. The timeline has shifted — you're not behind.",
     source: "National Association of Realtors, 2024",
   },
-  fact2: {
-    kicker: "No. 02 — Patience",
-    fact: "Most buyers spend 6+ months saving before they're ready.",
-    context: "A clear plan beats guesswork. Small monthly steps add up faster than you'd expect.",
-    source: "NAR Profile of Home Buyers and Sellers, 2024",
-  },
-  fact3: {
-    kicker: "No. 03 — Down Payments",
+  factDown: {
+    kicker: "No. 02 — Down Payments",
     fact: "The median first-time down payment is just 9%.",
     context: "You don't need 20%. FHA loans can go as low as 3.5%.",
     source: "NAR, 2024",
   },
-  fact4: {
-    kicker: "No. 04 — Compounding",
+  factCompound: {
+    kicker: "No. 03 — Compounding",
     fact: "Investing your savings can cut your timeline in half.",
     context: "$500/mo at 7% becomes $43k in five years — vs. $30k under a mattress.",
     source: "Compound interest, the eighth wonder of the world",
   },
 };
+
+// ── Section intro pages ────────────────────────────────────────────────────
+export const INTROS = {
+  introFinances: {
+    chapter: "Chapter I",
+    kicker: "First, the foundation",
+    title: "Let's gather a few key pieces of your financial picture.",
+    body: "Age, work, income, expenses, debt, credit, savings. Quick sliders — no documents, no commitments. Everything stays on this device.",
+  },
+  introHousehold: {
+    chapter: "Chapter II",
+    kicker: "Next, the household",
+    title: "Who's on the loan with you?",
+    body: "If you're buying with a partner, two incomes — and two credit scores — change the math. We'll only ask if it applies.",
+  },
+  introHome: {
+    chapter: "Chapter III",
+    kicker: "Then, the home",
+    title: "Where you're buying, and what you're buying.",
+    body: "ZIP code sets the local price benchmark. The home style shifts the monthly cost. A timeline turns it into a real plan.",
+  },
+  introRisk: {
+    chapter: "Chapter IV",
+    kicker: "Last, your style",
+    title: "How you feel about risk decides how your savings grow.",
+    body: "Four short questions. We'll match you to a Conservative, Balanced, or Growth strategy.",
+  },
+};
+
