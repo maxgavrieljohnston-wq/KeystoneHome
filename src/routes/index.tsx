@@ -169,24 +169,26 @@ function KeystoneApp() {
   const set = <K extends keyof Data>(k: K, v: Data[K]) =>
     setD((prev) => ({ ...prev, [k]: v }));
 
+  const shouldSkip = (idx: number) => {
+    const s = FLOW[idx];
+    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    if (d.hasPartner === false && partnerOnly.includes(s)) return true;
+    if (s === "factDemo") {
+      const primaryOver = d.age > 38;
+      const partnerOver = d.hasPartner ? d.partnerAge > 38 : true;
+      if (primaryOver && partnerOver) return true;
+    }
+    return false;
+  };
+
   const next = () => {
     let nextIdx = screenIdx + 1;
-    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
-    if (d.hasPartner === false) {
-      while (nextIdx < FLOW.length && partnerOnly.includes(FLOW[nextIdx])) {
-        nextIdx += 1;
-      }
-    }
+    while (nextIdx < FLOW.length && shouldSkip(nextIdx)) nextIdx += 1;
     setScreenIdx(Math.min(FLOW.length - 1, nextIdx));
   };
   const back = () => {
     let prevIdx = screenIdx - 1;
-    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
-    if (d.hasPartner === false) {
-      while (prevIdx > 0 && partnerOnly.includes(FLOW[prevIdx])) {
-        prevIdx -= 1;
-      }
-    }
+    while (prevIdx > 0 && shouldSkip(prevIdx)) prevIdx -= 1;
     setScreenIdx(Math.max(0, prevIdx));
   };
 
