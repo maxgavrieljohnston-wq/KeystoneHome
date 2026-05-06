@@ -557,6 +557,28 @@ function ScreenSwitch({
       </Question>
     );
 
+  if (screen === "partnerEmployment")
+    return (
+      <Question
+        kicker="Partner · Work"
+        title="How does your partner earn their income?"
+        sub="Same rules apply — lenders look for 2 years in the same line of work."
+      >
+        <Choices
+          options={EMPLOYMENT_TYPES.map((e) => ({
+            val: e.id,
+            label: e.label,
+            desc: e.desc,
+          }))}
+          value={d.partnerEmployment}
+          onSelect={(v) => set("partnerEmployment", v as string)}
+        />
+        <Cta onClick={next} disabled={!d.partnerEmployment}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
   if (screen === "partnerIncome")
     return (
       <Question kicker="Partner" title="Partner's gross annual income?">
