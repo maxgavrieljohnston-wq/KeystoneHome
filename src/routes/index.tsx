@@ -1128,7 +1128,8 @@ function Dashboard({ d }: { d: Data }) {
   const savingsOnly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
   // Affordability
-  const mortgage = calcMortgage(avgPrice, effectiveDownPct);
+  const mortgageRate = rateFromCredit(qualifyingCredit);
+  const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
   const taxIns = (avgPrice * 0.018) / 12; // ~1.8% annual property tax + insurance
   const pmi = effectiveDownPct < 20 ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12 : 0;
   const hoa = styleAdj.hoa;
