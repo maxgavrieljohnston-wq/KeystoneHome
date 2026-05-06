@@ -129,9 +129,9 @@ export const FACTS = {
     source: "National Association of Realtors, 2024",
   },
   fact2: {
-    icon: "🏠",
-    fact: "Only 1 in 5 home buyers today is buying for the first time",
-    context: "First-time buyers make up just 24% of the market — a historic low.",
+    icon: "⏳",
+    fact: "Most buyers spend 6+ months saving before they're ready",
+    context: "A clear plan beats guesswork — small monthly steps add up faster than you'd expect.",
     source: "NAR Profile of Home Buyers and Sellers, 2024",
   },
   fact3: {
