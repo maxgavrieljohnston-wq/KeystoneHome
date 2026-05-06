@@ -10,33 +10,48 @@ import {
   calcRequiredMonthly,
   deriveRisk,
   fmt,
+  fmtCompact,
   getPriceByZip,
-  styleAdjustments,
   rateFromCredit,
-} from "@/lib/heimili";
+  styleAdjustments,
+} from "@/lib/keystone";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Heimili — Your path to a first home" },
+      { title: "Keystone — Plan your first home" },
       {
         name: "description",
         content:
-          "Personalized investment, affordability, and readiness plan for first-time home buyers.",
+          "An editorial homebuying planner. Tell Keystone about your finances and get a custom plan to your first front door.",
       },
-      { property: "og:title", content: "Heimili — Your path to a first home" },
+      { property: "og:title", content: "Keystone — Plan your first home" },
       {
         property: "og:description",
         content:
-          "Tell Heimili about your finances and get a custom plan to reach your down payment.",
+          "Personalized affordability, savings, and readiness for first-time buyers.",
       },
     ],
   }),
-  component: HeimiliApp,
+  component: KeystoneApp,
 });
 
-// ── Flow ─────────────────────────────────────────────────────────────────────
+// ── Palette tokens (inline — editorial warm) ─────────────────────────────────
+const C = {
+  paper: "#f5efe6",
+  paperDeep: "#ebe2d3",
+  ink: "#1a1a1a",
+  inkSoft: "#3d3d3d",
+  inkMute: "#6b6b6b",
+  inkFaint: "#a39888",
+  rule: "#1a1a1a",
+  ember: "#c4452d",
+  sage: "#5a7a52",
+  gold: "#a8853a",
+  cream: "#fbf7f0",
+};
 
+// ── Flow ─────────────────────────────────────────────────────────────────────
 const FLOW = [
   "welcome",
   "email",
@@ -67,8 +82,12 @@ const FLOW = [
 ] as const;
 type Screen = (typeof FLOW)[number];
 
-const NON_INPUT: Screen[] = ["welcome", "fact1", "fact2", "fact3", "fact4", "dashboard"];
-const INPUT_STEPS = FLOW.filter((s) => !NON_INPUT.includes(s));
+const PROGRESS_SCREENS: Screen[] = [
+  "email", "age", "income", "expenses", "debt", "credit", "savings",
+  "partner", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
+  "zip", "homeStyle", "timeline", "downPct",
+  "risk0", "risk1", "risk2", "risk3",
+];
 
 type Data = {
   email: string;
@@ -98,330 +117,933 @@ const INITIAL: Data = {
   expenses: 3000,
   debt: 400,
   credit: null,
-  saved: 8000,
+  saved: 15000,
   hasPartner: null,
-  partnerIncome: 60000,
-  partnerExpenses: 2000,
-  partnerDebt: 300,
+  partnerIncome: 0,
+  partnerExpenses: 0,
+  partnerDebt: 0,
   partnerCredit: null,
   zip: "",
   zipData: null,
   homeStyles: [],
-  timelineYears: 3,
+  timelineYears: 5,
   downPct: 10,
   riskAnswers: {},
 };
 
-// ── App ──────────────────────────────────────────────────────────────────────
-
-function HeimiliApp() {
-  const [step, setStep] = useState(0);
+// ── Root component ───────────────────────────────────────────────────────────
+function KeystoneApp() {
   const [d, setD] = useState<Data>(INITIAL);
-  const screen = FLOW[step];
+  const [screenIdx, setScreenIdx] = useState(0);
+  const screen: Screen = FLOW[screenIdx];
 
-  const set = <K extends keyof Data>(k: K, v: Data[K]) => setD((x) => ({ ...x, [k]: v }));
-
-  const go = () => {
-    let next = step + 1;
-    // skip partner subscreens if no partner
-    while (
-      next < FLOW.length &&
-      d.hasPartner === false &&
-      ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(FLOW[next])
-    ) {
-      next++;
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      const id = "keystone-fonts";
+      if (!document.getElementById(id)) {
+        const link = document.createElement("link");
+        link.id = id;
+        link.rel = "stylesheet";
+        link.href =
+          "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+        document.head.appendChild(link);
+      }
     }
-    setStep(Math.min(next, FLOW.length - 1));
+  }, []);
+
+  const set = <K extends keyof Data>(k: K, v: Data[K]) =>
+    setD((prev) => ({ ...prev, [k]: v }));
+
+  const next = () => {
+    let nextIdx = screenIdx + 1;
+    // Skip partner sub-questions if no partner
+    if (
+      d.hasPartner === false &&
+      ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(
+        FLOW[nextIdx],
+      )
+    ) {
+      while (
+        nextIdx < FLOW.length &&
+        ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(
+          FLOW[nextIdx],
+        )
+      ) {
+        nextIdx += 1;
+      }
+    }
+    setScreenIdx(Math.min(FLOW.length - 1, nextIdx));
   };
-  const back = () => setStep((s) => Math.max(0, s - 1));
+  const back = () => setScreenIdx(Math.max(0, screenIdx - 1));
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
-        * { box-sizing: border-box; }
-        html, body, #root { background: #0a1628; }
-        body { font-family: 'DM Sans', system-ui, sans-serif; color: #fff; margin: 0; }
-        input[type=range] { -webkit-appearance: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      `}</style>
-      <div
-        style={{
-          minHeight: "100vh",
-          background:
-            "radial-gradient(ellipse at top, #102a44 0%, #0a1628 55%, #060e1c 100%)",
-          color: "#fff",
-          padding: "20px 16px 40px",
-        }}
-      >
-        <Nav screen={screen} onBack={back} canBack={step > 0 && screen !== "dashboard"} />
-        <ProgressBar screen={screen} />
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
-          <Screens d={d} set={set} screen={screen} go={go} />
-        </div>
-      </div>
-    </>
+    <Shell>
+      {screen !== "welcome" && screen !== "dashboard" && (
+        <TopBar
+          screen={screen}
+          onBack={screenIdx > 0 ? back : undefined}
+          progress={
+            PROGRESS_SCREENS.includes(screen)
+              ? (PROGRESS_SCREENS.indexOf(screen) + 1) /
+                PROGRESS_SCREENS.length
+              : null
+          }
+        />
+      )}
+      <Stage keyId={screen}>
+        <ScreenSwitch screen={screen} d={d} set={set} next={next} />
+      </Stage>
+    </Shell>
   );
 }
 
-function Nav({ screen, onBack, canBack }: { screen: Screen; onBack: () => void; canBack: boolean }) {
+// ── Shell & layout ───────────────────────────────────────────────────────────
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        maxWidth: 480,
-        margin: "0 auto 18px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
+        minHeight: "100vh",
+        background: C.paper,
+        color: C.ink,
+        fontFamily: "'Inter', system-ui, sans-serif",
+        padding: "0 22px 60px",
+        position: "relative",
       }}
     >
+      <style>{`
+        @keyframes fadeUp { from { opacity:0; transform: translateY(10px) } to { opacity:1; transform: none } }
+        @keyframes drawIn { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+        body { background: ${C.paper}; }
+        ::selection { background: ${C.ember}; color: ${C.cream}; }
+        button { font-family: inherit; }
+        input { font-family: inherit; }
+      `}</style>
+      <div style={{ maxWidth: 520, margin: "0 auto", paddingTop: 26 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TopBar({
+  screen,
+  onBack,
+  progress,
+}: {
+  screen: Screen;
+  onBack?: () => void;
+  progress: number | null;
+}) {
+  return (
+    <div style={{ marginBottom: 22 }}>
       <div
         style={{
-          fontFamily: "'Playfair Display', serif",
-          fontSize: 22,
-          fontWeight: 900,
-          letterSpacing: "-0.01em",
-          background: "linear-gradient(135deg,#a8d5e2,#fff)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 14,
         }}
       >
-        Heimili
-      </div>
-      {canBack ? (
-        <button
-          onClick={onBack}
+        <div
           style={{
-            background: "transparent",
-            border: "none",
-            color: "rgba(255,255,255,0.5)",
-            fontSize: 13,
-            cursor: "pointer",
-            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
-          ← Back
-        </button>
-      ) : (
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-          {screen === "dashboard" ? "Your plan" : ""}
+          {onBack ? (
+            <button
+              onClick={onBack}
+              aria-label="Back"
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                color: C.inkSoft,
+                fontSize: 16,
+                lineHeight: 1,
+              }}
+            >
+              ←
+            </button>
+          ) : (
+            <div style={{ width: 12 }} />
+          )}
+          <Wordmark small />
+        </div>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkFaint,
+          }}
+        >
+          {screen.startsWith("risk") ? "Risk" : screen.startsWith("partner") ? "Partner" : screen.startsWith("fact") ? "Reading" : "Step"}
         </span>
+      </div>
+      {progress !== null && (
+        <div
+          style={{
+            height: 1,
+            background: "rgba(26,26,26,0.12)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: C.ink,
+              transformOrigin: "left",
+              transform: `scaleX(${progress})`,
+              transition: "transform 0.45s cubic-bezier(.5,0,.2,1)",
+            }}
+          />
+        </div>
       )}
     </div>
   );
 }
 
-function ProgressBar({ screen }: { screen: Screen }) {
-  const idx = INPUT_STEPS.indexOf(screen as (typeof INPUT_STEPS)[number]);
-  if (idx < 0) return <div style={{ height: 30 }} />;
-  const pct = ((idx + 1) / INPUT_STEPS.length) * 100;
+function Wordmark({ small }: { small?: boolean }) {
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto 18px" }}>
-      <div
-        style={{
-          height: 4,
-          background: "rgba(255,255,255,0.06)",
-          borderRadius: 4,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: "linear-gradient(90deg,#4a8fa8,#a8d5e2)",
-            transition: "width 0.4s cubic-bezier(.5,0,.2,1)",
-          }}
-        />
-      </div>
-      <div
-        style={{
-          marginTop: 6,
-          fontSize: 10,
-          fontFamily: "'DM Mono', monospace",
-          color: "rgba(255,255,255,0.35)",
-          letterSpacing: "0.1em",
-        }}
-      >
-        {String(idx + 1).padStart(2, "0")} / {String(INPUT_STEPS.length).padStart(2, "0")}
-      </div>
-    </div>
+    <span
+      style={{
+        fontFamily: "'Fraunces', Georgia, serif",
+        fontWeight: 600,
+        fontSize: small ? 16 : 22,
+        letterSpacing: "-0.01em",
+        color: C.ink,
+      }}
+    >
+      Keystone
+      <span style={{ color: C.ember }}>.</span>
+    </span>
   );
 }
 
-// ── Reusable bits ───────────────────────────────────────────────────────────
-
-function Page({ keyId, children }: { keyId: string; children: React.ReactNode }) {
+function Stage({ children, keyId }: { children: React.ReactNode; keyId: string }) {
   return (
-    <div key={keyId} style={{ animation: "fadeUp 0.45s cubic-bezier(.5,0,.2,1) both" }}>
+    <div
+      key={keyId}
+      style={{ animation: "fadeUp 0.45s cubic-bezier(.5,0,.2,1) both" }}
+    >
       {children}
     </div>
   );
 }
 
-function Heading({ kicker, title, sub }: { kicker?: string; title: string; sub?: string }) {
+// ── Screen router ────────────────────────────────────────────────────────────
+function ScreenSwitch({
+  screen,
+  d,
+  set,
+  next,
+}: {
+  screen: Screen;
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  next: () => void;
+}) {
+  if (screen === "welcome") return <Welcome onStart={next} />;
+
+  if (screen === "email")
+    return (
+      <Question
+        kicker="Your turn"
+        title="Where should we send your plan?"
+        sub="Just for the report. We don't spam."
+      >
+        <input
+          type="email"
+          inputMode="email"
+          placeholder="you@email.com"
+          value={d.email}
+          onChange={(e) => set("email", e.target.value)}
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            borderBottom: `1.5px solid ${C.ink}`,
+            padding: "12px 0",
+            fontSize: 22,
+            fontFamily: "'Fraunces', serif",
+            color: C.ink,
+            outline: "none",
+            marginBottom: 28,
+          }}
+        />
+        <Cta onClick={next} disabled={!d.email.includes("@")}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "age")
+    return (
+      <Question kicker="About you" title="How old are you?">
+        <Slider
+          value={d.age}
+          min={18}
+          max={75}
+          step={1}
+          format={(v) => `${v}`}
+          onChange={(v) => set("age", v)}
+          unit="years old"
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "income")
+    return (
+      <Question
+        kicker="Income"
+        title="What's your gross annual income?"
+        sub="Before taxes. Don't include your partner — we'll ask separately."
+      >
+        <Slider
+          value={d.income}
+          min={20000}
+          max={400000}
+          step={1000}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("income", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "expenses")
+    return (
+      <Question
+        kicker="Spending"
+        title="Monthly expenses?"
+        sub="Rent, groceries, transport, subscriptions — the must-pays."
+      >
+        <Slider
+          value={d.expenses}
+          min={500}
+          max={15000}
+          step={50}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("expenses", v)}
+          unit="per month"
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "debt")
+    return (
+      <Question
+        kicker="Debt"
+        title="Monthly debt payments?"
+        sub="Student loans, car payments, credit cards minimums."
+      >
+        <Slider
+          value={d.debt}
+          min={0}
+          max={5000}
+          step={25}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("debt", v)}
+          unit="per month"
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "credit")
+    return (
+      <Question
+        kicker="Credit"
+        title="What's your credit score?"
+        sub="A rough range is fine — it sets your mortgage rate."
+      >
+        <Choices
+          options={CREDIT_BUCKETS.map((b) => ({
+            val: b.value,
+            label: b.label,
+            tag: b.range,
+            desc: `${b.desc} · est. ${(b.rate * 100).toFixed(2)}% rate`,
+          }))}
+          value={d.credit}
+          onSelect={(v) => set("credit", v as number)}
+        />
+        <Cta onClick={next} disabled={d.credit === null}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "savings")
+    return (
+      <Question
+        kicker="Savings"
+        title="What have you saved already?"
+        sub="Cash, savings, investments earmarked for the home."
+      >
+        <Slider
+          value={d.saved}
+          min={0}
+          max={300000}
+          step={500}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("saved", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "partner")
+    return (
+      <Question
+        kicker="Together"
+        title="Buying with a partner?"
+        sub="Two incomes can change everything."
+      >
+        <Choices
+          options={[
+            { val: 1, label: "Yes", desc: "Combine our finances" },
+            { val: 0, label: "No", desc: "Just me on the loan" },
+          ]}
+          value={d.hasPartner === null ? null : d.hasPartner ? 1 : 0}
+          onSelect={(v) => set("hasPartner", v === 1)}
+        />
+        <Cta onClick={next} disabled={d.hasPartner === null}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "partnerIncome")
+    return (
+      <Question kicker="Partner" title="Partner's gross annual income?">
+        <Slider
+          value={d.partnerIncome}
+          min={0}
+          max={400000}
+          step={1000}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("partnerIncome", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "partnerExpenses")
+    return (
+      <Question kicker="Partner" title="Partner's monthly expenses?">
+        <Slider
+          value={d.partnerExpenses}
+          min={0}
+          max={15000}
+          step={50}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("partnerExpenses", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "partnerDebt")
+    return (
+      <Question kicker="Partner" title="Partner's monthly debt?">
+        <Slider
+          value={d.partnerDebt}
+          min={0}
+          max={5000}
+          step={25}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("partnerDebt", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "partnerCredit")
+    return (
+      <Question
+        kicker="Partner"
+        title="Partner's credit score?"
+        sub="The lower of your two scores qualifies the loan."
+      >
+        <Choices
+          options={CREDIT_BUCKETS.map((b) => ({
+            val: b.value,
+            label: b.label,
+            tag: b.range,
+            desc: b.desc,
+          }))}
+          value={d.partnerCredit}
+          onSelect={(v) => set("partnerCredit", v as number)}
+        />
+        <Cta onClick={next} disabled={d.partnerCredit === null}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "zip")
+    return (
+      <Question
+        kicker="Where"
+        title="What ZIP code are you buying in?"
+        sub="Sets the local price benchmark."
+      >
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="00000"
+          maxLength={5}
+          value={d.zip}
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, "").slice(0, 5);
+            set("zip", v);
+            if (v.length === 5) set("zipData", getPriceByZip(v));
+          }}
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            borderBottom: `1.5px solid ${C.ink}`,
+            padding: "12px 0",
+            fontSize: 32,
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.2em",
+            color: C.ink,
+            outline: "none",
+            marginBottom: 18,
+          }}
+        />
+        {d.zipData && (
+          <ZipCallout city={d.zipData.city} avg={d.zipData.avg} />
+        )}
+        <Cta onClick={next} disabled={d.zip.length !== 5}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "homeStyle")
+    return (
+      <Question
+        kicker="Style"
+        title="What kind of home?"
+        sub="Pick all that interest you. Each one shifts the price and monthly cost."
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+            marginBottom: 28,
+          }}
+        >
+          {HOME_STYLES.map((s) => {
+            const active = d.homeStyles.includes(s.id);
+            return (
+              <button
+                key={s.id}
+                onClick={() =>
+                  set(
+                    "homeStyles",
+                    active
+                      ? d.homeStyles.filter((x) => x !== s.id)
+                      : [...d.homeStyles, s.id],
+                  )
+                }
+                style={{
+                  background: active ? C.ink : "transparent",
+                  color: active ? C.cream : C.ink,
+                  border: `1.5px solid ${C.ink}`,
+                  borderRadius: 0,
+                  padding: "16px 14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.18s",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Fraunces', serif",
+                    fontSize: 18,
+                    fontWeight: 600,
+                    marginBottom: 4,
+                  }}
+                >
+                  {s.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: active ? "rgba(251,247,240,0.6)" : C.inkMute,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {s.note}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <Cta onClick={next} disabled={d.homeStyles.length === 0}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "timeline")
+    return (
+      <Question
+        kicker="When"
+        title="When do you want to buy?"
+        sub="A realistic timeline shapes the whole plan."
+      >
+        <Slider
+          value={d.timelineYears}
+          min={1}
+          max={10}
+          step={1}
+          format={(v) => `${v}`}
+          onChange={(v) => set("timelineYears", v)}
+          unit={d.timelineYears === 1 ? "year from now" : "years from now"}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "downPct")
+    return (
+      <Question
+        kicker="Down payment"
+        title="How much down?"
+        sub="More down = lower payment. 20% removes PMI."
+      >
+        <Choices
+          options={[
+            { val: 3.5, label: "3.5%", tag: "FHA",  desc: "Lowest barrier" },
+            { val: 5,   label: "5%",   tag: "Common", desc: "Lower upfront cost" },
+            { val: 10,  label: "10%",  tag: "Solid", desc: "Middle ground" },
+            { val: 20,  label: "20%",  tag: "Best",  desc: "No PMI · best rates" },
+          ]}
+          value={d.downPct}
+          onSelect={(v) => set("downPct", v as number)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen.startsWith("risk")) {
+    const idx = Number(screen.replace("risk", ""));
+    const q = RISK_QS[idx];
+    const value = d.riskAnswers[idx];
+    return (
+      <Question kicker={`Risk · ${idx + 1} of 4`} title={q.q}>
+        <Choices
+          options={q.opts.map((o) => ({ val: o.val, label: o.label }))}
+          value={value ?? null}
+          onSelect={(v) =>
+            set("riskAnswers", { ...d.riskAnswers, [idx]: v as number })
+          }
+        />
+        <Cta onClick={next} disabled={value === undefined}>
+          Continue
+        </Cta>
+      </Question>
+    );
+  }
+
+  if (screen.startsWith("fact")) {
+    const f = FACTS[screen as keyof typeof FACTS];
+    if (!f) return null;
+    return <FactPage {...f} onNext={next} />;
+  }
+
+  if (screen === "dashboard") return <Report d={d} />;
+
+  return null;
+}
+
+// ── Welcome ──────────────────────────────────────────────────────────────────
+function Welcome({ onStart }: { onStart: () => void }) {
   return (
-    <div style={{ marginBottom: 28 }}>
+    <div style={{ paddingTop: 36 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 80,
+        }}
+      >
+        <Wordmark />
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkFaint,
+          }}
+        >
+          Vol. 01
+        </span>
+      </div>
+
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 18,
+        }}
+      >
+        — A homebuying plan, in print
+      </div>
+
+      <h1
+        style={{
+          fontFamily: "'Fraunces', Georgia, serif",
+          fontWeight: 400,
+          fontSize: 56,
+          lineHeight: 0.98,
+          letterSpacing: "-0.025em",
+          margin: "0 0 22px",
+          color: C.ink,
+        }}
+      >
+        The piece that
+        <br />
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>holds it all</em>
+        <br />
+        together.
+      </h1>
+
+      <p
+        style={{
+          fontSize: 15,
+          color: C.inkSoft,
+          lineHeight: 1.55,
+          maxWidth: 380,
+          marginBottom: 42,
+        }}
+      >
+        Tell us about your money in five minutes. We'll print a personal report
+        for the path to your first home — what to save, what to invest, what
+        you can afford.
+      </p>
+
+      <Cta onClick={onStart} large>
+        Begin the plan
+      </Cta>
+
+      <div
+        style={{
+          marginTop: 32,
+          paddingTop: 16,
+          borderTop: `1px solid ${C.rule}`,
+          display: "flex",
+          justifyContent: "space-between",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: C.inkFaint,
+        }}
+      >
+        <span>~ 5 minutes</span>
+        <span>No account</span>
+        <span>Free</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Question scaffolding ─────────────────────────────────────────────────────
+function Question({
+  kicker,
+  title,
+  sub,
+  children,
+}: {
+  kicker?: string;
+  title: string;
+  sub?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ paddingTop: 6 }}>
       {kicker && (
         <div
           style={{
-            fontSize: 11,
-            fontFamily: "'DM Mono', monospace",
-            color: "#a8d5e2",
-            letterSpacing: "0.18em",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
             textTransform: "uppercase",
-            marginBottom: 10,
+            color: C.ember,
+            marginBottom: 14,
           }}
         >
-          {kicker}
+          — {kicker}
         </div>
       )}
-      <h1
+      <h2
         style={{
-          fontFamily: "'Playfair Display', serif",
-          fontSize: 28,
-          fontWeight: 900,
-          lineHeight: 1.15,
-          letterSpacing: "-0.01em",
-          margin: 0,
+          fontFamily: "'Fraunces', serif",
+          fontWeight: 400,
+          fontSize: 34,
+          lineHeight: 1.05,
+          letterSpacing: "-0.02em",
+          margin: "0 0 12px",
+          color: C.ink,
         }}
       >
         {title}
-      </h1>
+      </h2>
       {sub && (
         <p
           style={{
-            marginTop: 12,
             fontSize: 14,
-            color: "rgba(255,255,255,0.55)",
-            lineHeight: 1.5,
+            color: C.inkMute,
+            lineHeight: 1.55,
+            margin: "0 0 32px",
+            maxWidth: 380,
           }}
         >
           {sub}
         </p>
       )}
+      {!sub && <div style={{ height: 28 }} />}
+      {children}
     </div>
   );
 }
 
-function Btn({
+// ── CTA ──────────────────────────────────────────────────────────────────────
+function Cta({
+  children,
   onClick,
   disabled,
-  children,
-  variant = "primary",
+  large,
 }: {
+  children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
-  children: React.ReactNode;
-  variant?: "primary" | "ghost";
+  large?: boolean;
 }) {
-  const base: React.CSSProperties = {
-    border: "none",
-    borderRadius: 14,
-    padding: "17px 28px",
-    fontSize: 15,
-    fontWeight: 800,
-    cursor: disabled ? "not-allowed" : "pointer",
-    width: "100%",
-    letterSpacing: "0.01em",
-    transition: "all 0.2s",
-    fontFamily: "inherit",
-  };
-  const styles: React.CSSProperties =
-    variant === "primary"
-      ? {
-          ...base,
-          background: "linear-gradient(135deg,#4a8fa8,#a8d5e2)",
-          color: "#0a1628",
-          boxShadow: disabled ? "none" : "0 6px 24px rgba(74,143,168,0.28)",
-          opacity: disabled ? 0.35 : 1,
-        }
-      : {
-          ...base,
-          background: "rgba(255,255,255,0.06)",
-          color: "rgba(255,255,255,0.7)",
-          border: "1.5px solid rgba(255,255,255,0.1)",
-        };
   return (
-    <button onClick={!disabled ? onClick : undefined} style={styles}>
+    <button
+      onClick={!disabled ? onClick : undefined}
+      style={{
+        background: disabled ? "transparent" : C.ink,
+        color: disabled ? C.inkFaint : C.cream,
+        border: `1.5px solid ${disabled ? C.inkFaint : C.ink}`,
+        borderRadius: 0,
+        padding: large ? "18px 28px" : "14px 22px",
+        fontSize: large ? 14 : 13,
+        fontWeight: 600,
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+        cursor: disabled ? "not-allowed" : "pointer",
+        width: "100%",
+        transition: "all 0.18s",
+        position: "relative",
+      }}
+    >
       {children}
+      <span style={{ marginLeft: 10 }}>→</span>
     </button>
   );
 }
 
-function SliderField({
-  label,
-  sublabel,
+// ── Slider ───────────────────────────────────────────────────────────────────
+function Slider({
   value,
   min,
   max,
   step,
   format,
   onChange,
-  onNext,
+  unit,
 }: {
-  label: string;
-  sublabel?: string;
   value: number;
   min: number;
   max: number;
   step: number;
   format: (v: number) => string;
   onChange: (v: number) => void;
-  onNext: () => void;
+  unit?: string;
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
-    <>
-      <Heading title={label} sub={sublabel} />
+    <div style={{ marginBottom: 36 }}>
       <div
         style={{
-          fontFamily: "'DM Mono', monospace",
-          fontSize: 42,
-          fontWeight: 700,
-          color: "#a8d5e2",
-          marginBottom: 24,
-          textAlign: "center",
-          letterSpacing: "-0.02em",
+          fontFamily: "'Fraunces', serif",
+          fontWeight: 400,
+          fontSize: 56,
+          lineHeight: 1,
+          letterSpacing: "-0.03em",
+          color: C.ink,
+          marginBottom: 4,
         }}
       >
         {format(value)}
       </div>
-      <div style={{ position: "relative", height: 36, marginBottom: 8 }}>
+      {unit && (
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+            marginBottom: 28,
+          }}
+        >
+          {unit}
+        </div>
+      )}
+      {!unit && <div style={{ height: 22 }} />}
+      <div style={{ position: "relative", height: 30 }}>
         <div
           style={{
             position: "absolute",
-            top: 16,
             left: 0,
             right: 0,
-            height: 4,
-            background: "rgba(255,255,255,0.08)",
-            borderRadius: 4,
+            top: 14,
+            height: 2,
+            background: "rgba(26,26,26,0.18)",
           }}
         />
         <div
           style={{
             position: "absolute",
-            top: 16,
             left: 0,
+            top: 14,
+            height: 2,
             width: `${pct}%`,
-            height: 4,
-            background: "linear-gradient(90deg,#4a8fa8,#a8d5e2)",
-            borderRadius: 4,
+            background: C.ink,
           }}
         />
         <div
           style={{
             position: "absolute",
-            top: 8,
-            left: `calc(${pct}% - 10px)`,
-            width: 20,
-            height: 20,
-            borderRadius: "50%",
-            background: "#a8d5e2",
-            boxShadow: "0 4px 12px rgba(168,213,226,0.5)",
+            left: `${pct}%`,
+            top: 6,
+            transform: "translateX(-50%)",
+            width: 18,
+            height: 18,
+            background: C.ember,
+            border: `2px solid ${C.ink}`,
             pointerEvents: "none",
           }}
         />
@@ -435,8 +1057,8 @@ function SliderField({
           style={{
             position: "absolute",
             inset: 0,
-            opacity: 0,
             width: "100%",
+            opacity: 0,
             cursor: "pointer",
           }}
         />
@@ -445,77 +1067,89 @@ function SliderField({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          fontSize: 11,
-          fontFamily: "'DM Mono', monospace",
-          color: "rgba(255,255,255,0.3)",
-          marginBottom: 32,
+          marginTop: 10,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          color: C.inkFaint,
+          letterSpacing: "0.05em",
         }}
       >
         <span>{format(min)}</span>
         <span>{format(max)}</span>
       </div>
-      <Btn onClick={onNext}>Continue →</Btn>
-    </>
+    </div>
   );
 }
 
-function ChoiceList<T extends string | number>({
+// ── Choices list ─────────────────────────────────────────────────────────────
+function Choices({
   options,
   value,
   onSelect,
-  multi,
 }: {
-  options: { val: T; label: string; desc?: string; right?: string; color?: string }[];
-  value: T | T[] | null;
-  onSelect: (v: T) => void;
-  multi?: boolean;
+  options: { val: number; label: string; tag?: string; desc?: string }[];
+  value: number | null;
+  onSelect: (v: number) => void;
 }) {
-  const isActive = (v: T) =>
-    multi && Array.isArray(value) ? value.includes(v) : value === v;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-      {options.map((o) => {
-        const active = isActive(o.val);
+    <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 28 }}>
+      {options.map((o, i) => {
+        const active = value === o.val;
         return (
           <button
-            key={String(o.val)}
+            key={`${o.val}-${i}`}
             onClick={() => onSelect(o.val)}
             style={{
+              background: active ? C.ink : "transparent",
+              color: active ? C.cream : C.ink,
+              border: "none",
+              borderTop: `1px solid ${C.ink}`,
+              borderBottom: i === options.length - 1 ? `1px solid ${C.ink}` : "none",
+              padding: "18px 4px",
+              cursor: "pointer",
+              textAlign: "left",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              background: active ? "rgba(168,213,226,0.12)" : "rgba(255,255,255,0.03)",
-              border: active
-                ? `1.5px solid ${o.color ? o.color + "70" : "rgba(168,213,226,0.55)"}`
-                : "1.5px solid rgba(255,255,255,0.07)",
-              borderRadius: 14,
-              padding: "15px 18px",
-              cursor: "pointer",
-              transition: "all 0.18s",
-              textAlign: "left",
-              color: "#fff",
-              fontFamily: "inherit",
+              gap: 16,
+              transition: "all 0.16s",
             }}
           >
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{o.label}</div>
+              <div
+                style={{
+                  fontFamily: "'Fraunces', serif",
+                  fontSize: 20,
+                  fontWeight: 500,
+                  marginBottom: o.desc ? 4 : 0,
+                }}
+              >
+                {o.label}
+              </div>
               {o.desc && (
                 <div
-                  style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}
+                  style={{
+                    fontSize: 12,
+                    color: active ? "rgba(251,247,240,0.6)" : C.inkMute,
+                    lineHeight: 1.4,
+                  }}
                 >
                   {o.desc}
                 </div>
               )}
             </div>
-            {o.right && (
+            {o.tag && (
               <div
                 style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.5)",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: active ? "rgba(251,247,240,0.6)" : C.inkFaint,
+                  whiteSpace: "nowrap",
                 }}
               >
-                {o.right}
+                {o.tag}
               </div>
             )}
           </button>
@@ -525,589 +1159,132 @@ function ChoiceList<T extends string | number>({
   );
 }
 
-function FactCard({
-  icon,
+function ZipCallout({ city, avg }: { city: string; avg: number }) {
+  return (
+    <div
+      style={{
+        borderTop: `1px solid ${C.ink}`,
+        borderBottom: `1px solid ${C.ink}`,
+        padding: "14px 0",
+        marginBottom: 28,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkFaint,
+            marginBottom: 4,
+          }}
+        >
+          Avg home price
+        </div>
+        <div
+          style={{
+            fontFamily: "'Fraunces', serif",
+            fontSize: 16,
+            color: C.ink,
+          }}
+        >
+          {city}
+        </div>
+      </div>
+      <div
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontSize: 28,
+          color: C.ember,
+        }}
+      >
+        {fmt(avg)}
+      </div>
+    </div>
+  );
+}
+
+// ── Fact page ────────────────────────────────────────────────────────────────
+function FactPage({
+  kicker,
   fact,
   context,
   source,
   onNext,
 }: {
-  icon: string;
+  kicker: string;
   fact: string;
   context: string;
   source: string;
   onNext: () => void;
 }) {
   return (
-    <div style={{ paddingTop: 30, textAlign: "center" }}>
+    <div style={{ paddingTop: 30 }}>
       <div
         style={{
-          fontSize: 56,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
           marginBottom: 24,
-          animation: "fadeIn 0.7s",
         }}
       >
-        {icon}
+        {kicker}
       </div>
       <div
         style={{
-          fontSize: 11,
-          fontFamily: "'DM Mono', monospace",
-          color: "#a8d5e2",
-          letterSpacing: "0.18em",
-          marginBottom: 16,
+          height: 1,
+          background: C.ink,
+          marginBottom: 32,
         }}
-      >
-        DID YOU KNOW
-      </div>
-      <h2
+      />
+      <p
         style={{
-          fontFamily: "'Playfair Display', serif",
-          fontSize: 26,
-          fontWeight: 900,
-          lineHeight: 1.2,
-          margin: "0 0 18px",
+          fontFamily: "'Fraunces', serif",
+          fontWeight: 400,
+          fontSize: 38,
+          lineHeight: 1.1,
+          letterSpacing: "-0.02em",
+          margin: "0 0 24px",
+          color: C.ink,
         }}
       >
         {fact}
-      </h2>
+      </p>
       <p
         style={{
           fontSize: 15,
-          color: "rgba(255,255,255,0.6)",
-          lineHeight: 1.5,
-          marginBottom: 12,
+          lineHeight: 1.6,
+          color: C.inkSoft,
+          margin: "0 0 28px",
+          maxWidth: 420,
         }}
       >
         {context}
       </p>
       <p
         style={{
-          fontSize: 11,
-          color: "rgba(255,255,255,0.3)",
-          marginBottom: 32,
-          fontStyle: "italic",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.1em",
+          color: C.inkFaint,
+          margin: "0 0 40px",
         }}
       >
-        {source}
+        — {source}
       </p>
-      <Btn onClick={onNext}>Got it →</Btn>
+      <Cta onClick={onNext}>Continue</Cta>
     </div>
   );
 }
 
-// ── Screens dispatcher ──────────────────────────────────────────────────────
-
-function Screens({
-  d,
-  set,
-  screen,
-  go,
-}: {
-  d: Data;
-  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
-  screen: Screen;
-  go: () => void;
-}) {
-  if (screen === "welcome")
-    return (
-      <Page keyId={screen}>
-        <div style={{ paddingTop: 40, textAlign: "center" }}>
-          <div style={{ fontSize: 56, marginBottom: 28 }}>🏡</div>
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 38,
-              fontWeight: 900,
-              lineHeight: 1.1,
-              margin: "0 0 16px",
-            }}
-          >
-            Your path to a first home
-          </h1>
-          <p
-            style={{
-              fontSize: 15,
-              color: "rgba(255,255,255,0.6)",
-              lineHeight: 1.55,
-              marginBottom: 36,
-            }}
-          >
-            In about 3 minutes, Heimili builds you a personalized investment, affordability, and
-            readiness plan — for free.
-          </p>
-          <Btn onClick={go}>Get Started →</Btn>
-          <p
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.3)",
-              marginTop: 18,
-            }}
-          >
-            No account required · No credit pulled
-          </p>
-        </div>
-      </Page>
-    );
-
-  if (screen === "email")
-    return (
-      <Page keyId={screen}>
-        <Heading
-          kicker="Step 1"
-          title="Where should we send your plan?"
-          sub="We'll save your results so you can come back to them anytime."
-        />
-        <input
-          type="email"
-          placeholder="you@email.com"
-          value={d.email}
-          onChange={(e) => set("email", e.target.value)}
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.05)",
-            border: "1.5px solid rgba(255,255,255,0.1)",
-            borderRadius: 14,
-            padding: "17px 18px",
-            color: "#fff",
-            fontSize: 15,
-            marginBottom: 20,
-            fontFamily: "inherit",
-            outline: "none",
-          }}
-        />
-        <Btn onClick={go} disabled={!d.email.includes("@")}>
-          Continue →
-        </Btn>
-        <button
-          onClick={go}
-          style={{
-            background: "none",
-            border: "none",
-            color: "rgba(255,255,255,0.3)",
-            fontSize: 13,
-            cursor: "pointer",
-            marginTop: 14,
-            width: "100%",
-            padding: 8,
-          }}
-        >
-          Skip for now
-        </button>
-      </Page>
-    );
-
-  if (screen === "age")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="How old are you?"
-          sublabel="Age helps us calibrate your timeline."
-          value={d.age}
-          min={18}
-          max={75}
-          step={1}
-          format={(v) => `${v} years`}
-          onChange={(v) => set("age", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "fact1") return <FactCard {...FACTS.fact1} onNext={go} />;
-
-  if (screen === "income")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="What's your annual income?"
-          sublabel="Gross income, before taxes."
-          value={d.income}
-          min={20000}
-          max={500000}
-          step={1000}
-          format={fmt}
-          onChange={(v) => set("income", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "expenses")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="Monthly living expenses?"
-          sublabel="Rent, groceries, utilities, subscriptions — the essentials."
-          value={d.expenses}
-          min={500}
-          max={15000}
-          step={50}
-          format={(v) => fmt(v) + "/mo"}
-          onChange={(v) => set("expenses", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "debt")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="Monthly debt payments?"
-          sublabel="Student loans, car payments, credit cards."
-          value={d.debt}
-          min={0}
-          max={5000}
-          step={50}
-          format={(v) => (v === 0 ? "None" : fmt(v) + "/mo")}
-          onChange={(v) => set("debt", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "credit")
-    return (
-      <Page keyId={screen}>
-        <Heading title="What's your credit score?" sub="Pick the range that best describes you." />
-        <ChoiceList
-          options={CREDIT_BUCKETS.map((b) => ({
-            val: b.value,
-            label: b.label,
-            desc: b.desc,
-            right: b.range,
-            color: b.color,
-          }))}
-          value={d.credit}
-          onSelect={(v) => set("credit", v)}
-        />
-        <Btn onClick={go} disabled={!d.credit}>
-          Continue →
-        </Btn>
-      </Page>
-    );
-
-  if (screen === "savings")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="Current savings"
-          sublabel="Anything you could put toward a home — checking, savings, brokerage."
-          value={d.saved}
-          min={0}
-          max={200000}
-          step={500}
-          format={fmt}
-          onChange={(v) => set("saved", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "fact2") return <FactCard {...FACTS.fact2} onNext={go} />;
-
-  if (screen === "partner")
-    return (
-      <Page keyId={screen}>
-        <Heading
-          title="Buying with a partner?"
-          sub="Combining incomes and credit can change everything."
-        />
-        <ChoiceList
-          options={[
-            { val: "yes" as string, label: "Yes — buying together", desc: "Add their finances next" },
-            { val: "no" as string, label: "Just me", desc: "Solo buyer" },
-          ]}
-          value={d.hasPartner === null ? null : d.hasPartner ? "yes" : "no"}
-          onSelect={(v) => set("hasPartner", v === "yes")}
-        />
-        <Btn onClick={go} disabled={d.hasPartner === null}>
-          Continue →
-        </Btn>
-      </Page>
-    );
-
-  if (screen === "partnerIncome")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="Partner's annual income?"
-          value={d.partnerIncome}
-          min={0}
-          max={500000}
-          step={1000}
-          format={fmt}
-          onChange={(v) => set("partnerIncome", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "partnerExpenses")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="Partner's monthly expenses?"
-          value={d.partnerExpenses}
-          min={0}
-          max={15000}
-          step={50}
-          format={(v) => fmt(v) + "/mo"}
-          onChange={(v) => set("partnerExpenses", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "partnerDebt")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="Partner's monthly debt?"
-          value={d.partnerDebt}
-          min={0}
-          max={5000}
-          step={50}
-          format={(v) => (v === 0 ? "None" : fmt(v) + "/mo")}
-          onChange={(v) => set("partnerDebt", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "partnerCredit")
-    return (
-      <Page keyId={screen}>
-        <Heading title="Partner's credit score?" sub="The lower of the two is what lenders use." />
-        <ChoiceList
-          options={CREDIT_BUCKETS.map((b) => ({
-            val: b.value,
-            label: b.label,
-            desc: b.desc,
-            right: b.range,
-            color: b.color,
-          }))}
-          value={d.partnerCredit}
-          onSelect={(v) => set("partnerCredit", v)}
-        />
-        <Btn onClick={go} disabled={!d.partnerCredit}>
-          Continue →
-        </Btn>
-      </Page>
-    );
-
-  if (screen === "fact3") return <FactCard {...FACTS.fact3} onNext={go} />;
-
-  if (screen === "zip") {
-    const lookup = () => {
-      if (d.zip.length === 5) {
-        const z = getPriceByZip(d.zip);
-        set("zipData", z);
-      }
-    };
-    return (
-      <Page keyId={screen}>
-        <Heading
-          title="Where do you want to buy?"
-          sub="Your ZIP code helps us estimate local home prices."
-        />
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={5}
-          placeholder="00000"
-          value={d.zip}
-          onChange={(e) => {
-            const v = e.target.value.replace(/\D/g, "").slice(0, 5);
-            set("zip", v);
-            if (v.length === 5) {
-              set("zipData", getPriceByZip(v));
-            } else {
-              set("zipData", null);
-            }
-          }}
-          onBlur={lookup}
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.05)",
-            border: "1.5px solid rgba(255,255,255,0.1)",
-            borderRadius: 14,
-            padding: "17px 18px",
-            color: "#fff",
-            fontSize: 22,
-            fontFamily: "'DM Mono', monospace",
-            letterSpacing: "0.3em",
-            textAlign: "center",
-            marginBottom: 20,
-            outline: "none",
-          }}
-        />
-        {d.zipData && (
-          <div
-            style={{
-              background: "rgba(168,213,226,0.08)",
-              border: "1.5px solid rgba(168,213,226,0.2)",
-              borderRadius: 14,
-              padding: "14px 18px",
-              marginBottom: 20,
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-              Avg home price in {d.zipData.city}
-            </div>
-            <div
-              style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: 22,
-                fontWeight: 700,
-                color: "#a8d5e2",
-                marginTop: 4,
-              }}
-            >
-              {fmt(d.zipData.avg)}
-            </div>
-          </div>
-        )}
-        <Btn onClick={go} disabled={d.zip.length < 5}>
-          Continue →
-        </Btn>
-      </Page>
-    );
-  }
-
-  if (screen === "homeStyle")
-    return (
-      <Page keyId={screen}>
-        <Heading title="What kind of home?" sub="Pick all that interest you." />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
-            marginBottom: 24,
-          }}
-        >
-          {HOME_STYLES.map((s) => {
-            const active = d.homeStyles.includes(s.id);
-            return (
-              <button
-                key={s.id}
-                onClick={() => {
-                  set(
-                    "homeStyles",
-                    active ? d.homeStyles.filter((x) => x !== s.id) : [...d.homeStyles, s.id],
-                  );
-                }}
-                style={{
-                  background: active ? "rgba(168,213,226,0.12)" : "rgba(255,255,255,0.03)",
-                  border: active
-                    ? "1.5px solid rgba(168,213,226,0.55)"
-                    : "1.5px solid rgba(255,255,255,0.07)",
-                  borderRadius: 14,
-                  padding: "18px 12px",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  color: "#fff",
-                  transition: "all 0.18s",
-                  fontFamily: "inherit",
-                }}
-              >
-                <div style={{ fontSize: 28, marginBottom: 6 }}>{s.emoji}</div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{s.label}</div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(255,255,255,0.45)",
-                    marginTop: 4,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {s.note}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <Btn onClick={go} disabled={d.homeStyles.length === 0}>
-          Continue →
-        </Btn>
-      </Page>
-    );
-
-  if (screen === "timeline")
-    return (
-      <Page keyId={screen}>
-        <SliderField
-          label="When do you want to buy?"
-          sublabel="A realistic timeline shapes your investment plan."
-          value={d.timelineYears}
-          min={1}
-          max={10}
-          step={1}
-          format={(v) => `${v} year${v > 1 ? "s" : ""}`}
-          onChange={(v) => set("timelineYears", v)}
-          onNext={go}
-        />
-      </Page>
-    );
-
-  if (screen === "downPct")
-    return (
-      <Page keyId={screen}>
-        <Heading
-          title="Down payment plan?"
-          sub="More down = lower monthly payment and no PMI at 20%."
-        />
-        <ChoiceList
-          options={[
-            { val: 3.5, label: "3.5%", desc: "FHA loan · lowest barrier to entry" },
-            { val: 5, label: "5%", desc: "Common first step — lower upfront cost" },
-            { val: 10, label: "10%", desc: "Solid middle ground" },
-            { val: 20, label: "20%", desc: "No PMI · best mortgage rates" },
-          ]}
-          value={d.downPct}
-          onSelect={(v) => set("downPct", v)}
-        />
-        <Btn onClick={go}>Continue →</Btn>
-      </Page>
-    );
-
-  if (screen === "fact4") return <FactCard {...FACTS.fact4} onNext={go} />;
-
-  if (screen.startsWith("risk")) {
-    const idx = Number(screen.replace("risk", ""));
-    const q = RISK_QS[idx];
-    const value = d.riskAnswers[idx];
-    return (
-      <Page keyId={screen}>
-        <Heading kicker={`Risk · ${idx + 1} of 4`} title={q.q} />
-        <ChoiceList
-          options={q.opts.map((o) => ({ val: o.val, label: o.label }))}
-          value={value ?? null}
-          onSelect={(v) =>
-            set("riskAnswers", { ...d.riskAnswers, [idx]: v as number })
-          }
-        />
-        <Btn onClick={go} disabled={value === undefined}>
-          Continue →
-        </Btn>
-      </Page>
-    );
-  }
-
-  if (screen === "dashboard") return <Dashboard d={d} />;
-
-  return null;
-}
-
-// ── Dashboard ────────────────────────────────────────────────────────────────
-
-function Dashboard({ d }: { d: Data }) {
-  const [tab, setTab] = useState<"save" | "invest" | "afford" | "ready">("save");
-
+// ── Report (single scrollable dashboard) ─────────────────────────────────────
+function Report({ d }: { d: Data }) {
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
   const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
@@ -1120,634 +1297,485 @@ function Dashboard({ d }: { d: Data }) {
   const combinedIncome = d.income + (hasPartner ? d.partnerIncome : 0);
   const combinedExpenses = d.expenses + (hasPartner ? d.partnerExpenses : 0);
   const combinedDebt = d.debt + (hasPartner ? d.partnerDebt : 0);
-  const qualifyingCredit = hasPartner && d.partnerCredit
-    ? Math.min(d.credit ?? 700, d.partnerCredit)
-    : d.credit ?? 700;
+  const qualifyingCredit =
+    hasPartner && d.partnerCredit
+      ? Math.min(d.credit ?? 700, d.partnerCredit)
+      : d.credit ?? 700;
 
-  const primaryMonthly = calcRequiredMonthly(d.saved, downPayment, months, risk.rate);
-  const savingsOnly = calcRequiredMonthly(d.saved, downPayment, months, 0);
+  const investedMonthly = calcRequiredMonthly(d.saved, downPayment, months, risk.rate);
+  const savedOnlyMonthly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
-  // Affordability
   const mortgageRate = rateFromCredit(qualifyingCredit);
   const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
-  const taxIns = (avgPrice * 0.018) / 12; // ~1.8% annual property tax + insurance
-  const pmi = effectiveDownPct < 20 ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12 : 0;
+  const taxIns = (avgPrice * 0.018) / 12;
+  const pmi =
+    effectiveDownPct < 20
+      ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12
+      : 0;
   const hoa = styleAdj.hoa;
   const reserve = styleAdj.reserve;
   const totalHousing = mortgage + taxIns + pmi + hoa + reserve;
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = totalHousing / monthlyIncome;
-  const affordable = housingRatio <= 0.28;
-  const stretching = !affordable && housingRatio <= 0.36;
+  const verdict =
+    housingRatio <= 0.28 ? "Affordable" : housingRatio <= 0.36 ? "A stretch" : "Difficult";
+  const verdictTone =
+    housingRatio <= 0.28 ? C.sage : housingRatio <= 0.36 ? C.gold : C.ember;
 
   const eFundMin = combinedExpenses * 3;
-  const eFundMax = combinedExpenses * 6;
   const eFundOk = d.saved >= eFundMin;
 
-  // Readiness 0-100
-  const creditScore = Math.max(0, Math.min(100, ((qualifyingCredit - 580) / (820 - 580)) * 100));
+  const creditScoreNorm = Math.max(
+    0,
+    Math.min(100, ((qualifyingCredit - 580) / (820 - 580)) * 100),
+  );
   const dti = (combinedDebt + totalHousing) / monthlyIncome;
   const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.28) / 0.2) * 100));
-  const savingsScore = Math.max(0, Math.min(100, (d.saved / downPayment) * 100));
+  const savingsScore = Math.max(0, Math.min(100, (d.saved / Math.max(downPayment, 1)) * 100));
   const timelineScore = Math.max(0, Math.min(100, (d.timelineYears / 5) * 100));
   const readiness = Math.round(
-    creditScore * 0.3 + dtiScore * 0.3 + savingsScore * 0.25 + timelineScore * 0.15,
+    creditScoreNorm * 0.3 + dtiScore * 0.3 + savingsScore * 0.25 + timelineScore * 0.15,
   );
+  const readinessLabel =
+    readiness >= 80
+      ? "Ready to act"
+      : readiness >= 60
+        ? "Almost there"
+        : readiness >= 40
+          ? "Building toward it"
+          : "Early days";
 
   const styleNames = d.homeStyles
     .map((id) => HOME_STYLES.find((s) => s.id === id)?.label)
     .filter(Boolean)
-    .join(", ");
+    .join(" + ");
 
   return (
-    <div style={{ animation: "fadeUp 0.5s both" }}>
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div
-          style={{
-            fontSize: 10,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: "#a8d5e2",
-            marginBottom: 6,
-            fontFamily: "'DM Mono', monospace",
-          }}
-        >
-          Your Path Home
-        </div>
-        <h2
-          style={{
-            fontSize: 24,
-            fontWeight: 900,
-            fontFamily: "'Playfair Display', serif",
-            lineHeight: 1.2,
-            margin: "0 0 6px",
-          }}
-        >
-          {styleNames || "Your Home"} in {zipData.city}
-        </h2>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>
-          {fmt(avgPrice)} est · {effectiveDownPct}% down ={" "}
-          <span style={{ color: "#a8d5e2", fontWeight: 700 }}>{fmt(downPayment)}</span>
-          {hasPartner && (
-            <span style={{ color: "rgba(255,255,255,0.35)" }}> · Buying together</span>
-          )}
-        </p>
-      </div>
-
-      {/* Tabs */}
+    <div style={{ paddingTop: 8, paddingBottom: 40 }}>
+      {/* Masthead */}
       <div
         style={{
           display: "flex",
-          gap: 6,
-          background: "rgba(255,255,255,0.04)",
-          padding: 4,
-          borderRadius: 12,
-          marginBottom: 20,
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 18,
         }}
       >
-        {[
-          { key: "save", label: "Save" },
-          { key: "invest", label: "Invest" },
-          { key: "afford", label: "Afford" },
-          { key: "ready", label: "Ready" },
-        ].map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key as typeof tab)}
-            style={{
-              flex: 1,
-              border: "none",
-              borderRadius: 9,
-              padding: "10px 4px",
-              cursor: "pointer",
-              background: tab === t.key ? "rgba(168,213,226,0.16)" : "transparent",
-              color: tab === t.key ? "#a8d5e2" : "rgba(255,255,255,0.32)",
-              fontWeight: 700,
-              fontSize: 12,
-              transition: "all 0.2s",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              fontFamily: "inherit",
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+        <Wordmark small />
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkFaint,
+          }}
+        >
+          The Report
+        </span>
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 18 }} />
+
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 12,
+        }}
+      >
+        Your plan, prepared
       </div>
 
-      {tab === "save" && (
-        <div>
-          <StatCard
-            label={`Save only · ${d.timelineYears}-year goal`}
-            value={fmt(savingsOnly) + "/mo"}
-            sub={`Stash this monthly in a regular account to reach ${fmt(downPayment)} in ${d.timelineYears} years — no investment growth assumed.`}
-            color="#a8d5e2"
-          >
-            {savingsOnly > primaryMonthly && (
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.55)",
-                  marginTop: 10,
-                  fontWeight: 500,
-                  lineHeight: 1.5,
-                }}
-              >
-                That's {fmt(savingsOnly - primaryMonthly)}/mo more than the {risk.label.toLowerCase()} investing plan. Check the <strong style={{ color: "#a8d5e2" }}>Invest</strong> tab to see how compounding shrinks the burden.
-              </div>
-            )}
-          </StatCard>
+      <h1
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontWeight: 400,
+          fontSize: 42,
+          lineHeight: 1.02,
+          letterSpacing: "-0.025em",
+          margin: "0 0 14px",
+          color: C.ink,
+        }}
+      >
+        {styleNames || "Your home"}{" "}
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>in</em>{" "}
+        {zipData.city}.
+      </h1>
 
-          <SectionHeader>Why saving alone is hard</SectionHeader>
-          <div
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 0,
+          borderTop: `1px solid ${C.ink}`,
+          borderBottom: `1px solid ${C.ink}`,
+          marginBottom: 36,
+        }}
+      >
+        <Stat label="Est. price"  value={fmtCompact(avgPrice)} />
+        <Stat label="Down"        value={`${effectiveDownPct}%`} divider />
+        <Stat label="= deposit"   value={fmtCompact(downPayment)} divider />
+      </div>
+
+      {/* Section 1 — Save vs Invest */}
+      <Section number="01" title="Save, or invest?">
+        <p style={SubP}>
+          To put down{" "}
+          <em style={{ fontStyle: "italic" }}>{fmt(downPayment)}</em> in{" "}
+          {d.timelineYears} years, here's what each path costs you per month.
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 1,
+            background: C.ink,
+            border: `1px solid ${C.ink}`,
+            margin: "20px 0 18px",
+          }}
+        >
+          <PathCard
+            kicker="Path A · Save"
+            value={fmt(savedOnlyMonthly)}
+            unit="/ month"
+            note="Cash in a regular account. No growth assumed."
+          />
+          <PathCard
+            kicker={`Path B · ${risk.label}`}
+            value={fmt(investedMonthly)}
+            unit="/ month"
+            note={`Invested at ~${(risk.rate * 100).toFixed(0)}% annually.`}
+            highlight
+          />
+        </div>
+
+        {savedOnlyMonthly > investedMonthly && (
+          <p
             style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1.5px solid rgba(255,255,255,0.06)",
-              borderRadius: 12,
-              padding: 16,
-              fontSize: 13,
-              color: "rgba(255,255,255,0.6)",
-              lineHeight: 1.55,
+              ...SubP,
+              borderLeft: `2px solid ${C.ember}`,
+              paddingLeft: 14,
+              fontStyle: "italic",
+              fontFamily: "'Fraunces', serif",
+              fontSize: 15,
+              color: C.inkSoft,
             }}
           >
-            With{" "}
-            <strong style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>
-              {fmt(d.saved)}
+            Investing saves you{" "}
+            <strong style={{ color: C.ember, fontStyle: "normal" }}>
+              {fmt(savedOnlyMonthly - investedMonthly)}/mo
             </strong>{" "}
-            saved today and a target of{" "}
-            <strong style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>
-              {fmt(downPayment)}
-            </strong>
-            , you need to set aside {fmt(savingsOnly)} every month for{" "}
-            {d.timelineYears} years. Inflation also eats at cash sitting still — investing protects against that.
-          </div>
-        </div>
-      )}
+            — and protects against inflation while you wait.
+          </p>
+        )}
 
-      {tab === "invest" && (
-        <div>
-          <StatCard
-            label={`${risk.label} strategy · ${d.timelineYears}-year goal`}
-            value={fmt(primaryMonthly) + "/mo"}
-            sub={`Invest this monthly to reach ${fmt(downPayment)} in ${d.timelineYears} years.`}
-            color={risk.color}
+        <div style={{ marginTop: 18 }}>
+          <Subhead>All three risk profiles</Subhead>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontFamily: "'Inter', sans-serif",
+            }}
           >
-            {savingsOnly > primaryMonthly && (
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "#86efac",
-                  marginTop: 10,
-                  fontWeight: 600,
-                }}
-              >
-                💚 {fmt(savingsOnly - primaryMonthly)}/mo less than saving alone
-              </div>
-            )}
-          </StatCard>
-
-          <SectionHeader>All Three Strategies</SectionHeader>
-          {STRATEGIES.map((s) => {
-            const m = calcRequiredMonthly(d.saved, downPayment, months, s.rate);
-            const isMatch = s.label === risk.label;
-            return (
-              <div
-                key={s.label}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: isMatch
-                    ? "rgba(168,213,226,0.1)"
-                    : "rgba(255,255,255,0.03)",
-                  border: isMatch
-                    ? "1.5px solid rgba(168,213,226,0.4)"
-                    : "1.5px solid rgba(255,255,255,0.06)",
-                  borderRadius: 12,
-                  padding: "14px 16px",
-                  marginBottom: 8,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: s.color,
-                    }}
-                  />
-                  <div>
-                    <div
+            <tbody>
+              {STRATEGIES.map((s) => {
+                const m = calcRequiredMonthly(d.saved, downPayment, months, s.rate);
+                const isMatch = s.label === risk.label;
+                return (
+                  <tr
+                    key={s.label}
+                    style={{ borderBottom: `1px solid ${C.paperDeep}` }}
+                  >
+                    <td
                       style={{
-                        fontSize: 14,
-                        fontWeight: 800,
-                        color: isMatch ? "#fff" : "rgba(255,255,255,0.6)",
+                        padding: "12px 0",
+                        fontFamily: "'Fraunces', serif",
+                        fontSize: 16,
+                        fontWeight: isMatch ? 600 : 400,
+                        color: isMatch ? C.ember : C.ink,
                       }}
                     >
+                      {isMatch && "→ "}
                       {s.label}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                      {s.desc}
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'DM Mono', monospace",
-                    fontWeight: 700,
-                    color: isMatch ? "#a8d5e2" : "rgba(255,255,255,0.5)",
-                    fontSize: 14,
-                  }}
-                >
-                  {fmt(m)}/mo
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+                    <td
+                      style={{
+                        padding: "12px 0",
+                        fontSize: 11,
+                        color: C.inkMute,
+                      }}
+                    >
+                      {(s.rate * 100).toFixed(0)}%
+                    </td>
+                    <td
+                      style={{
+                        padding: "12px 0",
+                        textAlign: "right",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 13,
+                        color: isMatch ? C.ink : C.inkMute,
+                        fontWeight: isMatch ? 600 : 400,
+                      }}
+                    >
+                      {fmt(m)}/mo
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </Section>
 
-      {tab === "afford" && (
-        <div>
+      {/* Section 2 — Affordability */}
+      <Section number="02" title="What it costs to live there.">
+        <p style={SubP}>
+          A {(mortgageRate * 100).toFixed(2)}% / 30-year fixed mortgage based on your{" "}
+          {qualifyingCredit < 670 ? "credit profile" : "credit standing"}.
+        </p>
+
+        <div
+          style={{
+            margin: "24px 0 18px",
+            padding: "20px 0",
+            borderTop: `1px solid ${C.ink}`,
+            borderBottom: `1px solid ${C.ink}`,
+          }}
+        >
           <div
             style={{
-              background: affordable
-                ? "rgba(74,222,128,0.07)"
-                : stretching
-                  ? "rgba(251,191,36,0.07)"
-                  : "rgba(248,113,113,0.07)",
-              border: `1.5px solid ${
-                affordable
-                  ? "rgba(74,222,128,0.25)"
-                  : stretching
-                    ? "rgba(251,191,36,0.25)"
-                    : "rgba(248,113,113,0.25)"
-              }`,
-              borderRadius: 16,
-              padding: 20,
-              marginBottom: 14,
+              fontFamily: "'Fraunces', serif",
+              fontSize: 56,
+              fontWeight: 400,
+              letterSpacing: "-0.03em",
+              lineHeight: 1,
+              color: C.ink,
+              marginBottom: 8,
+            }}
+          >
+            {fmt(totalHousing)}
+            <span
+              style={{
+                fontSize: 16,
+                color: C.inkMute,
+                fontFamily: "'Inter', sans-serif",
+                fontStyle: "italic",
+                fontWeight: 400,
+                marginLeft: 6,
+              }}
+            >
+              /mo all-in
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: verdictTone,
+              }}
+            >
+              ◆ {verdict}
+            </span>
+            <span style={{ fontSize: 12, color: C.inkMute }}>
+              {Math.round(housingRatio * 100)}% of your income · lenders prefer ≤28%
+            </span>
+          </div>
+        </div>
+
+        <Subhead>The breakdown</Subhead>
+        <LineRow label="Principal & interest" val={fmt(mortgage)} />
+        <LineRow label="Tax & insurance"     val={fmt(taxIns)} />
+        {effectiveDownPct < 20 && <LineRow label="PMI" val={fmt(pmi)} />}
+        {hoa > 0     && <LineRow label="HOA dues"            val={fmt(hoa)} />}
+        {reserve > 0 && <LineRow label="Maintenance reserve" val={fmt(reserve)} />}
+        <LineRow label="Total" val={fmt(totalHousing)} bold />
+      </Section>
+
+      {/* Section 3 — Readiness */}
+      <Section number="03" title={`${readinessLabel}.`}>
+        <p style={SubP}>
+          A composite of your credit, debt-to-income, savings progress, and
+          timeline.
+        </p>
+
+        <div style={{ margin: "28px 0 22px" }}>
+          <div
+            style={{
+              fontFamily: "'Fraunces', serif",
+              fontSize: 96,
+              lineHeight: 1,
+              letterSpacing: "-0.04em",
+              color: C.ink,
+              fontWeight: 400,
+            }}
+          >
+            {readiness}
+            <span style={{ fontSize: 32, color: C.inkFaint }}> / 100</span>
+          </div>
+        </div>
+
+        <ReadyRow label="Credit"   score={creditScoreNorm} note={`${qualifyingCredit} score`} />
+        <ReadyRow label="DTI"      score={dtiScore}        note={`${Math.round(dti * 100)}% of income`} />
+        <ReadyRow label="Savings"  score={savingsScore}    note={`${fmt(d.saved)} of ${fmt(downPayment)}`} />
+        <ReadyRow label="Timeline" score={timelineScore}   note={`${d.timelineYears} year${d.timelineYears > 1 ? "s" : ""}`} />
+
+        {!eFundOk && (
+          <div
+            style={{
+              marginTop: 24,
+              padding: 16,
+              border: `1.5px solid ${C.gold}`,
+              background: "rgba(168,133,58,0.08)",
             }}
           >
             <div
               style={{
-                fontSize: 13,
-                fontWeight: 800,
-                color: affordable ? "#4ade80" : stretching ? "#fbbf24" : "#f87171",
-                marginBottom: 8,
-              }}
-            >
-              {affordable
-                ? "✅ Looks Affordable"
-                : stretching
-                  ? "⚠️ A Bit of a Stretch"
-                  : "❌ May Be Difficult"}
-            </div>
-            <div
-              style={{
-                fontSize: 36,
-                fontWeight: 900,
-                fontFamily: "'DM Mono', monospace",
-                color: "#fff",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.gold,
                 marginBottom: 6,
               }}
             >
-              {fmt(totalHousing)}/mo
+              ◆ Build a buffer first
             </div>
-            <div
-              style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.5 }}
-            >
-              Estimated all-in monthly housing — that's{" "}
-              <strong style={{ color: "#fff" }}>{Math.round(housingRatio * 100)}%</strong> of
-              your income.{" "}
-              {affordable
-                ? "Lenders prefer under 28% — you're in good shape."
-                : "Lenders prefer under 28%."}
-              <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                Based on a {(mortgageRate * 100).toFixed(2)}% / 30-yr fixed rate from your credit tier.
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                gap: 8,
-                marginTop: 14,
-              }}
-            >
-              {[
-                { label: "P & I", val: fmt(mortgage), show: true },
-                {
-                  label: effectiveDownPct < 20 ? "PMI" : "No PMI",
-                  val: effectiveDownPct < 20 ? fmt(pmi) : "—",
-                  show: true,
-                },
-                { label: "Tax & Ins", val: fmt(taxIns), show: true },
-                { label: "HOA", val: fmt(hoa), show: hoa > 0 },
-                { label: "Maint.", val: fmt(reserve), show: reserve > 0 },
-              ]
-                .filter((i) => i.show)
-                .map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    background: "rgba(0,0,0,0.2)",
-                    borderRadius: 10,
-                    padding: "10px 8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "rgba(255,255,255,0.4)",
-                      letterSpacing: "0.05em",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      fontFamily: "'DM Mono', monospace",
-                    }}
-                  >
-                    {item.val}
-                  </div>
-                </div>
-              ))}
+            <div style={{ fontSize: 13, color: C.inkSoft, lineHeight: 1.55 }}>
+              Lenders want to see ~3 months of expenses ({fmt(eFundMin)}) in
+              reserve before you close. You're at {fmt(d.saved)}.
             </div>
           </div>
+        )}
+      </Section>
 
-          <SectionHeader>Emergency Fund</SectionHeader>
-          <div
-            style={{
-              background: eFundOk ? "rgba(74,222,128,0.07)" : "rgba(251,191,36,0.07)",
-              border: `1.5px solid ${
-                eFundOk ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"
-              }`,
-              borderRadius: 16,
-              padding: 18,
-              marginBottom: 14,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 800,
-                color: eFundOk ? "#4ade80" : "#fbbf24",
-                marginBottom: 8,
-              }}
-            >
-              {eFundOk ? "✅ Emergency Fund on Track" : "⚠️ Build Your Emergency Fund"}
-            </div>
-            <div
-              style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}
-            >
-              We recommend{" "}
-              <strong style={{ color: "#fff" }}>
-                {fmt(eFundMin)} – {fmt(eFundMax)}
-              </strong>{" "}
-              in cash.{" "}
-              {eFundOk
-                ? `You have ${fmt(d.saved)} saved. You're covered.`
-                : `You have ${fmt(d.saved)} — short of the minimum.`}
-            </div>
-            <div
-              style={{
-                background: "rgba(255,255,255,0.07)",
-                borderRadius: 4,
-                height: 6,
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  borderRadius: 4,
-                  width: `${Math.min(100, (d.saved / eFundMax) * 100)}%`,
-                  background: eFundOk ? "#4ade80" : "#fbbf24",
-                  transition: "width 0.5s",
-                }}
-              />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: 6,
-                fontSize: 11,
-                color: "rgba(255,255,255,0.4)",
-                fontFamily: "'DM Mono', monospace",
-              }}
-            >
-              <span>{fmt(d.saved)} saved</span>
-              <span>{fmt(eFundMax)} target</span>
-            </div>
-          </div>
-
-          <SectionHeader>Income & Debt</SectionHeader>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <MiniStat
-              label={hasPartner ? "Combined Income" : "Income"}
-              value={fmt(combinedIncome)}
-            />
-            <MiniStat label="Monthly DTI" value={`${Math.round(dti * 100)}%`} />
-          </div>
-        </div>
-      )}
-
-      {tab === "ready" && (
-        <div>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1.5px solid rgba(255,255,255,0.08)",
-              borderRadius: 16,
-              padding: 24,
-              marginBottom: 14,
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                color: "rgba(255,255,255,0.5)",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                marginBottom: 14,
-              }}
-            >
-              Readiness Score
-            </div>
-            <div
-              style={{
-                fontSize: 72,
-                fontFamily: "'DM Mono', monospace",
-                fontWeight: 700,
-                lineHeight: 1,
-                color:
-                  readiness >= 70 ? "#4ade80" : readiness >= 45 ? "#fbbf24" : "#f87171",
-              }}
-            >
-              {readiness}
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                color: "rgba(255,255,255,0.5)",
-                marginTop: 8,
-                lineHeight: 1.5,
-              }}
-            >
-              {readiness >= 70
-                ? "You're in great shape — start talking to lenders."
-                : readiness >= 45
-                  ? "A few improvements will meaningfully boost your eligibility."
-                  : "Focus on credit and debt reduction first — biggest payoff."}
-            </div>
-          </div>
-
-          <SectionHeader>The Numbers</SectionHeader>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <MiniStat
-              label={`Credit${hasPartner ? " (qual.)" : ""}`}
-              value={String(qualifyingCredit)}
-            />
-            <MiniStat label="DTI Ratio" value={`${Math.round(dti * 100)}%`} />
-            <MiniStat label="Saved" value={fmt(d.saved)} />
-            <MiniStat
-              label="To Go"
-              value={fmt(Math.max(0, downPayment - d.saved))}
-            />
-          </div>
-
-          <div
-            style={{
-              marginTop: 18,
-              background: "rgba(168,213,226,0.06)",
-              border: "1.5px solid rgba(168,213,226,0.2)",
-              borderRadius: 14,
-              padding: 16,
-              fontSize: 13,
-              color: "rgba(255,255,255,0.7)",
-              lineHeight: 1.5,
-            }}
-          >
-            <strong style={{ color: "#a8d5e2" }}>Next step:</strong>{" "}
-            {readiness >= 70
-              ? "Get pre-approved with 2–3 lenders to lock in your rate."
-              : qualifyingCredit < 670
-                ? "Pay down credit balances to under 30% utilization to lift your score."
-                : combinedDebt > monthlyIncome * 0.15
-                  ? "Reduce monthly debt to widen your borrowing capacity."
-                  : "Keep investing monthly — you're building the down payment runway."}
-          </div>
-        </div>
-      )}
+      {/* Footer */}
+      <div
+        style={{
+          marginTop: 40,
+          paddingTop: 18,
+          borderTop: `1px solid ${C.ink}`,
+          display: "flex",
+          justifyContent: "space-between",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: C.inkFaint,
+        }}
+      >
+        <span>Keystone</span>
+        <span>End of report</span>
+      </div>
     </div>
   );
 }
 
-function StatCard({
+// ── Report sub-components ────────────────────────────────────────────────────
+const SubP: React.CSSProperties = {
+  fontSize: 14,
+  color: C.inkMute,
+  lineHeight: 1.6,
+  margin: "0 0 14px",
+  maxWidth: 460,
+};
+
+function Section({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section style={{ marginBottom: 44 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 14,
+          marginBottom: 14,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            color: C.ember,
+          }}
+        >
+          §{number}
+        </span>
+        <h2
+          style={{
+            fontFamily: "'Fraunces', serif",
+            fontWeight: 400,
+            fontSize: 28,
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            margin: 0,
+            color: C.ink,
+          }}
+        >
+          {title}
+        </h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Subhead({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        color: C.inkFaint,
+        marginBottom: 8,
+        marginTop: 8,
+      }}
+    >
+      — {children}
+    </div>
+  );
+}
+
+function Stat({
   label,
   value,
-  sub,
-  color,
-  children,
+  divider,
 }: {
   label: string;
   value: string;
-  sub?: string;
-  color?: string;
-  children?: React.ReactNode;
+  divider?: boolean;
 }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.03)",
-        border: `1.5px solid ${color ? color + "40" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 14,
+        padding: "14px 12px",
+        borderLeft: divider ? `1px solid ${C.ink}` : "none",
       }}
     >
       <div
         style={{
-          fontSize: 11,
-          color: "rgba(255,255,255,0.5)",
-          letterSpacing: "0.1em",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.18em",
           textTransform: "uppercase",
-          marginBottom: 8,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 32,
-          fontWeight: 900,
-          fontFamily: "'DM Mono', monospace",
-          color: color || "#fff",
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {value}
-      </div>
-      {sub && (
-        <div
-          style={{
-            fontSize: 13,
-            color: "rgba(255,255,255,0.5)",
-            marginTop: 8,
-            lineHeight: 1.5,
-          }}
-        >
-          {sub}
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontSize: 11,
-        fontFamily: "'DM Mono', monospace",
-        color: "rgba(255,255,255,0.4)",
-        letterSpacing: "0.18em",
-        textTransform: "uppercase",
-        marginTop: 22,
-        marginBottom: 10,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1.5px solid rgba(255,255,255,0.06)",
-        borderRadius: 12,
-        padding: "12px 14px",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 10,
-          color: "rgba(255,255,255,0.4)",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
+          color: C.inkFaint,
           marginBottom: 4,
         }}
       >
@@ -1755,13 +1783,164 @@ function MiniStat({ label, value }: { label: string; value: string }) {
       </div>
       <div
         style={{
-          fontSize: 16,
-          fontWeight: 700,
-          fontFamily: "'DM Mono', monospace",
-          color: "#fff",
+          fontFamily: "'Fraunces', serif",
+          fontSize: 22,
+          color: C.ink,
         }}
       >
         {value}
+      </div>
+    </div>
+  );
+}
+
+function PathCard({
+  kicker,
+  value,
+  unit,
+  note,
+  highlight,
+}: {
+  kicker: string;
+  value: string;
+  unit: string;
+  note: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        background: highlight ? C.cream : C.paper,
+        padding: "18px 14px",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: highlight ? C.ember : C.inkFaint,
+          marginBottom: 10,
+        }}
+      >
+        {kicker}
+      </div>
+      <div
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontSize: 28,
+          fontWeight: 500,
+          lineHeight: 1,
+          color: C.ink,
+          marginBottom: 4,
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {value}
+        <span
+          style={{
+            fontSize: 11,
+            color: C.inkMute,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 400,
+            marginLeft: 4,
+          }}
+        >
+          {unit}
+        </span>
+      </div>
+      <div style={{ fontSize: 11, color: C.inkMute, lineHeight: 1.4, marginTop: 8 }}>
+        {note}
+      </div>
+    </div>
+  );
+}
+
+function LineRow({
+  label,
+  val,
+  bold,
+}: {
+  label: string;
+  val: string;
+  bold?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        padding: "10px 0",
+        borderBottom: `1px dotted ${C.inkFaint}`,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontSize: bold ? 16 : 14,
+          color: C.ink,
+          fontWeight: bold ? 600 : 400,
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 13,
+          color: C.ink,
+          fontWeight: bold ? 600 : 400,
+        }}
+      >
+        {val}
+      </span>
+    </div>
+  );
+}
+
+function ReadyRow({
+  label,
+  score,
+  note,
+}: {
+  label: string;
+  score: number;
+  note: string;
+}) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 6,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Fraunces', serif",
+            fontSize: 15,
+            color: C.ink,
+          }}
+        >
+          {label}
+        </span>
+        <span style={{ fontSize: 11, color: C.inkMute }}>{note}</span>
+      </div>
+      <div style={{ height: 4, background: C.paperDeep, position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: C.ink,
+            transformOrigin: "left",
+            transform: `scaleX(${Math.max(0, Math.min(1, score / 100))})`,
+            transition: "transform 0.6s cubic-bezier(.5,0,.2,1)",
+          }}
+        />
       </div>
     </div>
   );
