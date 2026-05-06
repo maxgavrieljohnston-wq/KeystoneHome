@@ -1,3 +1,5 @@
+// Keystone — financial engine & content constants for the homebuyer planner.
+
 export const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -5,7 +7,21 @@ export const fmt = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-export function calcRequiredMonthly(saved: number, target: number, months: number, rate: number) {
+export const fmtCompact = (n: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n);
+
+// ── Investment / savings math ──────────────────────────────────────────────
+export function calcRequiredMonthly(
+  saved: number,
+  target: number,
+  months: number,
+  rate: number,
+) {
   if (months <= 0 || saved >= target) return 0;
   const r = rate / 12;
   if (r === 0) return Math.max(0, Math.ceil((target - saved) / months));
@@ -13,27 +29,25 @@ export function calcRequiredMonthly(saved: number, target: number, months: numbe
   return Math.max(0, Math.ceil((target - saved * g) / ((g - 1) / r)));
 }
 
-export type Risk = { rate: number; label: string; desc: string; color: string };
+export type Risk = { rate: number; label: string; desc: string; tone: string };
+
+export const STRATEGIES: Risk[] = [
+  { rate: 0.04, label: "Conservative", desc: "Bonds & CDs · ~4%/yr", tone: "sage" },
+  { rate: 0.07, label: "Balanced",     desc: "Index funds & bonds · ~7%/yr", tone: "ink" },
+  { rate: 0.1,  label: "Growth",       desc: "Equities · ~10%/yr", tone: "ember" },
+];
 
 export function deriveRisk(answers: Record<number, number>): Risk {
   const keys = Object.keys(answers);
-  if (!keys.length)
-    return { rate: 0.07, label: "Balanced", desc: "Index funds & bonds · ~7%/yr", color: "#a8d5e2" };
+  if (!keys.length) return STRATEGIES[1];
   const score = keys.reduce((a, k) => a + answers[Number(k)], 0);
   const pct = score / (keys.length * 3);
-  if (pct >= 0.72)
-    return { rate: 0.1, label: "Growth", desc: "Equities · ~10%/yr", color: "#fb923c" };
-  if (pct >= 0.42)
-    return { rate: 0.07, label: "Balanced", desc: "Index funds & bonds · ~7%/yr", color: "#a8d5e2" };
-  return { rate: 0.04, label: "Conservative", desc: "Bonds & CDs · ~4%/yr", color: "#86efac" };
+  if (pct >= 0.72) return STRATEGIES[2];
+  if (pct >= 0.42) return STRATEGIES[1];
+  return STRATEGIES[0];
 }
 
-export const STRATEGIES: Risk[] = [
-  { rate: 0.04, label: "Conservative", desc: "Bonds & CDs · ~4%/yr", color: "#86efac" },
-  { rate: 0.07, label: "Balanced", desc: "Index funds & bonds · ~7%/yr", color: "#a8d5e2" },
-  { rate: 0.1, label: "Growth", desc: "Equities · ~10%/yr", color: "#fb923c" },
-];
-
+// ── Mortgage ───────────────────────────────────────────────────────────────
 export function calcMortgage(price: number, downPct: number, rate = 0.07, years = 30) {
   const principal = price * (1 - downPct / 100);
   const r = rate / 12;
@@ -41,6 +55,16 @@ export function calcMortgage(price: number, downPct: number, rate = 0.07, years 
   return (principal * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
 }
 
+/** 30-yr fixed mortgage rate by FICO. Illustrative tiers, not live quotes. */
+export function rateFromCredit(score?: number | null): number {
+  if (!score) return 0.07;
+  if (score >= 740) return 0.0625;
+  if (score >= 670) return 0.07;
+  if (score >= 580) return 0.08;
+  return 0.0925;
+}
+
+// ── ZIP → city + price ─────────────────────────────────────────────────────
 export function getPriceByZip(zip: string): { city: string; avg: number } {
   const p = parseInt(zip.slice(0, 3));
   if (p >= 100 && p <= 119) return { city: "New York, NY", avg: 780000 };
@@ -66,58 +90,53 @@ export function getPriceByZip(zip: string): { city: string; avg: number } {
   return { city: "your area", avg: 400000 };
 }
 
+// ── Home styles ────────────────────────────────────────────────────────────
 export type HomeStyle = {
   id: string;
   label: string;
-  emoji: string;
-  /** Multiplier vs the ZIP's average home price */
+  /** Multiplier vs. ZIP's average price */
   priceMult: number;
   /** Typical monthly HOA dues */
   hoa: number;
-  /** Monthly maintenance / renovation reserve added to housing cost */
+  /** Monthly maintenance / renovation reserve */
   reserve: number;
-  /** Minimum down payment % typically required */
+  /** Minimum down payment % */
   minDown: number;
-  /** Short note explaining the financial tradeoff */
+  /** Short editorial note */
   note: string;
 };
 
 export const HOME_STYLES: HomeStyle[] = [
-  { id: "starter",   label: "Starter Home",  emoji: "🏠", priceMult: 0.80, hoa: 0,   reserve: 150, minDown: 3.5, note: "Smaller & cheaper than the local average" },
-  { id: "single",    label: "Single Family", emoji: "🏡", priceMult: 1.10, hoa: 0,   reserve: 250, minDown: 3.5, note: "Larger lot, higher upkeep, no HOA" },
-  { id: "townhouse", label: "Townhouse",     emoji: "🏘️", priceMult: 0.90, hoa: 200, reserve: 100, minDown: 3.5, note: "Shared walls, modest HOA" },
-  { id: "condo",     label: "Condo",         emoji: "🏢", priceMult: 0.75, hoa: 400, reserve: 50,  minDown: 3.5, note: "Lower price but real HOA dues" },
-  { id: "multi",     label: "Multi-Family",  emoji: "🏬", priceMult: 1.40, hoa: 0,   reserve: 350, minDown: 15,  note: "Owner-occupied 2–4 unit · 15% down min" },
-  { id: "fixer",     label: "Fixer-Upper",   emoji: "🔨", priceMult: 0.70, hoa: 0,   reserve: 500, minDown: 3.5, note: "Lower price, big renovation reserve" },
+  { id: "starter",   label: "Starter",       priceMult: 0.80, hoa: 0,   reserve: 150, minDown: 3.5, note: "Smaller footprint, smaller price." },
+  { id: "single",    label: "Single Family", priceMult: 1.10, hoa: 0,   reserve: 250, minDown: 3.5, note: "More space, more upkeep." },
+  { id: "townhouse", label: "Townhouse",     priceMult: 0.90, hoa: 200, reserve: 100, minDown: 3.5, note: "Shared walls, modest dues." },
+  { id: "condo",     label: "Condo",         priceMult: 0.75, hoa: 400, reserve: 50,  minDown: 3.5, note: "Lower price, real HOA." },
+  { id: "multi",     label: "Multi-Family",  priceMult: 1.40, hoa: 0,   reserve: 350, minDown: 15,  note: "Income unit. 15% min down." },
+  { id: "fixer",     label: "Fixer-Upper",   priceMult: 0.70, hoa: 0,   reserve: 500, minDown: 3.5, note: "Discount up front, work after." },
 ];
 
-/** Combine selected style multipliers/extras. Averages across picks. */
 export function styleAdjustments(ids: string[]) {
   const picks = HOME_STYLES.filter((s) => ids.includes(s.id));
-  if (picks.length === 0)
-    return { priceMult: 1, hoa: 0, reserve: 0, minDown: 3.5 };
+  if (picks.length === 0) return { priceMult: 1, hoa: 0, reserve: 0, minDown: 3.5 };
   const avg = (k: "priceMult" | "hoa" | "reserve") =>
     picks.reduce((a, p) => a + p[k], 0) / picks.length;
-  const minDown = Math.max(...picks.map((p) => p.minDown));
-  return { priceMult: avg("priceMult"), hoa: avg("hoa"), reserve: avg("reserve"), minDown };
+  return {
+    priceMult: avg("priceMult"),
+    hoa: avg("hoa"),
+    reserve: avg("reserve"),
+    minDown: Math.max(...picks.map((p) => p.minDown)),
+  };
 }
 
+// ── Credit ─────────────────────────────────────────────────────────────────
 export const CREDIT_BUCKETS = [
-  { label: "Excellent", range: "740–850", value: 795, color: "#4ade80", desc: "Qualifies for the best rates available", rate: 0.0625 },
-  { label: "Good",      range: "670–739", value: 704, color: "#a8d5e2", desc: "Solid options across most lenders",      rate: 0.0700 },
-  { label: "Fair",      range: "580–669", value: 624, color: "#fbbf24", desc: "Some loan options — rates will be higher", rate: 0.0800 },
-  { label: "Poor",      range: "300–579", value: 450, color: "#f87171", desc: "Limited options — improving this helps most", rate: 0.0925 },
+  { label: "Excellent", range: "740–850", value: 795, desc: "Best rates available", rate: 0.0625 },
+  { label: "Good",      range: "670–739", value: 704, desc: "Solid lender options", rate: 0.07 },
+  { label: "Fair",      range: "580–669", value: 624, desc: "Higher rates, still doable", rate: 0.08 },
+  { label: "Poor",      range: "300–579", value: 450, desc: "Limited options today", rate: 0.0925 },
 ];
 
-/** 30-yr fixed mortgage rate by FICO. Illustrative tiers, not live quotes. */
-export function rateFromCredit(score?: number | null): number {
-  if (!score) return 0.07;
-  if (score >= 740) return 0.0625;
-  if (score >= 670) return 0.0700;
-  if (score >= 580) return 0.0800;
-  return 0.0925;
-}
-
+// ── Risk quiz ──────────────────────────────────────────────────────────────
 export const RISK_QS = [
   {
     q: "If your investments dropped 20% in a month, you'd…",
@@ -157,29 +176,30 @@ export const RISK_QS = [
   },
 ];
 
+// ── Editorial fact cards ───────────────────────────────────────────────────
 export const FACTS = {
   fact1: {
-    icon: "👤",
-    fact: "The average first-time home buyer is now 38 years old",
-    context: "It's risen from 28 in 1991. You're not behind — the timeline has shifted.",
+    kicker: "No. 01 — Demographics",
+    fact: "The average first-time buyer is now 38 years old.",
+    context: "Up from 28 in 1991. The timeline has shifted — you're not behind.",
     source: "National Association of Realtors, 2024",
   },
   fact2: {
-    icon: "⏳",
-    fact: "Most buyers spend 6+ months saving before they're ready",
-    context: "A clear plan beats guesswork — small monthly steps add up faster than you'd expect.",
+    kicker: "No. 02 — Patience",
+    fact: "Most buyers spend 6+ months saving before they're ready.",
+    context: "A clear plan beats guesswork. Small monthly steps add up faster than you'd expect.",
     source: "NAR Profile of Home Buyers and Sellers, 2024",
   },
   fact3: {
-    icon: "💵",
-    fact: "The median first-time down payment is just 9%",
-    context: "You don't need 20% to buy. FHA loans can go as low as 3.5%.",
+    kicker: "No. 03 — Down Payments",
+    fact: "The median first-time down payment is just 9%.",
+    context: "You don't need 20%. FHA loans can go as low as 3.5%.",
     source: "NAR, 2024",
   },
   fact4: {
-    icon: "📈",
-    fact: "Investing your savings can cut your timeline in half",
-    context: "$500/mo at 7% becomes $43k in 5 years — vs $30k under a mattress.",
+    kicker: "No. 04 — Compounding",
+    fact: "Investing your savings can cut your timeline in half.",
+    context: "$500/mo at 7% becomes $43k in five years — vs. $30k under a mattress.",
     source: "Compound interest, the eighth wonder of the world",
   },
 };
