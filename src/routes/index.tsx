@@ -544,7 +544,7 @@ function ScreenSwitch({
   if (screen === "partner")
     return (
       <Question
-        kicker="Chapter II — Next, the household"
+        kicker="The household"
         title="Are you buying on your own, or with a partner?"
         sub="Two incomes — and two credit scores — can change the math entirely. We'll start here so the rest of the questions make sense."
       >
@@ -1309,18 +1309,7 @@ function IntroPage({
 }) {
   return (
     <div style={{ paddingTop: 30 }}>
-      <div
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: C.ember,
-          marginBottom: 12,
-        }}
-      >
-        {chapter}
-      </div>
+      {false && chapter && <div />}
       <div
         style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",
