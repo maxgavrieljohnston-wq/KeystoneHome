@@ -171,7 +171,7 @@ function KeystoneApp() {
 
   const next = () => {
     let nextIdx = screenIdx + 1;
-    const partnerOnly = ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false) {
       while (nextIdx < FLOW.length && partnerOnly.includes(FLOW[nextIdx])) {
         nextIdx += 1;
@@ -181,7 +181,7 @@ function KeystoneApp() {
   };
   const back = () => {
     let prevIdx = screenIdx - 1;
-    const partnerOnly = ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false) {
       while (prevIdx > 0 && partnerOnly.includes(FLOW[prevIdx])) {
         prevIdx -= 1;
