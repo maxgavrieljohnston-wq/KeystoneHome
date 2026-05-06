@@ -165,25 +165,24 @@ function KeystoneApp() {
 
   const next = () => {
     let nextIdx = screenIdx + 1;
-    // Skip partner sub-questions if no partner
-    if (
-      d.hasPartner === false &&
-      ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(
-        FLOW[nextIdx],
-      )
-    ) {
-      while (
-        nextIdx < FLOW.length &&
-        ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit"].includes(
-          FLOW[nextIdx],
-        )
-      ) {
+    const partnerOnly = ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    if (d.hasPartner === false) {
+      while (nextIdx < FLOW.length && partnerOnly.includes(FLOW[nextIdx])) {
         nextIdx += 1;
       }
     }
     setScreenIdx(Math.min(FLOW.length - 1, nextIdx));
   };
-  const back = () => setScreenIdx(Math.max(0, screenIdx - 1));
+  const back = () => {
+    let prevIdx = screenIdx - 1;
+    const partnerOnly = ["partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    if (d.hasPartner === false) {
+      while (prevIdx > 0 && partnerOnly.includes(FLOW[prevIdx])) {
+        prevIdx -= 1;
+      }
+    }
+    setScreenIdx(Math.max(0, prevIdx));
+  };
 
   return (
     <Shell>
