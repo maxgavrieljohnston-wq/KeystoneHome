@@ -428,6 +428,8 @@ function ScreenSwitch({
         </Cta>
       </Question>
     );
+
+  if (screen === "income")
     return (
       <Question
         kicker="Income"
