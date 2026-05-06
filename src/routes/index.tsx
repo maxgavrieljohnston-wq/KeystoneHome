@@ -133,6 +133,7 @@ const INITIAL: Data = {
   credit: null,
   saved: 15000,
   hasPartner: null,
+  partnerAge: 32,
   partnerEmployment: null,
   partnerIncome: 0,
   partnerExpenses: 0,
