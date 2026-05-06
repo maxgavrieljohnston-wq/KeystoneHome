@@ -1106,7 +1106,7 @@ function Screens({
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
 function Dashboard({ d }: { d: Data }) {
-  const [tab, setTab] = useState<"invest" | "afford" | "ready">("invest");
+  const [tab, setTab] = useState<"save" | "invest" | "afford" | "ready">("save");
 
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
