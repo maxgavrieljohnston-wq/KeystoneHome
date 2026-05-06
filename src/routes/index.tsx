@@ -109,6 +109,7 @@ type Data = {
   credit: number | null;
   saved: number;
   hasPartner: boolean | null;
+  partnerAge: number;
   partnerEmployment: string | null;
   partnerIncome: number;
   partnerExpenses: number;
