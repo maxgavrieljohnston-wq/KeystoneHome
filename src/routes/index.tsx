@@ -57,25 +57,29 @@ const C = {
 const FLOW = [
   "welcome",
   "email",
+  "introFinances",
   "age",
-  "fact1",
+  "employment",
   "income",
   "expenses",
   "debt",
   "credit",
+  "factDemo",
   "savings",
-  "fact2",
+  "introHousehold",
   "partner",
   "partnerIncome",
   "partnerExpenses",
   "partnerDebt",
   "partnerCredit",
-  "fact3",
+  "introHome",
+  "factDown",
   "zip",
   "homeStyle",
   "timeline",
   "downPct",
-  "fact4",
+  "introRisk",
+  "factCompound",
   "risk0",
   "risk1",
   "risk2",
@@ -85,7 +89,7 @@ const FLOW = [
 type Screen = (typeof FLOW)[number];
 
 const PROGRESS_SCREENS: Screen[] = [
-  "email", "age", "income", "expenses", "debt", "credit", "savings",
+  "email", "age", "employment", "income", "expenses", "debt", "credit", "savings",
   "partner", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
   "zip", "homeStyle", "timeline", "downPct",
   "risk0", "risk1", "risk2", "risk3",
@@ -94,6 +98,7 @@ const PROGRESS_SCREENS: Screen[] = [
 type Data = {
   email: string;
   age: number;
+  employment: string | null;
   income: number;
   expenses: number;
   debt: number;
@@ -115,6 +120,7 @@ type Data = {
 const INITIAL: Data = {
   email: "",
   age: 32,
+  employment: null,
   income: 75000,
   expenses: 3000,
   debt: 400,
