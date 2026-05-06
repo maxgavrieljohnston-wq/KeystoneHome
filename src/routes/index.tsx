@@ -1309,18 +1309,7 @@ function IntroPage({
 }) {
   return (
     <div style={{ paddingTop: 30 }}>
-      <div
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: C.ember,
-          marginBottom: 12,
-        }}
-      >
-        {chapter}
-      </div>
+      {false && chapter && <div />}
       <div
         style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",
