@@ -856,11 +856,11 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        Your first
+        Find your
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>front door,</em>
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Keystone.</em>
         <br />
-        in focus.
+        Build the rest.
       </h1>
 
       <p
