@@ -622,45 +622,7 @@ function ScreenSwitch({
     );
 
   if (screen === "zip")
-    return (
-      <Question
-        kicker="Where"
-        title="What ZIP code are you buying in?"
-        sub="Sets the local price benchmark."
-      >
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="00000"
-          maxLength={5}
-          value={d.zip}
-          onChange={(e) => {
-            const v = e.target.value.replace(/\D/g, "").slice(0, 5);
-            set("zip", v);
-            if (v.length === 5) set("zipData", getPriceByZip(v));
-          }}
-          style={{
-            width: "100%",
-            background: "transparent",
-            border: "none",
-            borderBottom: `1.5px solid ${C.ink}`,
-            padding: "12px 0",
-            fontSize: 32,
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.2em",
-            color: C.ink,
-            outline: "none",
-            marginBottom: 18,
-          }}
-        />
-        {d.zipData !== null && (
-          <ZipCallout city={d.zipData!.city} avg={d.zipData!.avg} />
-        )}
-        <Cta onClick={next} disabled={d.zip.length !== 5}>
-          Continue
-        </Cta>
-      </Question>
-    );
+    return <ZipScreen d={d} set={set} next={next} />;
 
   if (screen === "homeStyle")
     return (
