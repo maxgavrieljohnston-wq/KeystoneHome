@@ -271,15 +271,21 @@ function TopBar({
               aria-label="Back"
               style={{
                 background: "transparent",
-                border: "none",
+                border: `1px solid ${C.ink}`,
                 cursor: "pointer",
-                padding: 0,
-                color: C.inkSoft,
-                fontSize: 16,
-                lineHeight: 1,
+                padding: "6px 12px",
+                color: C.ink,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontFamily: "'JetBrains Mono', monospace",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              ←
+              ← Back
             </button>
           ) : (
             <div style={{ width: 12 }} />
