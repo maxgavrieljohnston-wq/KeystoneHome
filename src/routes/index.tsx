@@ -750,26 +750,6 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "downPct")
-    return (
-      <Question
-        kicker="Down payment"
-        title="How much down?"
-        sub="More down = lower payment. 20% removes PMI."
-      >
-        <Choices
-          options={[
-            { val: 3.5, label: "3.5%", tag: "FHA",  desc: "Lowest barrier" },
-            { val: 5,   label: "5%",   tag: "Common", desc: "Lower upfront cost" },
-            { val: 10,  label: "10%",  tag: "Solid", desc: "Middle ground" },
-            { val: 20,  label: "20%",  tag: "Best",  desc: "No PMI · best rates" },
-          ]}
-          value={d.downPct}
-          onSelect={(v) => set("downPct", v as number)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
 
   if (screen.startsWith("risk")) {
     const idx = Number(screen.replace("risk", ""));
