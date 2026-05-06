@@ -114,9 +114,9 @@ type Data = {
   partnerCredit: number | null;
   zip: string;
   zipData: { city: string; avg: number } | null;
-  homeStyles: string[];
+  homeStyle: string | null;
   timelineYears: number;
-  downPct: number;
+  timelineBucket: string | null;
   riskAnswers: Record<number, number>;
 };
 
@@ -136,9 +136,9 @@ const INITIAL: Data = {
   partnerCredit: null,
   zip: "",
   zipData: null,
-  homeStyles: [],
-  timelineYears: 5,
-  downPct: 10,
+  homeStyle: null,
+  timelineYears: 3,
+  timelineBucket: null,
   riskAnswers: {},
 };
 
