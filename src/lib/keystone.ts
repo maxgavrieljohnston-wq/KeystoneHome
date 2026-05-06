@@ -139,41 +139,58 @@ export const CREDIT_BUCKETS = [
 // ── Risk quiz ──────────────────────────────────────────────────────────────
 export const RISK_QS = [
   {
-    q: "How would you describe your investing experience?",
+    q: "When you look at your savings, what feels better?",
+    sub: "A steady number that never goes down but grows slowly — or a balance that bounces around if it gets you the keys sooner?",
     opts: [
-      { label: "Never invested before", val: 0 },
-      { label: "A little — savings account mostly", val: 1 },
-      { label: "Some — index funds or 401k", val: 2 },
-      { label: "Lots — I trade actively", val: 3 },
+      { label: "Steady, never going down", val: 0 },
+      { label: "Mostly steady, small swings OK", val: 1 },
+      { label: "Some bouncing for a better return", val: 2 },
+      { label: "I don't mind the swings if I get there sooner", val: 3 },
     ],
   },
   {
-    q: "What matters more to you?",
+    q: "If the perfect house showed up tomorrow and you were a few thousand short…",
+    sub: "Could you wait another six months to save up — or does that thought drive you crazy?",
     opts: [
-      { label: "Never losing principal", val: 0 },
-      { label: "Mostly safety, a little growth", val: 1 },
-      { label: "Balanced growth and safety", val: 2 },
-      { label: "Maximum long-term growth", val: 3 },
+      { label: "Drives me crazy — I'd want it now", val: 0 },
+      { label: "I'd be frustrated but I could wait", val: 1 },
+      { label: "Six more months is fine", val: 2 },
+      { label: "Happy to wait — patience pays", val: 3 },
     ],
   },
   {
-    q: "If your investments dropped 20% in a month, you'd…",
+    q: "Think back to your last big purchase (car, vacation). How did the money leaving feel?",
     opts: [
-      { label: "Sell everything immediately", val: 0 },
-      { label: "Sell some to limit losses", val: 1 },
-      { label: "Hold steady and wait", val: 2 },
-      { label: "Buy more at the lower price", val: 3 },
+      { label: "Stressful — I watched the balance drop", val: 0 },
+      { label: "A little stressful, but I got over it", val: 1 },
+      { label: "Mixed — some stress, some excitement", val: 2 },
+      { label: "Just excited about the thing I was getting", val: 3 },
     ],
   },
   {
-    q: "How long can you leave this money untouched?",
+    q: "How do you handle your bank balance day-to-day?",
     opts: [
-      { label: "I might need it within a year", val: 0 },
-      { label: "1–2 years, then it's for the home", val: 1 },
-      { label: "3–5 years — I won't touch it early", val: 2 },
-      { label: "5+ years, locked in for the goal", val: 3 },
+      { label: "I check it every single day", val: 0 },
+      { label: "A few times a week", val: 1 },
+      { label: "Once a month or so", val: 2 },
+      { label: "Auto-transfer it and forget about it", val: 3 },
     ],
   },
+];
+
+// ── Timeline buckets ───────────────────────────────────────────────────────
+export const TIMELINE_BUCKETS = [
+  { id: "now",     label: "Right away",     years: 1, desc: "Within the next year" },
+  { id: "near",    label: "Near future",    years: 3, desc: "1 to 3 years out" },
+  { id: "planning", label: "Planning ahead", years: 5, desc: "3 to 5+ years from now" },
+];
+
+// ── Down payment buckets (shown at the end, not asked) ─────────────────────
+export const DOWN_BUCKETS = [
+  { pct: 3.5, label: "3.5%", tag: "FHA",      desc: "Lowest barrier · PMI for a while" },
+  { pct: 5,   label: "5%",   tag: "Conventional", desc: "Lower upfront · faster PMI drop" },
+  { pct: 10,  label: "10%",  tag: "Solid",    desc: "Strong middle ground" },
+  { pct: 20,  label: "20%",  tag: "Best",     desc: "No PMI · best rates" },
 ];
 
 // ── Employment ─────────────────────────────────────────────────────────────
@@ -196,8 +213,8 @@ export const FACTS = {
   factDown: {
     kicker: "No. 02 — Down Payments",
     fact: "The median first-time down payment is just 9%.",
-    context: "You don't need 20%. FHA loans can go as low as 3.5%.",
-    source: "NAR, 2024",
+    context: "You don't need 20% to buy. Most first-time buyers put down far less than people think.",
+    source: "National Association of Realtors, 2024",
   },
   factCompound: {
     kicker: "No. 03 — Compounding",
@@ -209,23 +226,23 @@ export const FACTS = {
 
 // ── Section intro pages ────────────────────────────────────────────────────
 export const INTROS = {
-  introFinances: {
-    chapter: "Chapter I",
-    kicker: "First, the foundation",
-    title: "Let's gather a few key pieces of your financial picture.",
-    body: "Age, work, income, expenses, debt, credit, savings. Quick sliders — no documents, no commitments. Everything stays on this device.",
-  },
   introHousehold: {
+    chapter: "Chapter I",
+    kicker: "First, the household",
+    title: "Are you buying on your own, or with a partner?",
+    body: "Two incomes — and two credit scores — can change the math entirely. We'll start here so the rest of the questions make sense.",
+  },
+  introFinances: {
     chapter: "Chapter II",
-    kicker: "Next, the household",
-    title: "Who's on the loan with you?",
-    body: "If you're buying with a partner, two incomes — and two credit scores — change the math. We'll only ask if it applies.",
+    kicker: "Next, the foundation",
+    title: "Let's gather a few key pieces of your financial picture.",
+    body: "Age, work, income, expenses, debt, savings, credit. Quick sliders — no documents, no commitments. Everything stays on this device.",
   },
   introHome: {
     chapter: "Chapter III",
     kicker: "Then, the home",
     title: "Where you're buying, and what you're buying.",
-    body: "ZIP code sets the local price benchmark. The home style shifts the monthly cost. A timeline turns it into a real plan.",
+    body: "Your location sets the local price benchmark. The home style shifts the monthly cost. A timeline turns it into a real plan.",
   },
   introRisk: {
     chapter: "Chapter IV",

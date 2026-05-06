@@ -2,12 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
+  DOWN_BUCKETS,
   EMPLOYMENT_TYPES,
   FACTS,
   HOME_STYLES,
   INTROS,
   RISK_QS,
   STRATEGIES,
+  TIMELINE_BUCKETS,
   calcMortgage,
   calcRequiredMonthly,
   deriveRisk,
@@ -57,15 +59,6 @@ const C = {
 const FLOW = [
   "welcome",
   "email",
-  "introFinances",
-  "age",
-  "employment",
-  "income",
-  "expenses",
-  "debt",
-  "credit",
-  "savings",
-  "factDemo",
   "introHousehold",
   "partner",
   "partnerIncome",
@@ -73,11 +66,19 @@ const FLOW = [
   "partnerDebt",
   "partnerCredit",
   "introPartnerSummary",
+  "introFinances",
+  "age",
+  "employment",
+  "income",
+  "expenses",
+  "debt",
+  "savings",
+  "credit",
+  "factDemo",
   "introHome",
   "zip",
   "homeStyle",
   "timeline",
-  "downPct",
   "factDown",
   "introRisk",
   "risk0",
@@ -90,9 +91,10 @@ const FLOW = [
 type Screen = (typeof FLOW)[number];
 
 const PROGRESS_SCREENS: Screen[] = [
-  "email", "age", "employment", "income", "expenses", "debt", "credit", "savings",
+  "email",
   "partner", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
-  "zip", "homeStyle", "timeline", "downPct",
+  "age", "employment", "income", "expenses", "debt", "savings", "credit",
+  "zip", "homeStyle", "timeline",
   "risk0", "risk1", "risk2", "risk3",
 ];
 
@@ -112,9 +114,9 @@ type Data = {
   partnerCredit: number | null;
   zip: string;
   zipData: { city: string; avg: number } | null;
-  homeStyles: string[];
+  homeStyle: string | null;
   timelineYears: number;
-  downPct: number;
+  timelineBucket: string | null;
   riskAnswers: Record<number, number>;
 };
 
@@ -134,9 +136,9 @@ const INITIAL: Data = {
   partnerCredit: null,
   zip: "",
   zipData: null,
-  homeStyles: [],
-  timelineYears: 5,
-  downPct: 10,
+  homeStyle: null,
+  timelineYears: 3,
+  timelineBucket: null,
   riskAnswers: {},
 };
 
@@ -500,7 +502,7 @@ function ScreenSwitch({
             val: b.value,
             label: b.label,
             tag: b.range,
-            desc: `${b.desc} · est. ${(b.rate * 100).toFixed(2)}% rate`,
+            desc: b.desc,
           }))}
           value={d.credit}
           onSelect={(v) => set("credit", v as number)}
@@ -620,52 +622,14 @@ function ScreenSwitch({
     );
 
   if (screen === "zip")
-    return (
-      <Question
-        kicker="Where"
-        title="What ZIP code are you buying in?"
-        sub="Sets the local price benchmark."
-      >
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="00000"
-          maxLength={5}
-          value={d.zip}
-          onChange={(e) => {
-            const v = e.target.value.replace(/\D/g, "").slice(0, 5);
-            set("zip", v);
-            if (v.length === 5) set("zipData", getPriceByZip(v));
-          }}
-          style={{
-            width: "100%",
-            background: "transparent",
-            border: "none",
-            borderBottom: `1.5px solid ${C.ink}`,
-            padding: "12px 0",
-            fontSize: 32,
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.2em",
-            color: C.ink,
-            outline: "none",
-            marginBottom: 18,
-          }}
-        />
-        {d.zipData !== null && (
-          <ZipCallout city={d.zipData!.city} avg={d.zipData!.avg} />
-        )}
-        <Cta onClick={next} disabled={d.zip.length !== 5}>
-          Continue
-        </Cta>
-      </Question>
-    );
+    return <ZipScreen d={d} set={set} next={next} />;
 
   if (screen === "homeStyle")
     return (
       <Question
         kicker="Style"
         title="What kind of home?"
-        sub="Pick all that interest you. Each one shifts the price and monthly cost."
+        sub="Pick the one that fits best — it shifts the price and monthly cost."
       >
         <div
           style={{
@@ -676,18 +640,11 @@ function ScreenSwitch({
           }}
         >
           {HOME_STYLES.map((s) => {
-            const active = d.homeStyles.includes(s.id);
+            const active = d.homeStyle === s.id;
             return (
               <button
                 key={s.id}
-                onClick={() =>
-                  set(
-                    "homeStyles",
-                    active
-                      ? d.homeStyles.filter((x) => x !== s.id)
-                      : [...d.homeStyles, s.id],
-                  )
-                }
+                onClick={() => set("homeStyle", s.id)}
                 style={{
                   background: active ? C.ink : "transparent",
                   color: active ? C.cream : C.ink,
@@ -722,7 +679,7 @@ function ScreenSwitch({
             );
           })}
         </div>
-        <Cta onClick={next} disabled={d.homeStyles.length === 0}>
+        <Cta onClick={next} disabled={!d.homeStyle}>
           Continue
         </Cta>
       </Question>
@@ -733,48 +690,34 @@ function ScreenSwitch({
       <Question
         kicker="When"
         title="When do you want to buy?"
-        sub="A realistic timeline shapes the whole plan."
+        sub="We'll tailor the plan to fit your window."
       >
-        <Slider
-          value={d.timelineYears}
-          min={1}
-          max={10}
-          step={1}
-          format={(v) => `${v}`}
-          onChange={(v) => set("timelineYears", v)}
-          unit={d.timelineYears === 1 ? "year from now" : "years from now"}
+        <Choices
+          options={TIMELINE_BUCKETS.map((b) => ({
+            val: b.id,
+            label: b.label,
+            desc: b.desc,
+          }))}
+          value={d.timelineBucket}
+          onSelect={(v) => {
+            const b = TIMELINE_BUCKETS.find((x) => x.id === v);
+            set("timelineBucket", v as string);
+            if (b) set("timelineYears", b.years);
+          }}
         />
-        <Cta onClick={next}>Continue</Cta>
+        <Cta onClick={next} disabled={!d.timelineBucket}>
+          Continue
+        </Cta>
       </Question>
     );
 
-  if (screen === "downPct")
-    return (
-      <Question
-        kicker="Down payment"
-        title="How much down?"
-        sub="More down = lower payment. 20% removes PMI."
-      >
-        <Choices
-          options={[
-            { val: 3.5, label: "3.5%", tag: "FHA",  desc: "Lowest barrier" },
-            { val: 5,   label: "5%",   tag: "Common", desc: "Lower upfront cost" },
-            { val: 10,  label: "10%",  tag: "Solid", desc: "Middle ground" },
-            { val: 20,  label: "20%",  tag: "Best",  desc: "No PMI · best rates" },
-          ]}
-          value={d.downPct}
-          onSelect={(v) => set("downPct", v as number)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
 
   if (screen.startsWith("risk")) {
     const idx = Number(screen.replace("risk", ""));
     const q = RISK_QS[idx];
     const value = d.riskAnswers[idx];
     return (
-      <Question kicker={`Risk · ${idx + 1} of 4`} title={q.q}>
+      <Question kicker={`Risk · ${idx + 1} of 4`} title={q.q} sub={q.sub}>
         <Choices
           options={q.opts.map((o) => ({ val: o.val, label: o.label }))}
           value={value ?? null}
@@ -786,37 +729,6 @@ function ScreenSwitch({
           Continue
         </Cta>
       </Question>
-    );
-  }
-
-  if (screen === "factDown") {
-    const reinforcement: Record<number, { headline: string; body: string }> = {
-      3.5: {
-        headline: "3.5% down — a smart way in.",
-        body: "FHA opens the door with the lowest barrier. You'll carry PMI for a while, but you're buying years sooner than waiting for 20%.",
-      },
-      5: {
-        headline: "5% down — solid first move.",
-        body: "Conventional 5% gets you in without a huge upfront hit. You'll drop PMI faster than FHA once you cross 20% equity.",
-      },
-      10: {
-        headline: "10% down — strong middle ground.",
-        body: "You're cutting your monthly payment meaningfully and your PMI window is short. Lenders like this profile.",
-      },
-      20: {
-        headline: "20% down — the gold standard.",
-        body: "No PMI, the best rates available, and the lowest monthly payment. It takes longer to save, but the math is undeniable.",
-      },
-    };
-    const r = reinforcement[d.downPct] ?? reinforcement[10];
-    return (
-      <FactPage
-        kicker="No. 02 — Your Down Payment"
-        fact={r.headline}
-        context={`The median first-time down payment is just 9% — your ${d.downPct}% choice is right in the realistic zone. ${r.body}`}
-        source="NAR, 2024"
-        onNext={next}
-      />
     );
   }
 
@@ -887,26 +799,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        Find your
+        The
         <br />
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Keystone.</em>
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>Foundation</em>
         <br />
-        Build the rest.
+        for your first home.
       </h1>
-
-      <p
-        style={{
-          fontSize: 15,
-          color: C.inkSoft,
-          lineHeight: 1.55,
-          maxWidth: 380,
-          marginBottom: 42,
-        }}
-      >
-        Tell us about your money in five minutes. We'll print a personal report
-        for the path to your first home — what to save, what to invest, what
-        you can afford.
-      </p>
 
       <Cta onClick={onStart} large>
         Begin the plan
@@ -1418,11 +1316,162 @@ function IntroPage({
     </div>
   );
 }
+
+function ZipScreen({
+  d,
+  set,
+  next,
+}: {
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  next: () => void;
+}) {
+  const [status, setStatus] = useState<"idle" | "asking" | "denied" | "manual" | "located">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const requestLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setStatus("manual");
+      return;
+    }
+    setStatus("asking");
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+          );
+          const j = await res.json();
+          const zip: string | undefined = j?.address?.postcode;
+          if (zip && /^\d{5}/.test(zip)) {
+            const z = zip.slice(0, 5);
+            set("zip", z);
+            set("zipData", getPriceByZip(z));
+            setStatus("located");
+          } else {
+            setStatus("manual");
+            setError("Couldn't pin a ZIP from that location.");
+          }
+        } catch {
+          setStatus("manual");
+          setError("Lookup failed. Enter a ZIP instead.");
+        }
+      },
+      () => {
+        setStatus("manual");
+      },
+      { timeout: 8000 },
+    );
+  };
+
+  return (
+    <Question
+      kicker="Where"
+      title="Where are you buying?"
+      sub="We use your area to set the local price benchmark."
+    >
+      {status === "idle" && (
+        <div style={{ marginBottom: 28 }}>
+          <button
+            onClick={requestLocation}
+            style={{
+              background: "transparent",
+              color: C.ink,
+              border: `1.5px solid ${C.ink}`,
+              padding: "16px 18px",
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              width: "100%",
+              marginBottom: 12,
+            }}
+          >
+            ◎ Use my location
+          </button>
+          <button
+            onClick={() => setStatus("manual")}
+            style={{
+              background: "transparent",
+              color: C.inkMute,
+              border: "none",
+              padding: "8px 0",
+              fontSize: 12,
+              cursor: "pointer",
+              width: "100%",
+              textDecoration: "underline",
+              textUnderlineOffset: 4,
+            }}
+          >
+            Enter a ZIP instead
+          </button>
+        </div>
+      )}
+
+      {status === "asking" && (
+        <div style={{ marginBottom: 28, color: C.inkMute, fontSize: 13 }}>
+          Asking your browser for permission…
+        </div>
+      )}
+
+      {(status === "manual" || status === "located") && (
+        <>
+          {error && (
+            <div style={{ fontSize: 12, color: C.ember, marginBottom: 10 }}>{error}</div>
+          )}
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="00000"
+            maxLength={5}
+            value={d.zip}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 5);
+              set("zip", v);
+              if (v.length === 5) set("zipData", getPriceByZip(v));
+              else set("zipData", null);
+            }}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 32,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.2em",
+              color: C.ink,
+              outline: "none",
+              marginBottom: 18,
+            }}
+          />
+        </>
+      )}
+
+      {d.zipData !== null && (
+        <ZipCallout city={d.zipData!.city} avg={d.zipData!.avg} />
+      )}
+
+      <Cta onClick={next} disabled={d.zip.length !== 5}>
+        Continue
+      </Cta>
+    </Question>
+  );
+}
+
+
 function Report({ d }: { d: Data }) {
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
-  const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
+  const styleIds = d.homeStyle ? [d.homeStyle] : [];
+  const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
   const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
-  const effectiveDownPct = Math.max(d.downPct, styleAdj.minDown);
+  // Default down payment derived from savings as % of price; floored to min, capped at 20.
+  const savingsRatio = avgPrice > 0 ? (d.saved / avgPrice) * 100 : 0;
+  const candidate = savingsRatio >= 20 ? 20 : savingsRatio >= 10 ? 10 : savingsRatio >= 5 ? 5 : 3.5;
+  const effectiveDownPct = Math.max(candidate, styleAdj.minDown);
   const downPayment = Math.round((avgPrice * effectiveDownPct) / 100);
   const months = d.timelineYears * 12;
   const risk = useMemo(() => deriveRisk(d.riskAnswers), [d.riskAnswers]);
@@ -1479,10 +1528,7 @@ function Report({ d }: { d: Data }) {
           ? "Building toward it"
           : "Early days";
 
-  const styleNames = d.homeStyles
-    .map((id) => HOME_STYLES.find((s) => s.id === id)?.label)
-    .filter(Boolean)
-    .join(" + ");
+  const styleNames = HOME_STYLES.find((s) => s.id === d.homeStyle)?.label ?? "Your home";
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 40 }}>
@@ -1666,8 +1712,79 @@ function Report({ d }: { d: Data }) {
         </div>
       </Section>
 
-      {/* Section 2 — Affordability */}
-      <Section number="02" title="What it costs to live there.">
+      {/* Down payment buckets */}
+      <Section number="02" title="Your down payment options.">
+        <p style={SubP}>
+          Based on {fmt(d.saved)} saved against {fmtCompact(avgPrice)}, we modeled your plan at{" "}
+          <em style={{ fontStyle: "italic" }}>{effectiveDownPct}% down</em>. Here's what each path
+          would actually mean for you.
+        </p>
+        <div style={{ marginTop: 14 }}>
+          {DOWN_BUCKETS.map((b) => {
+            const dp = Math.round((avgPrice * b.pct) / 100);
+            const m = calcMortgage(avgPrice, b.pct, mortgageRate);
+            const pmiB = b.pct < 20 ? (avgPrice * (1 - b.pct / 100) * 0.005) / 12 : 0;
+            const allIn = m + taxIns + pmiB + hoa + reserve;
+            const isMatch = b.pct === effectiveDownPct;
+            return (
+              <div
+                key={b.pct}
+                style={{
+                  borderTop: `1px solid ${C.ink}`,
+                  background: isMatch ? C.cream : "transparent",
+                  padding: "14px 12px",
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr auto",
+                  gap: 14,
+                  alignItems: "baseline",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "\'Fraunces\', serif",
+                    fontSize: 22,
+                    fontWeight: 600,
+                    color: isMatch ? C.ember : C.ink,
+                    minWidth: 56,
+                  }}
+                >
+                  {b.label}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, color: C.ink, marginBottom: 2 }}>
+                    {b.tag} · {b.desc}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "\'JetBrains Mono\', monospace",
+                      fontSize: 11,
+                      color: C.inkMute,
+                    }}
+                  >
+                    {fmt(dp)} down · {fmt(allIn)}/mo all-in{b.pct < 20 ? " · PMI" : " · no PMI"}
+                  </div>
+                </div>
+                {isMatch && (
+                  <span
+                    style={{
+                      fontFamily: "\'JetBrains Mono\', monospace",
+                      fontSize: 9,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: C.ember,
+                    }}
+                  >
+                    ◆ Yours
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
+      {/* Section 3 — Affordability */}
+      <Section number="03" title="What it costs to live there.">
         <p style={SubP}>
           A {(mortgageRate * 100).toFixed(2)}% / 30-year fixed mortgage based on your{" "}
           {qualifyingCredit < 670 ? "credit profile" : "credit standing"}.
@@ -1734,7 +1851,7 @@ function Report({ d }: { d: Data }) {
       </Section>
 
       {/* Section 3 — Readiness */}
-      <Section number="03" title={`${readinessLabel}.`}>
+      <Section number="04" title={`${readinessLabel}.`}>
         <p style={SubP}>
           A composite of your credit, debt-to-income, savings progress, and
           timeline.
