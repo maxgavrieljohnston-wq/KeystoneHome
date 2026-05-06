@@ -166,12 +166,12 @@ export const RISK_QS = [
     ],
   },
   {
-    q: "Outside this home goal, how do you invest for retirement?",
+    q: "How long can you leave this money untouched?",
     opts: [
-      { label: "I don't yet", val: 0 },
-      { label: "A default 401(k), set and forget", val: 1 },
-      { label: "Regular contributions to index funds", val: 2 },
-      { label: "Actively managed portfolio", val: 3 },
+      { label: "I might need it within a year", val: 0 },
+      { label: "1–2 years, then it's for the home", val: 1 },
+      { label: "3–5 years — I won't touch it early", val: 2 },
+      { label: "5+ years, locked in for the goal", val: 3 },
     ],
   },
 ];
