@@ -502,7 +502,7 @@ function ScreenSwitch({
             val: b.value,
             label: b.label,
             tag: b.range,
-            desc: `${b.desc} · est. ${(b.rate * 100).toFixed(2)}% rate`,
+            desc: b.desc,
           }))}
           value={d.credit}
           onSelect={(v) => set("credit", v as number)}
