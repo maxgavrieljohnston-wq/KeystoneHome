@@ -2,12 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
+  DOWN_BUCKETS,
   EMPLOYMENT_TYPES,
   FACTS,
   HOME_STYLES,
   INTROS,
   RISK_QS,
   STRATEGIES,
+  TIMELINE_BUCKETS,
   calcMortgage,
   calcRequiredMonthly,
   deriveRisk,
