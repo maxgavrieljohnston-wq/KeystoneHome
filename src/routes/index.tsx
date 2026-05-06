@@ -544,14 +544,14 @@ function ScreenSwitch({
   if (screen === "partner")
     return (
       <Question
-        kicker="Together"
-        title="Buying with a partner?"
-        sub="Two incomes can change everything."
+        kicker="Chapter I — First, the household"
+        title="Are you buying on your own, or with a partner?"
+        sub="Two incomes — and two credit scores — can change the math entirely. We'll start here so the rest of the questions make sense."
       >
         <Choices
           options={[
-            { val: 1, label: "Yes", desc: "Combine our finances" },
-            { val: 0, label: "No", desc: "Just me on the loan" },
+            { val: 1, label: "With a partner", desc: "Combine our finances" },
+            { val: 0, label: "On my own", desc: "Just me on the loan" },
           ]}
           value={d.hasPartner === null ? null : d.hasPartner ? 1 : 0}
           onSelect={(v) => set("hasPartner", v === 1)}
