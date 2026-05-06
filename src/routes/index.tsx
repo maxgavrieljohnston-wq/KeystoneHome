@@ -810,17 +810,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
         }}
       >
         <Wordmark />
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: C.inkFaint,
-          }}
-        >
-          Vol. 01
-        </span>
       </div>
 
       <div
