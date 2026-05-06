@@ -1370,9 +1370,13 @@ function IntroPage({
 }
 function Report({ d }: { d: Data }) {
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
-  const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
+  const styleIds = d.homeStyle ? [d.homeStyle] : [];
+  const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
   const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
-  const effectiveDownPct = Math.max(d.downPct, styleAdj.minDown);
+  // Default down payment derived from savings as % of price; floored to min, capped at 20.
+  const savingsRatio = avgPrice > 0 ? (d.saved / avgPrice) * 100 : 0;
+  const candidate = savingsRatio >= 20 ? 20 : savingsRatio >= 10 ? 10 : savingsRatio >= 5 ? 5 : 3.5;
+  const effectiveDownPct = Math.max(candidate, styleAdj.minDown);
   const downPayment = Math.round((avgPrice * effectiveDownPct) / 100);
   const months = d.timelineYears * 12;
   const risk = useMemo(() => deriveRisk(d.riskAnswers), [d.riskAnswers]);
@@ -1429,10 +1433,7 @@ function Report({ d }: { d: Data }) {
           ? "Building toward it"
           : "Early days";
 
-  const styleNames = d.homeStyles
-    .map((id) => HOME_STYLES.find((s) => s.id === id)?.label)
-    .filter(Boolean)
-    .join(" + ");
+  const styleNames = HOME_STYLES.find((s) => s.id === d.homeStyle)?.label ?? "Your home";
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 40 }}>
