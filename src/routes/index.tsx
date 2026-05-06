@@ -770,6 +770,172 @@ function ScreenSwitch({
       </Question>
     );
 
+  if (screen === "homeFeatures") {
+    const Stepper = ({
+      label,
+      value,
+      onChange,
+      min,
+      max,
+      suffix,
+    }: {
+      label: string;
+      value: number;
+      onChange: (n: number) => void;
+      min: number;
+      max: number;
+      suffix?: string;
+    }) => (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "18px 0",
+          borderBottom: `1px solid ${C.inkFaint}`,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 22,
+            fontWeight: 600,
+            color: C.ink,
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button
+            onClick={() => onChange(Math.max(min, value - 1))}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 0,
+              border: `1.5px solid ${C.ink}`,
+              background: "transparent",
+              color: C.ink,
+              fontSize: 18,
+              cursor: "pointer",
+            }}
+          >
+            −
+          </button>
+          <div
+            style={{
+              minWidth: 56,
+              textAlign: "center",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 18,
+              color: C.ink,
+            }}
+          >
+            {value}
+            {suffix}
+          </div>
+          <button
+            onClick={() => onChange(Math.min(max, value + 1))}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 0,
+              border: `1.5px solid ${C.ink}`,
+              background: "transparent",
+              color: C.ink,
+              fontSize: 18,
+              cursor: "pointer",
+            }}
+          >
+            +
+          </button>
+        </div>
+      </div>
+    );
+
+    const Pills = ({
+      label,
+      options,
+      value,
+      onSelect,
+    }: {
+      label: string;
+      options: { val: string; label: string }[];
+      value: string | null;
+      onSelect: (v: string) => void;
+    }) => (
+      <div style={{ padding: "18px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 22,
+            fontWeight: 600,
+            color: C.ink,
+            marginBottom: 12,
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {options.map((o) => {
+            const active = value === o.val;
+            return (
+              <button
+                key={o.val}
+                onClick={() => onSelect(o.val)}
+                style={{
+                  border: `1.5px solid ${C.ink}`,
+                  background: active ? C.ink : "transparent",
+                  color: active ? C.cream : C.ink,
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  borderRadius: 0,
+                }}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+
+    return (
+      <Question
+        kicker="Features"
+        title="What do you need inside?"
+        sub="A rough wishlist — we'll factor it into your search."
+      >
+        <div style={{ marginBottom: 28 }}>
+          <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
+          <Stepper label="Bathrooms" value={d.baths} onChange={(n) => set("baths", n)} min={1} max={5} suffix={d.baths >= 5 ? "+" : ""} />
+          <Pills
+            label="Outdoor space"
+            options={[
+              { val: "yard", label: "Yard" },
+              { val: "patio", label: "Patio / balcony" },
+              { val: "none", label: "Not needed" },
+            ]}
+            value={d.outdoorSpace}
+            onSelect={(v) => set("outdoorSpace", v)}
+          />
+          <Pills
+            label="Parking"
+            options={[
+              { val: "garage", label: "Garage" },
+              { val: "driveway", label: "Driveway" },
+              { val: "street", label: "Street is fine" },
+            ]}
+            value={d.parking}
+            onSelect={(v) => set("parking", v)}
+          />
+        </div>
+        <Cta onClick={next} disabled={!d.outdoorSpace || !d.parking}>
+          Continue
+        </Cta>
+      </Question>
+    );
+  }
 
   if (screen.startsWith("risk")) {
     const idx = Number(screen.replace("risk", ""));
