@@ -226,23 +226,23 @@ export const FACTS = {
 
 // ── Section intro pages ────────────────────────────────────────────────────
 export const INTROS = {
-  introFinances: {
-    chapter: "Chapter I",
-    kicker: "First, the foundation",
-    title: "Let's gather a few key pieces of your financial picture.",
-    body: "Age, work, income, expenses, debt, credit, savings. Quick sliders — no documents, no commitments. Everything stays on this device.",
-  },
   introHousehold: {
+    chapter: "Chapter I",
+    kicker: "First, the household",
+    title: "Are you buying on your own, or with a partner?",
+    body: "Two incomes — and two credit scores — can change the math entirely. We'll start here so the rest of the questions make sense.",
+  },
+  introFinances: {
     chapter: "Chapter II",
-    kicker: "Next, the household",
-    title: "Who's on the loan with you?",
-    body: "If you're buying with a partner, two incomes — and two credit scores — change the math. We'll only ask if it applies.",
+    kicker: "Next, the foundation",
+    title: "Let's gather a few key pieces of your financial picture.",
+    body: "Age, work, income, expenses, debt, savings, credit. Quick sliders — no documents, no commitments. Everything stays on this device.",
   },
   introHome: {
     chapter: "Chapter III",
     kicker: "Then, the home",
     title: "Where you're buying, and what you're buying.",
-    body: "ZIP code sets the local price benchmark. The home style shifts the monthly cost. A timeline turns it into a real plan.",
+    body: "Your location sets the local price benchmark. The home style shifts the monthly cost. A timeline turns it into a real plan.",
   },
   introRisk: {
     chapter: "Chapter IV",
