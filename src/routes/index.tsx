@@ -1424,6 +1424,9 @@ function Dashboard({ d }: { d: Data }) {
               {affordable
                 ? "Lenders prefer under 28% — you're in good shape."
                 : "Lenders prefer under 28%."}
+              <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                Based on a {(mortgageRate * 100).toFixed(2)}% / 30-yr fixed rate from your credit tier.
+              </div>
             </div>
             <div
               style={{
