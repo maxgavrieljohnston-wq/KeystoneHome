@@ -289,7 +289,7 @@ function TopBar({
             color: C.inkFaint,
           }}
         >
-          {screen.startsWith("risk") ? "Risk" : screen.startsWith("partner") ? "Partner" : screen.startsWith("fact") ? "Reading" : "Step"}
+          {screen.startsWith("risk") ? "Risk" : screen.startsWith("partner") ? "Partner" : screen.startsWith("fact") ? "Reading" : screen.startsWith("intro") ? "Chapter" : "Step"}
         </span>
       </div>
       {progress !== null && (
