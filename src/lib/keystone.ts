@@ -205,7 +205,7 @@ export const EMPLOYMENT_TYPES = [
 // ── Editorial fact cards ───────────────────────────────────────────────────
 export const FACTS = {
   factDemo: {
-    kicker: "No. 01 — Demographics",
+    kicker: "",
     fact: "The average first-time buyer is now 38 years old.",
     context: "Up from 28 in 1991. The timeline has shifted — you're not behind.",
     source: "National Association of Realtors, 2024",
