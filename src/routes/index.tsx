@@ -1207,6 +1207,7 @@ function Dashboard({ d }: { d: Data }) {
         }}
       >
         {[
+          { key: "save", label: "Save" },
           { key: "invest", label: "Invest" },
           { key: "afford", label: "Afford" },
           { key: "ready", label: "Ready" },
