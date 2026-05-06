@@ -1402,9 +1402,9 @@ function ZipScreen({
 
   return (
     <Question
-      kicker="Where"
-      title="Where are you buying?"
-      sub="We use your area to set the local price benchmark."
+      kicker="The home"
+      title="Where you're buying, and what you're buying."
+      sub="Your location sets the local price benchmark. Share your location or enter a ZIP — next we'll cover the home style and timeline."
     >
       {status === "idle" && (
         <div style={{ marginBottom: 28 }}>
