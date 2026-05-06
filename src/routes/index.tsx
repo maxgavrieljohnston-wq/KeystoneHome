@@ -1236,6 +1236,55 @@ function Dashboard({ d }: { d: Data }) {
         ))}
       </div>
 
+      {tab === "save" && (
+        <div>
+          <StatCard
+            label={`Save only · ${d.timelineYears}-year goal`}
+            value={fmt(savingsOnly) + "/mo"}
+            sub={`Stash this monthly in a regular account to reach ${fmt(downPayment)} in ${d.timelineYears} years — no investment growth assumed.`}
+            color="#a8d5e2"
+          >
+            {savingsOnly > primaryMonthly && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.55)",
+                  marginTop: 10,
+                  fontWeight: 500,
+                  lineHeight: 1.5,
+                }}
+              >
+                That's {fmt(savingsOnly - primaryMonthly)}/mo more than the {risk.label.toLowerCase()} investing plan. Check the <strong style={{ color: "#a8d5e2" }}>Invest</strong> tab to see how compounding shrinks the burden.
+              </div>
+            )}
+          </StatCard>
+
+          <SectionHeader>Why saving alone is hard</SectionHeader>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1.5px solid rgba(255,255,255,0.06)",
+              borderRadius: 12,
+              padding: 16,
+              fontSize: 13,
+              color: "rgba(255,255,255,0.6)",
+              lineHeight: 1.55,
+            }}
+          >
+            With{" "}
+            <strong style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>
+              {fmt(d.saved)}
+            </strong>{" "}
+            saved today and a target of{" "}
+            <strong style={{ color: "#fff", fontFamily: "'DM Mono', monospace" }}>
+              {fmt(downPayment)}
+            </strong>
+            , you need to set aside {fmt(savingsOnly)} every month for{" "}
+            {d.timelineYears} years. Inflation also eats at cash sitting still — investing protects against that.
+          </div>
+        </div>
+      )}
+
       {tab === "invest" && (
         <div>
           <StatCard
