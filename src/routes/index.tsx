@@ -77,6 +77,7 @@ const FLOW = [
   "factDemo",
   "zip",
   "homeStyle",
+  "homeFeatures",
   "timeline",
   "factDown",
   "introRisk",
@@ -94,7 +95,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
-  "zip", "homeStyle", "timeline",
+  "zip", "homeStyle", "homeFeatures", "timeline",
   "risk0", "risk1", "risk2", "risk3",
 ];
 
@@ -117,6 +118,10 @@ type Data = {
   zip: string;
   zipData: { city: string; avg: number } | null;
   homeStyle: string | null;
+  beds: number;
+  baths: number;
+  outdoorSpace: string | null;
+  parking: string | null;
   timelineYears: number;
   timelineBucket: string | null;
   riskAnswers: Record<number, number>;
@@ -141,6 +146,10 @@ const INITIAL: Data = {
   zip: "",
   zipData: null,
   homeStyle: null,
+  beds: 2,
+  baths: 2,
+  outdoorSpace: null,
+  parking: null,
   timelineYears: 3,
   timelineBucket: null,
   riskAnswers: {},
