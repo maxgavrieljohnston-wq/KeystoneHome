@@ -1115,9 +1115,9 @@ function Choices({
   value,
   onSelect,
 }: {
-  options: { val: number; label: string; tag?: string; desc?: string }[];
-  value: number | null;
-  onSelect: (v: number) => void;
+  options: { val: number | string; label: string; tag?: string; desc?: string }[];
+  value: number | string | null;
+  onSelect: (v: number | string) => void;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 28 }}>
