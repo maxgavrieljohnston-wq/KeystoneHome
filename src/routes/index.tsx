@@ -407,7 +407,27 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "income")
+  if (screen === "employment")
+    return (
+      <Question
+        kicker="Work"
+        title="How do you earn your income?"
+        sub="Lenders typically want 2 years in the same line of work. Self-employed buyers usually need 2 years of tax returns."
+      >
+        <Choices
+          options={EMPLOYMENT_TYPES.map((e) => ({
+            val: e.id,
+            label: e.label,
+            desc: e.desc,
+          }))}
+          value={d.employment}
+          onSelect={(v) => set("employment", v as string)}
+        />
+        <Cta onClick={next} disabled={!d.employment}>
+          Continue
+        </Cta>
+      </Question>
+    );
     return (
       <Question
         kicker="Income"
