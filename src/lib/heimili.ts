@@ -66,14 +66,41 @@ export function getPriceByZip(zip: string): { city: string; avg: number } {
   return { city: "your area", avg: 400000 };
 }
 
-export const HOME_STYLES = [
-  { id: "starter", label: "Starter Home", emoji: "🏠" },
-  { id: "single", label: "Single Family", emoji: "🏡" },
-  { id: "townhouse", label: "Townhouse", emoji: "🏘️" },
-  { id: "condo", label: "Condo", emoji: "🏢" },
-  { id: "multi", label: "Multi-Family", emoji: "🏬" },
-  { id: "fixer", label: "Fixer-Upper", emoji: "🔨" },
+export type HomeStyle = {
+  id: string;
+  label: string;
+  emoji: string;
+  /** Multiplier vs the ZIP's average home price */
+  priceMult: number;
+  /** Typical monthly HOA dues */
+  hoa: number;
+  /** Monthly maintenance / renovation reserve added to housing cost */
+  reserve: number;
+  /** Minimum down payment % typically required */
+  minDown: number;
+  /** Short note explaining the financial tradeoff */
+  note: string;
+};
+
+export const HOME_STYLES: HomeStyle[] = [
+  { id: "starter",   label: "Starter Home",  emoji: "🏠", priceMult: 0.80, hoa: 0,   reserve: 150, minDown: 3.5, note: "Smaller & cheaper than the local average" },
+  { id: "single",    label: "Single Family", emoji: "🏡", priceMult: 1.10, hoa: 0,   reserve: 250, minDown: 3.5, note: "Larger lot, higher upkeep, no HOA" },
+  { id: "townhouse", label: "Townhouse",     emoji: "🏘️", priceMult: 0.90, hoa: 200, reserve: 100, minDown: 3.5, note: "Shared walls, modest HOA" },
+  { id: "condo",     label: "Condo",         emoji: "🏢", priceMult: 0.75, hoa: 400, reserve: 50,  minDown: 3.5, note: "Lower price but real HOA dues" },
+  { id: "multi",     label: "Multi-Family",  emoji: "🏬", priceMult: 1.40, hoa: 0,   reserve: 350, minDown: 15,  note: "Owner-occupied 2–4 unit · 15% down min" },
+  { id: "fixer",     label: "Fixer-Upper",   emoji: "🔨", priceMult: 0.70, hoa: 0,   reserve: 500, minDown: 3.5, note: "Lower price, big renovation reserve" },
 ];
+
+/** Combine selected style multipliers/extras. Averages across picks. */
+export function styleAdjustments(ids: string[]) {
+  const picks = HOME_STYLES.filter((s) => ids.includes(s.id));
+  if (picks.length === 0)
+    return { priceMult: 1, hoa: 0, reserve: 0, minDown: 3.5 };
+  const avg = (k: "priceMult" | "hoa" | "reserve") =>
+    picks.reduce((a, p) => a + p[k], 0) / picks.length;
+  const minDown = Math.max(...picks.map((p) => p.minDown));
+  return { priceMult: avg("priceMult"), hoa: avg("hoa"), reserve: avg("reserve"), minDown };
+}
 
 export const CREDIT_BUCKETS = [
   { label: "Excellent", range: "740–850", value: 795, color: "#4ade80", desc: "Qualifies for the best rates available" },

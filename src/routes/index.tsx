@@ -11,6 +11,7 @@ import {
   deriveRisk,
   fmt,
   getPriceByZip,
+  styleAdjustments,
 } from "@/lib/heimili";
 
 export const Route = createFileRoute("/")({
@@ -1015,6 +1016,16 @@ function Screens({
               >
                 <div style={{ fontSize: 28, marginBottom: 6 }}>{s.emoji}</div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{s.label}</div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,0.45)",
+                    marginTop: 4,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {s.note}
+                </div>
               </button>
             );
           })}
@@ -1097,8 +1108,10 @@ function Dashboard({ d }: { d: Data }) {
   const [tab, setTab] = useState<"invest" | "afford" | "ready">("invest");
 
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
-  const avgPrice = zipData.avg;
-  const downPayment = Math.round((avgPrice * d.downPct) / 100);
+  const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
+  const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
+  const effectiveDownPct = Math.max(d.downPct, styleAdj.minDown);
+  const downPayment = Math.round((avgPrice * effectiveDownPct) / 100);
   const months = d.timelineYears * 12;
   const risk = useMemo(() => deriveRisk(d.riskAnswers), [d.riskAnswers]);
 
@@ -1114,10 +1127,12 @@ function Dashboard({ d }: { d: Data }) {
   const savingsOnly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
   // Affordability
-  const mortgage = calcMortgage(avgPrice, d.downPct);
+  const mortgage = calcMortgage(avgPrice, effectiveDownPct);
   const taxIns = (avgPrice * 0.018) / 12; // ~1.8% annual property tax + insurance
-  const pmi = d.downPct < 20 ? (avgPrice * (1 - d.downPct / 100) * 0.005) / 12 : 0;
-  const totalHousing = mortgage + taxIns + pmi;
+  const pmi = effectiveDownPct < 20 ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12 : 0;
+  const hoa = styleAdj.hoa;
+  const reserve = styleAdj.reserve;
+  const totalHousing = mortgage + taxIns + pmi + hoa + reserve;
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = totalHousing / monthlyIncome;
   const affordable = housingRatio <= 0.28;
@@ -1170,7 +1185,7 @@ function Dashboard({ d }: { d: Data }) {
           {styleNames || "Your Home"} in {zipData.city}
         </h2>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>
-          {fmt(avgPrice)} avg · {d.downPct}% down ={" "}
+          {fmt(avgPrice)} est · {effectiveDownPct}% down ={" "}
           <span style={{ color: "#a8d5e2", fontWeight: 700 }}>{fmt(downPayment)}</span>
           {hasPartner && (
             <span style={{ color: "rgba(255,255,255,0.35)" }}> · Buying together</span>
@@ -1367,13 +1382,18 @@ function Dashboard({ d }: { d: Data }) {
               }}
             >
               {[
-                { label: "P & I", val: fmt(mortgage) },
+                { label: "P & I", val: fmt(mortgage), show: true },
                 {
-                  label: d.downPct < 20 ? "PMI" : "No PMI",
-                  val: d.downPct < 20 ? fmt(pmi) : "—",
+                  label: effectiveDownPct < 20 ? "PMI" : "No PMI",
+                  val: effectiveDownPct < 20 ? fmt(pmi) : "—",
+                  show: true,
                 },
-                { label: "Tax & Ins", val: fmt(taxIns) },
-              ].map((item) => (
+                { label: "Tax & Ins", val: fmt(taxIns), show: true },
+                { label: "HOA", val: fmt(hoa), show: hoa > 0 },
+                { label: "Maint.", val: fmt(reserve), show: reserve > 0 },
+              ]
+                .filter((i) => i.show)
+                .map((item) => (
                 <div
                   key={item.label}
                   style={{
