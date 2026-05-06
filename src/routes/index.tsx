@@ -1108,8 +1108,10 @@ function Dashboard({ d }: { d: Data }) {
   const [tab, setTab] = useState<"invest" | "afford" | "ready">("invest");
 
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
-  const avgPrice = zipData.avg;
-  const downPayment = Math.round((avgPrice * d.downPct) / 100);
+  const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
+  const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
+  const effectiveDownPct = Math.max(d.downPct, styleAdj.minDown);
+  const downPayment = Math.round((avgPrice * effectiveDownPct) / 100);
   const months = d.timelineYears * 12;
   const risk = useMemo(() => deriveRisk(d.riskAnswers), [d.riskAnswers]);
 
@@ -1125,10 +1127,12 @@ function Dashboard({ d }: { d: Data }) {
   const savingsOnly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
   // Affordability
-  const mortgage = calcMortgage(avgPrice, d.downPct);
+  const mortgage = calcMortgage(avgPrice, effectiveDownPct);
   const taxIns = (avgPrice * 0.018) / 12; // ~1.8% annual property tax + insurance
-  const pmi = d.downPct < 20 ? (avgPrice * (1 - d.downPct / 100) * 0.005) / 12 : 0;
-  const totalHousing = mortgage + taxIns + pmi;
+  const pmi = effectiveDownPct < 20 ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12 : 0;
+  const hoa = styleAdj.hoa;
+  const reserve = styleAdj.reserve;
+  const totalHousing = mortgage + taxIns + pmi + hoa + reserve;
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = totalHousing / monthlyIncome;
   const affordable = housingRatio <= 0.28;
