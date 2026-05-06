@@ -1015,6 +1015,16 @@ function Screens({
               >
                 <div style={{ fontSize: 28, marginBottom: 6 }}>{s.emoji}</div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{s.label}</div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,0.45)",
+                    marginTop: 4,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {s.note}
+                </div>
               </button>
             );
           })}
