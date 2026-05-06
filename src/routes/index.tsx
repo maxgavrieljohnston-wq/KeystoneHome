@@ -182,7 +182,7 @@ function KeystoneApp() {
   };
   const back = () => {
     let prevIdx = screenIdx - 1;
-    const partnerOnly = ["partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false) {
       while (prevIdx > 0 && partnerOnly.includes(FLOW[prevIdx])) {
         prevIdx -= 1;
