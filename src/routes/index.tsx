@@ -12,6 +12,7 @@ import {
   fmt,
   getPriceByZip,
   styleAdjustments,
+  rateFromCredit,
 } from "@/lib/heimili";
 
 export const Route = createFileRoute("/")({
