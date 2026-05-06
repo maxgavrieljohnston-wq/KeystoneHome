@@ -213,8 +213,8 @@ export const FACTS = {
   factDown: {
     kicker: "No. 02 — Down Payments",
     fact: "The median first-time down payment is just 9%.",
-    context: "You don't need 20%. FHA loans can go as low as 3.5%.",
-    source: "NAR, 2024",
+    context: "You don't need 20% to buy. Most first-time buyers put down far less than people think.",
+    source: "National Association of Realtors, 2024",
   },
   factCompound: {
     kicker: "No. 03 — Compounding",
