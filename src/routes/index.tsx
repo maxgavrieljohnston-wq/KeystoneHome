@@ -1317,7 +1317,74 @@ function FactPage({
   );
 }
 
-// ── Report (single scrollable dashboard) ─────────────────────────────────────
+function IntroPage({
+  chapter,
+  kicker,
+  title,
+  body,
+  onNext,
+}: {
+  chapter: string;
+  kicker: string;
+  title: string;
+  body: string;
+  onNext: () => void;
+}) {
+  return (
+    <div style={{ paddingTop: 30 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 12,
+        }}
+      >
+        {chapter}
+      </div>
+      <div
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontStyle: "italic",
+          fontWeight: 400,
+          fontSize: 16,
+          color: C.inkMute,
+          marginBottom: 28,
+        }}
+      >
+        — {kicker}
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 32 }} />
+      <h2
+        style={{
+          fontFamily: "'Fraunces', serif",
+          fontWeight: 400,
+          fontSize: 36,
+          lineHeight: 1.08,
+          letterSpacing: "-0.02em",
+          margin: "0 0 22px",
+          color: C.ink,
+        }}
+      >
+        {title}
+      </h2>
+      <p
+        style={{
+          fontSize: 15,
+          lineHeight: 1.6,
+          color: C.inkSoft,
+          margin: "0 0 40px",
+          maxWidth: 420,
+        }}
+      >
+        {body}
+      </p>
+      <Cta onClick={onNext}>Begin</Cta>
+    </div>
+  );
+}
 function Report({ d }: { d: Data }) {
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleAdj = useMemo(() => styleAdjustments(d.homeStyles), [d.homeStyles]);
