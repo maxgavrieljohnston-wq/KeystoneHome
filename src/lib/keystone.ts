@@ -233,5 +233,11 @@ export const INTROS = {
     title: "How you feel about risk decides how your savings grow.",
     body: "Four short questions. We'll match you to a Conservative, Balanced, or Growth strategy.",
   },
+  introPartnerSummary: {
+    chapter: "Interlude",
+    kicker: "Two on the loan",
+    title: "Got it — we'll run the numbers as a household.",
+    body: "From here on, income, debt, and credit are combined. Lenders will qualify you on the lower of the two credit scores, so we'll use that for your rate.",
+  },
 };
 
