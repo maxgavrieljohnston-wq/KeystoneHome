@@ -838,6 +838,21 @@ function Welcome({ onStart }: { onStart: () => void }) {
         for your first home.
       </h1>
 
+      <p
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 19,
+          lineHeight: 1.45,
+          color: C.inkSoft,
+          margin: "0 0 32px",
+          maxWidth: 460,
+        }}
+      >
+        We simplify homeownership by automating your savings and optimizing your
+        portfolio specifically for a down payment. It's more than just an
+        investment account; it's the path to your future address.
+      </p>
+
       <Cta onClick={onStart} large>
         Begin the plan
       </Cta>
