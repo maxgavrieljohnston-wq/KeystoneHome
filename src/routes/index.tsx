@@ -833,7 +833,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
           marginBottom: 18,
         }}
       >
-        — A homebuying plan, in print
+        — A homebuying plan
       </div>
 
       <h1
