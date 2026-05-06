@@ -649,9 +649,9 @@ function ScreenSwitch({
             marginBottom: 18,
           }}
         />
-        {d.zipData && (
+        {d.zipData ? (
           <ZipCallout city={d.zipData.city} avg={d.zipData.avg} />
-        )}
+        ) : null}
         <Cta onClick={next} disabled={d.zip.length !== 5}>
           Continue
         </Cta>
