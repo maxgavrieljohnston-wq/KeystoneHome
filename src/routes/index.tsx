@@ -741,24 +741,35 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "timeline")
+  if (screen === "timeline") {
+    const zipData = d.zipData ?? { city: "your area", avg: 400000 };
+    const styleIds = d.homeStyle ? [d.homeStyle] : [];
+    const adj = styleAdjustments(styleIds);
+    const avgPrice = Math.round(zipData.avg * adj.priceMult);
+    const candidate = d.downGoalPct ?? 10;
+    const effectiveDownPct = Math.max(candidate, adj.minDown);
+    const target = Math.round((avgPrice * effectiveDownPct) / 100);
+    const yearOptions = [1, 3, 5, 7, 10];
     return (
       <Question
         kicker="When"
         title="When do you want to buy?"
-        sub="The average person saves for 7 years to buy their first home. Don't worry — we can get you there faster."
+        sub={`Here's what you'd need to set aside each month to hit ${fmt(target)} (${effectiveDownPct}% down on ${fmtCompact(avgPrice)}).`}
       >
         <Choices
-          options={TIMELINE_BUCKETS.map((b) => ({
-            val: b.id,
-            label: b.label,
-            desc: b.desc,
-          }))}
-          value={d.timelineBucket}
+          options={yearOptions.map((y) => {
+            const monthly = calcRequiredMonthly(d.saved, target, y * 12, 0);
+            return {
+              val: String(y),
+              label: `${y} ${y === 1 ? "year" : "years"}`,
+              desc: `${fmt(monthly)}/mo`,
+            };
+          })}
+          value={String(d.timelineYears)}
           onSelect={(v) => {
-            const b = TIMELINE_BUCKETS.find((x) => x.id === v);
-            set("timelineBucket", v as string);
-            if (b) set("timelineYears", b.years);
+            const y = parseInt(v as string, 10);
+            set("timelineYears", y);
+            set("timelineBucket", `${y}y`);
           }}
         />
         <Cta onClick={next} disabled={!d.timelineBucket}>
@@ -766,6 +777,7 @@ function ScreenSwitch({
         </Cta>
       </Question>
     );
+  }
 
   if (screen === "downGoal")
     return (
