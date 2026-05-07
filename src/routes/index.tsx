@@ -85,16 +85,20 @@ const FLOW = [
   "risk1",
   "risk2",
   "risk3",
+  "handoff",
   "dashboard",
 ] as const;
 type Screen = (typeof FLOW)[number];
 
 const PROGRESS_SCREENS: Screen[] = [
   "email",
+  "introFinances",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
+  "factDemo",
   "zip", "homeStyle", "homeFeatures", "timeline", "downGoal",
+  "introRisk",
   "risk0", "risk1", "risk2", "risk3",
 ];
 
@@ -204,7 +208,7 @@ function KeystoneApp() {
 
   return (
     <Shell>
-      {screen !== "welcome" && screen !== "dashboard" && (
+      {screen !== "welcome" && screen !== "dashboard" && screen !== "handoff" && (
         <TopBar
           screen={screen}
           onBack={screenIdx > 0 ? back : undefined}
@@ -992,6 +996,8 @@ function ScreenSwitch({
     return <IntroPage {...i} onNext={next} />;
   }
 
+  if (screen === "handoff") return <Handoff email={d.email} onNext={next} />;
+
   if (screen === "dashboard") return <Report d={d} />;
 
   return null;
@@ -1552,6 +1558,72 @@ function IntroPage({
         {body}
       </p>
       <Cta onClick={onNext}>Begin</Cta>
+    </div>
+  );
+}
+
+function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
+  return (
+    <div style={{ paddingTop: 60, textAlign: "center" }}>
+      <div
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontStyle: "italic",
+          fontWeight: 400,
+          fontSize: 16,
+          color: C.inkMute,
+          marginBottom: 28,
+        }}
+      >
+        — That's everything
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 32 }} />
+      <h2
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontWeight: 400,
+          fontSize: 38,
+          lineHeight: 1.08,
+          letterSpacing: "-0.02em",
+          margin: "0 0 22px",
+          color: C.ink,
+        }}
+      >
+        Thank you. Your plan is ready.
+      </h2>
+      <p
+        style={{
+          fontSize: 15,
+          lineHeight: 1.6,
+          color: C.inkSoft,
+          margin: "0 auto 16px",
+          maxWidth: 420,
+        }}
+      >
+        We've crunched the numbers. Your personalized path home is on the next page
+        {email ? (
+          <>
+            {" "}— and a copy is on its way to{" "}
+            <span style={{ color: C.ink, fontWeight: 600 }}>{email}</span>.
+          </>
+        ) : (
+          " — and a copy will be emailed to you."
+        )}
+      </p>
+      <p
+        style={{
+          fontSize: 13,
+          lineHeight: 1.6,
+          color: C.inkMute,
+          margin: "0 auto 40px",
+          maxWidth: 420,
+          fontStyle: "italic",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+        }}
+      >
+        Take your time with it. This is the start of something real.
+      </p>
+      <Cta onClick={onNext}>See my plan</Cta>
     </div>
   );
 }
