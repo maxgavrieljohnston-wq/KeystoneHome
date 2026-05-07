@@ -839,63 +839,46 @@ function ScreenSwitch({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "18px 0",
+          padding: "14px 0",
           borderBottom: `1px solid ${C.inkFaint}`,
         }}
       >
         <div
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: 600,
             color: C.ink,
           }}
         >
           {label}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             onClick={() => onChange(Math.max(min, value - 1))}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 0,
-              border: `1.5px solid ${C.ink}`,
-              background: "transparent",
-              color: C.ink,
-              fontSize: 18,
-              cursor: "pointer",
+              width: 34, height: 34, borderRadius: 0,
+              border: `1.5px solid ${C.ink}`, background: "transparent",
+              color: C.ink, fontSize: 18, cursor: "pointer",
             }}
-          >
-            −
-          </button>
+          >−</button>
           <div
             style={{
-              minWidth: 56,
-              textAlign: "center",
+              minWidth: 48, textAlign: "center",
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 18,
-              color: C.ink,
+              fontSize: 17, color: C.ink,
             }}
           >
-            {value}
-            {suffix}
+            {value}{suffix}
           </div>
           <button
             onClick={() => onChange(Math.min(max, value + 1))}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 0,
-              border: `1.5px solid ${C.ink}`,
-              background: "transparent",
-              color: C.ink,
-              fontSize: 18,
-              cursor: "pointer",
+              width: 34, height: 34, borderRadius: 0,
+              border: `1.5px solid ${C.ink}`, background: "transparent",
+              color: C.ink, fontSize: 18, cursor: "pointer",
             }}
-          >
-            +
-          </button>
+          >+</button>
         </div>
       </div>
     );
@@ -911,14 +894,11 @@ function ScreenSwitch({
       value: string | null;
       onSelect: (v: string) => void;
     }) => (
-      <div style={{ padding: "18px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
+      <div style={{ padding: "14px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
         <div
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: 22,
-            fontWeight: 600,
-            color: C.ink,
-            marginBottom: 12,
+            fontSize: 20, fontWeight: 600, color: C.ink, marginBottom: 10,
           }}
         >
           {label}
@@ -934,10 +914,7 @@ function ScreenSwitch({
                   border: `1.5px solid ${C.ink}`,
                   background: active ? C.ink : "transparent",
                   color: active ? C.cream : C.ink,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  borderRadius: 0,
+                  padding: "7px 13px", fontSize: 13, cursor: "pointer", borderRadius: 0,
                 }}
               >
                 {o.label}
@@ -948,53 +925,181 @@ function ScreenSwitch({
       </div>
     );
 
+    // Priority chips: tap to cycle off → nice → must → off
+    const PriorityList = ({
+      items,
+      values,
+      onChange,
+    }: {
+      items: { val: string; label: string }[];
+      values: Record<string, "nice" | "must">;
+      onChange: (next: Record<string, "nice" | "must">) => void;
+    }) => {
+      const cycle = (v: string) => {
+        const cur = values[v];
+        const next = { ...values };
+        if (!cur) next[v] = "nice";
+        else if (cur === "nice") next[v] = "must";
+        else delete next[v];
+        onChange(next);
+      };
+      return (
+        <div style={{ padding: "14px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {items.map((it) => {
+              const state = values[it.val];
+              const bg = state === "must" ? C.ember : state === "nice" ? C.ink : "transparent";
+              const fg = state ? C.cream : C.ink;
+              const border = state === "must" ? C.ember : C.ink;
+              return (
+                <button
+                  key={it.val}
+                  onClick={() => cycle(it.val)}
+                  style={{
+                    border: `1.5px solid ${border}`,
+                    background: bg, color: fg,
+                    padding: "8px 13px", fontSize: 13, cursor: "pointer",
+                    borderRadius: 0, display: "inline-flex", alignItems: "center", gap: 6,
+                  }}
+                >
+                  {state === "must" && <span style={{ fontSize: 10, letterSpacing: 1 }}>★</span>}
+                  {it.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    const SectionHeader = ({ title, hint }: { title: string; hint?: string }) => (
+      <div style={{ marginTop: 28, marginBottom: 4 }}>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11, letterSpacing: 2, textTransform: "uppercase",
+            color: C.inkMute,
+          }}
+        >
+          {title}
+        </div>
+        {hint && (
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontStyle: "italic", fontSize: 14, color: C.inkSoft, marginTop: 4,
+            }}
+          >
+            {hint}
+          </div>
+        )}
+      </div>
+    );
+
     const showLayout = ["starter", "single", "multi", "fixer"].includes(d.homeStyle ?? "");
+
+    const lifestyleItems = [
+      { val: "kids", label: "Space for kids" },
+      { val: "dog", label: "Room for a dog" },
+      { val: "host", label: "Hosting friends" },
+      { val: "mornings", label: "Quiet mornings outside" },
+      { val: "garden", label: "Gardening" },
+      { val: "lowmaint", label: "Low maintenance" },
+      { val: "office", label: "Home office" },
+    ];
+    const neighborhoodItems = [
+      { val: "walk", label: "Walkable area" },
+      { val: "schools", label: "Good schools" },
+      { val: "commute", label: "Near work" },
+      { val: "transit", label: "Public transit" },
+      { val: "quiet", label: "Quiet suburb" },
+      { val: "nature", label: "Parks & nature" },
+      { val: "nightlife", label: "Restaurants & nightlife" },
+      { val: "family", label: "Near family" },
+    ];
+
     return (
       <Question
         kicker="Features"
         title="Picture the place."
-        sub="A rough wishlist — we'll factor it into your search."
+        sub="Tap once for nice-to-have, twice to mark a must. We'll use this to shape your search and your savings plan."
       >
         <div style={{ marginBottom: 28 }}>
+          <SectionHeader title="Home basics" />
           <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
           <Stepper label="Bathrooms" value={d.baths} onChange={(n) => set("baths", n)} min={1} max={5} suffix={d.baths >= 5 ? "+" : ""} />
           {showLayout && (
             <Pills
               label="Style of home"
               options={[
+                { val: "any", label: "No preference" },
                 { val: "ranch", label: "Ranch / single-story" },
                 { val: "twostory", label: "Two-story" },
                 { val: "split", label: "Split-level" },
-                { val: "any", label: "No preference" },
               ]}
-              value={d.homeLayout}
+              value={d.homeLayout ?? "any"}
               onSelect={(v) => set("homeLayout", v)}
             />
           )}
           <Pills
             label="Outdoor space"
             options={[
-              { val: "yard", label: "Yard" },
-              { val: "patio", label: "Patio / balcony" },
               { val: "none", label: "Not needed" },
+              { val: "patio", label: "Patio / balcony" },
+              { val: "yard", label: "Yard" },
             ]}
-            value={d.outdoorSpace}
+            value={d.outdoorSpace ?? "none"}
             onSelect={(v) => set("outdoorSpace", v)}
           />
           <Pills
             label="Parking"
             options={[
-              { val: "garage", label: "Garage" },
-              { val: "driveway", label: "Driveway" },
               { val: "street", label: "Street is fine" },
+              { val: "driveway", label: "Driveway" },
+              { val: "garage", label: "Garage" },
             ]}
-            value={d.parking}
+            value={d.parking ?? "street"}
             onSelect={(v) => set("parking", v)}
           />
+
+          <SectionHeader
+            title="Lifestyle"
+            hint="What would make it feel like home? Tap once for would-be-nice, twice for must-have."
+          />
+          <PriorityList
+            items={lifestyleItems}
+            values={d.lifestyle}
+            onChange={(v) => set("lifestyle", v)}
+          />
+
+          <SectionHeader
+            title="Neighborhood"
+            hint="Where the home sits matters as much as the home itself."
+          />
+          <PriorityList
+            items={neighborhoodItems}
+            values={d.neighborhood}
+            onChange={(v) => set("neighborhood", v)}
+          />
+
+          <div
+            style={{
+              marginTop: 24,
+              padding: "12px 14px",
+              border: `1px solid ${C.inkFaint}`,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontStyle: "italic",
+              fontSize: 14,
+              color: C.inkSoft,
+              lineHeight: 1.5,
+            }}
+          >
+            Why we ask: your wishlist helps us estimate a realistic target price
+            in your area — and later, we'll show how relaxing a must-have could
+            shorten your timeline.
+          </div>
         </div>
-        <Cta onClick={next} disabled={!d.outdoorSpace || !d.parking || (showLayout && !d.homeLayout)}>
-          Continue
-        </Cta>
+        <Cta onClick={next}>Continue</Cta>
       </Question>
     );
   }
