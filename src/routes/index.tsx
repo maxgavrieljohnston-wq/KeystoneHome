@@ -729,40 +729,63 @@ function ScreenSwitch({
     const candidate = d.downGoalPct ?? 10;
     const effectiveDownPct = Math.max(candidate, adj.minDown);
     const target = Math.round((avgPrice * effectiveDownPct) / 100);
-    const yearOptions = [1, 3, 5, 7, 10];
-    // Recommendation: 15–20% of take-home pay (approx take-home = gross * 0.78).
-    // Pick the fastest timeline whose required monthly save fits within ~20% of take-home.
+
+    // Options are percentages of monthly take-home pay saved toward the down payment.
+    const pctOptions = [5, 10, 20, 25, 30];
+    const INDUSTRY_STD = 20;
     const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
-    const maxAffordable = takeHomeMonthly * 0.2;
-    const monthlyByYear: Record<number, number> = {};
-    yearOptions.forEach((y) => {
-      monthlyByYear[y] = calcRequiredMonthly(d.saved, target, y * 12, 0);
+    const monthlyExpenses = (d.expenses ?? 0) + (d.debt ?? 0);
+    const headroom = Math.max(0, takeHomeMonthly - monthlyExpenses);
+
+    const remaining = Math.max(0, target - d.saved);
+    const yearsForMonthly = (mo: number) =>
+      mo > 0 ? Math.max(1, Math.round(remaining / mo / 12)) : 99;
+
+    type Opt = { pct: number; monthly: number; years: number };
+    const allOpts: Opt[] = pctOptions.map((p) => {
+      const monthly = Math.round((takeHomeMonthly * p) / 100);
+      return { pct: p, monthly, years: yearsForMonthly(monthly) };
     });
-    const recommendedYear =
-      takeHomeMonthly > 0
-        ? yearOptions.find((y) => monthlyByYear[y] <= maxAffordable) ?? 10
+    // Hide options whose monthly save exceeds what's left after expenses + debts.
+    const visibleOpts = allOpts.filter((o) => takeHomeMonthly === 0 || o.monthly <= headroom);
+
+    const stdOpt = allOpts.find((o) => o.pct === INDUSTRY_STD);
+    const stdVisible = visibleOpts.some((o) => o.pct === INDUSTRY_STD);
+    // If 20% isn't affordable, recommend the highest visible pct as the practical standard.
+    const recOpt = stdVisible
+      ? stdOpt
+      : visibleOpts.length
+        ? visibleOpts[visibleOpts.length - 1]
         : null;
+
     return (
       <Question
         kicker="When"
         title="When do you want to buy?"
-        sub={`Here's what you'd need to set aside each month to hit ${effectiveDownPct}% down — just by saving. Next, we'll show you how investing can get you there faster.`}
+        sub={`Pick how much of your monthly take-home pay you'd set aside toward ${effectiveDownPct}% down. We'll work the timeline back from there.`}
       >
         <Choices
-          options={yearOptions.map((y) => ({
-            val: String(y),
-            label: `${y} ${y === 1 ? "year" : "years"}`,
-            desc: `${fmt(monthlyByYear[y])}/mo`,
-            tag: y === recommendedYear ? "Industry Standard" : undefined,
+          options={visibleOpts.map((o) => ({
+            val: String(o.pct),
+            label: `${o.pct}% / mo`,
+            desc: `${fmt(o.monthly)}/mo · ~${o.years} ${o.years === 1 ? "year" : "years"}`,
+            tag:
+              recOpt && o.pct === recOpt.pct
+                ? stdVisible
+                  ? "★ Industry Standard"
+                  : "★ Recommended"
+                : undefined,
           }))}
-          value={String(d.timelineYears)}
+          value={d.timelineBucket?.startsWith("p") ? d.timelineBucket.slice(1) : ""}
           onSelect={(v) => {
-            const y = parseInt(v as string, 10);
-            set("timelineYears", y);
-            set("timelineBucket", `${y}y`);
+            const p = parseInt(v as string, 10);
+            const opt = allOpts.find((o) => o.pct === p);
+            if (!opt) return;
+            set("timelineYears", opt.years);
+            set("timelineBucket", `p${p}`);
           }}
         />
-        {recommendedYear && (
+        {recOpt && (
           <div
             style={{
               fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -773,9 +796,18 @@ function ScreenSwitch({
               marginBottom: 24,
             }}
           >
-            Based on your current financial situation, the industry standard would be{" "}
-            {recommendedYear} {recommendedYear === 1 ? "year" : "years"} — saving{" "}
-            {fmt(monthlyByYear[recommendedYear])}/mo is a comfortable share of your take-home pay.
+            {stdVisible ? (
+              <>
+                Industry standard is around <strong>20%/mo</strong> — about{" "}
+                {fmt(recOpt.monthly)}/mo — a comfortable share of your take-home pay.
+              </>
+            ) : (
+              <>
+                20%/mo would stretch your budget given your current expenses, so{" "}
+                <strong>{recOpt.pct}%/mo</strong> ({fmt(recOpt.monthly)}/mo) is the most you can
+                comfortably set aside today.
+              </>
+            )}
           </div>
         )}
         <Cta onClick={next} disabled={!d.timelineBucket}>
