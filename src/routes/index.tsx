@@ -1592,7 +1592,7 @@ function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
           color: C.ink,
         }}
       >
-        Thank you. Your plan is ready.
+        Your timeline is ready
       </h2>
       <p
         style={{
@@ -1603,14 +1603,25 @@ function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
           maxWidth: 420,
         }}
       >
-        We've crunched the numbers. Your personalized path home is on the next page
+        We mapped out a plan to help you reach your down payment—faster.
+      </p>
+      <p
+        style={{
+          fontSize: 14,
+          lineHeight: 1.6,
+          color: C.inkSoft,
+          margin: "0 auto 16px",
+          maxWidth: 420,
+        }}
+      >
         {email ? (
           <>
-            {" "}— and a copy is on its way to{" "}
-            <span style={{ color: C.ink, fontWeight: 600 }}>{email}</span>.
+            Sent to{" "}
+            <span style={{ color: C.ink, fontWeight: 600 }}>{email}</span>{" "}
+            so you can revisit anytime
           </>
         ) : (
-          " — and a copy will be emailed to you."
+          "Sent to your email so you can revisit anytime"
         )}
       </p>
       <p
@@ -1624,9 +1635,9 @@ function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
           fontFamily: "'Cormorant Garamond', Georgia, serif",
         }}
       >
-        Take your time with it. This is the start of something real.
+        Most people take years. Yours might look different.
       </p>
-      <Cta onClick={onNext}>See my plan</Cta>
+      <Cta onClick={onNext}>Show Me My Timeline →</Cta>
     </div>
   );
 }
