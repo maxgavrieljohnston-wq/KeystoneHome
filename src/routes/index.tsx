@@ -1004,12 +1004,74 @@ function ScreenSwitch({
       { val: "family", label: "Near family" },
     ];
 
+    const zdLive = d.zipData ?? { city: "your area", avg: 400000 };
+    const baseAdjLive = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
+    let multLive = baseAdjLive.priceMult;
+    multLive += Math.max(0, d.beds - 3) * 0.05;
+    multLive += Math.max(0, d.baths - 2) * 0.03;
+    if (d.outdoorSpace === "patio") multLive += 0.02;
+    if (d.outdoorSpace === "yard") multLive += 0.05;
+    if (d.parking === "driveway") multLive += 0.02;
+    if (d.parking === "garage") multLive += 0.05;
+    const weightLive = (v: "nice" | "must") => (v === "must" ? 0.025 : 0.01);
+    Object.values(d.lifestyle).forEach((v) => (multLive += weightLive(v)));
+    Object.values(d.neighborhood).forEach((v) => (multLive += weightLive(v)));
+    const livePriceTop = Math.round(zdLive.avg * multLive);
+
     return (
       <Question
         kicker="Features"
         title="Picture the place."
         sub="Tap once for nice-to-have, twice to mark a must. We'll use this to shape your search and your savings plan."
       >
+        <div
+          style={{
+            marginTop: 4,
+            marginBottom: 8,
+            padding: "16px 16px 14px",
+            border: `1px solid ${C.ink}`,
+            background: C.cream,
+            position: "sticky",
+            top: 8,
+            zIndex: 5,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: C.inkMute,
+            }}
+          >
+            Estimated price · {zdLive.city}
+          </div>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 38,
+              lineHeight: 1.05,
+              color: C.ink,
+              marginTop: 6,
+              fontVariantNumeric: "tabular-nums",
+              transition: "all .25s ease",
+            }}
+          >
+            {fmt(livePriceTop)}
+          </div>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontStyle: "italic",
+              fontSize: 13,
+              color: C.inkSoft,
+              marginTop: 6,
+            }}
+          >
+            Updates live as you adjust features below.
+          </div>
+        </div>
         <div style={{ marginBottom: 28 }}>
           <SectionHeader title="Home basics" />
           <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
@@ -1068,70 +1130,6 @@ function ScreenSwitch({
             onChange={(v) => set("neighborhood", v)}
           />
 
-          {(() => {
-            const zd = d.zipData ?? { city: "your area", avg: 400000 };
-            const baseAdj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
-            let mult = baseAdj.priceMult;
-            // Bedrooms / bathrooms beyond a typical baseline
-            mult += Math.max(0, d.beds - 3) * 0.05;
-            mult += Math.max(0, d.baths - 2) * 0.03;
-            // Outdoor & parking
-            if (d.outdoorSpace === "patio") mult += 0.02;
-            if (d.outdoorSpace === "yard") mult += 0.05;
-            if (d.parking === "driveway") mult += 0.02;
-            if (d.parking === "garage") mult += 0.05;
-            // Lifestyle & neighborhood priorities
-            const weight = (v: "nice" | "must") => (v === "must" ? 0.025 : 0.01);
-            Object.values(d.lifestyle).forEach((v) => (mult += weight(v)));
-            Object.values(d.neighborhood).forEach((v) => (mult += weight(v)));
-            const livePrice = Math.round(zd.avg * mult);
-            return (
-              <div
-                style={{
-                  marginTop: 24,
-                  padding: "16px 16px 14px",
-                  border: `1px solid ${C.ink}`,
-                  background: C.cream,
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 10,
-                    letterSpacing: 2,
-                    textTransform: "uppercase",
-                    color: C.inkMute,
-                  }}
-                >
-                  Estimated price · {zd.city}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontSize: 38,
-                    lineHeight: 1.05,
-                    color: C.ink,
-                    marginTop: 6,
-                    fontVariantNumeric: "tabular-nums",
-                    transition: "all .25s ease",
-                  }}
-                >
-                  {fmt(livePrice)}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontStyle: "italic",
-                    fontSize: 13,
-                    color: C.inkSoft,
-                    marginTop: 6,
-                  }}
-                >
-                  Updates live as you adjust features above.
-                </div>
-              </div>
-            );
-          })()}
         </div>
         <Cta onClick={next}>Continue</Cta>
       </Question>
