@@ -730,86 +730,95 @@ function ScreenSwitch({
     const effectiveDownPct = Math.max(candidate, adj.minDown);
     const target = Math.round((avgPrice * effectiveDownPct) / 100);
 
-    // Options are percentages of monthly take-home pay saved toward the down payment.
-    const pctOptions = [5, 10, 20, 25, 30];
-    const INDUSTRY_STD = 20;
     const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
     const monthlyExpenses = (d.expenses ?? 0) + (d.debt ?? 0);
     const headroom = Math.max(0, takeHomeMonthly - monthlyExpenses);
+    // Max percent of take-home that won't exceed headroom (after expenses + debt).
+    const maxPct = takeHomeMonthly > 0
+      ? Math.max(1, Math.floor((headroom / takeHomeMonthly) * 100))
+      : 1;
 
     const remaining = Math.max(0, target - d.saved);
-    const yearsForMonthly = (mo: number) =>
-      mo > 0 ? Math.max(1, Math.round(remaining / mo / 12)) : 99;
+    const currentPct = d.timelineBucket?.startsWith("p")
+      ? Math.min(maxPct, Math.max(1, parseInt(d.timelineBucket.slice(1), 10) || 10))
+      : Math.min(maxPct, 10);
+    const monthlySave = Math.round((takeHomeMonthly * currentPct) / 100);
+    const yearsToBuy = monthlySave > 0 ? remaining / monthlySave / 12 : 0;
+    const yearsLabel = yearsToBuy >= 1
+      ? `${yearsToBuy.toFixed(1)} ${yearsToBuy.toFixed(1) === "1.0" ? "year" : "years"}`
+      : `${Math.max(1, Math.round(yearsToBuy * 12))} months`;
 
-    type Opt = { pct: number; monthly: number; years: number };
-    const allOpts: Opt[] = pctOptions.map((p) => {
-      const monthly = Math.round((takeHomeMonthly * p) / 100);
-      return { pct: p, monthly, years: yearsForMonthly(monthly) };
-    });
-    // Hide options whose monthly save exceeds what's left after expenses + debts.
-    const visibleOpts = allOpts.filter((o) => takeHomeMonthly === 0 || o.monthly <= headroom);
-
-    const stdOpt = allOpts.find((o) => o.pct === INDUSTRY_STD);
-    const stdVisible = visibleOpts.some((o) => o.pct === INDUSTRY_STD);
-    // If 20% isn't affordable, recommend the highest visible pct as the practical standard.
-    const recOpt = stdVisible
-      ? stdOpt
-      : visibleOpts.length
-        ? visibleOpts[visibleOpts.length - 1]
-        : null;
+    // Initialize on first render of this screen.
+    if (!d.timelineBucket) {
+      set("timelineBucket", `p${currentPct}`);
+      set("timelineYears", Math.max(1, Math.round(yearsToBuy)));
+    }
 
     return (
       <Question
-        kicker="When"
-        title="When do you want to buy?"
-        sub={`Pick how much of your monthly take-home pay you'd set aside toward ${effectiveDownPct}% down. We'll work the timeline back from there.`}
+        kicker="Timeline"
+        title="How long would it take using only a savings account?"
+        sub={`Choose the share of your monthly take-home pay you'd comfortably set aside toward ${effectiveDownPct}% down (${fmt(target)}). We'll show how long it would take.`}
       >
-        <Choices
-          options={visibleOpts.map((o) => ({
-            val: String(o.pct),
-            label: `${o.pct}% / mo`,
-            desc: `${fmt(o.monthly)}/mo · ~${o.years} ${o.years === 1 ? "year" : "years"}`,
-            tag:
-              recOpt && o.pct === recOpt.pct
-                ? stdVisible
-                  ? "★ Industry Standard"
-                  : "★ Recommended"
-                : undefined,
-          }))}
-          value={d.timelineBucket?.startsWith("p") ? d.timelineBucket.slice(1) : ""}
-          onSelect={(v) => {
-            const p = parseInt(v as string, 10);
-            const opt = allOpts.find((o) => o.pct === p);
-            if (!opt) return;
-            set("timelineYears", opt.years);
-            set("timelineBucket", `p${p}`);
+        <Slider
+          value={currentPct}
+          min={1}
+          max={maxPct}
+          step={1}
+          format={(v) => `${v}%`}
+          unit={`of take-home · ${fmt(monthlySave)}/mo`}
+          onChange={(v) => {
+            const mo = Math.round((takeHomeMonthly * v) / 100);
+            const yrs = mo > 0 ? Math.max(1, Math.round(remaining / mo / 12)) : 99;
+            set("timelineBucket", `p${v}`);
+            set("timelineYears", yrs);
           }}
         />
-        {recOpt && (
+        <div
+          style={{
+            border: `1px solid ${C.ink}`,
+            padding: "20px 18px",
+            marginBottom: 20,
+            background: C.paperDeep,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkMute,
+              marginBottom: 8,
+            }}
+          >
+            At {currentPct}% / mo, you'd buy in
+          </div>
           <div
             style={{
               fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontStyle: "italic",
-              fontSize: 14,
-              lineHeight: 1.5,
-              color: C.inkSoft,
-              marginBottom: 24,
+              fontSize: 44,
+              lineHeight: 1,
+              letterSpacing: "-0.03em",
+              color: C.ink,
             }}
           >
-            {stdVisible ? (
-              <>
-                Industry standard is around <strong>20%/mo</strong> — about{" "}
-                {fmt(recOpt.monthly)}/mo — a comfortable share of your take-home pay.
-              </>
-            ) : (
-              <>
-                20%/mo would stretch your budget given your current expenses, so{" "}
-                <strong>{recOpt.pct}%/mo</strong> ({fmt(recOpt.monthly)}/mo) is the most you can
-                comfortably set aside today.
-              </>
-            )}
+            {yearsLabel}
           </div>
-        )}
+        </div>
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontStyle: "italic",
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: C.inkSoft,
+            marginBottom: 24,
+          }}
+        >
+          That's the timeline using only a standard savings account. Don't worry — we'll get
+          you there faster.
+        </div>
         <Cta onClick={next} disabled={!d.timelineBucket}>
           Continue
         </Cta>
