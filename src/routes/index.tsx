@@ -1562,6 +1562,72 @@ function IntroPage({
   );
 }
 
+function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
+  return (
+    <div style={{ paddingTop: 60, textAlign: "center" }}>
+      <div
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontStyle: "italic",
+          fontWeight: 400,
+          fontSize: 16,
+          color: C.inkMute,
+          marginBottom: 28,
+        }}
+      >
+        — That's everything
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 32 }} />
+      <h2
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontWeight: 400,
+          fontSize: 38,
+          lineHeight: 1.08,
+          letterSpacing: "-0.02em",
+          margin: "0 0 22px",
+          color: C.ink,
+        }}
+      >
+        Thank you. Your plan is ready.
+      </h2>
+      <p
+        style={{
+          fontSize: 15,
+          lineHeight: 1.6,
+          color: C.inkSoft,
+          margin: "0 auto 16px",
+          maxWidth: 420,
+        }}
+      >
+        We've crunched the numbers. Your personalized path home is on the next page
+        {email ? (
+          <>
+            {" "}— and a copy is on its way to{" "}
+            <span style={{ color: C.ink, fontWeight: 600 }}>{email}</span>.
+          </>
+        ) : (
+          " — and a copy will be emailed to you."
+        )}
+      </p>
+      <p
+        style={{
+          fontSize: 13,
+          lineHeight: 1.6,
+          color: C.inkMute,
+          margin: "0 auto 40px",
+          maxWidth: 420,
+          fontStyle: "italic",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+        }}
+      >
+        Take your time with it. This is the start of something real.
+      </p>
+      <Cta onClick={onNext}>See my plan</Cta>
+    </div>
+  );
+}
+
 function ZipScreen({
   d,
   set,
