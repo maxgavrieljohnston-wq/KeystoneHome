@@ -734,7 +734,7 @@ function ScreenSwitch({
     const pctOptions = [5, 10, 20, 25, 30];
     const INDUSTRY_STD = 20;
     const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
-    const monthlyExpenses = (d.expenses ?? 0) + (d.debts ?? 0);
+    const monthlyExpenses = (d.expenses ?? 0) + (d.debt ?? 0);
     const headroom = Math.max(0, takeHomeMonthly - monthlyExpenses);
 
     const remaining = Math.max(0, target - d.saved);
