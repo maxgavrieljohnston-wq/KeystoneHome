@@ -454,7 +454,7 @@ function ScreenSwitch({
       <Question
         kicker="Income"
         title="What's your gross annual income?"
-        sub="Before taxes. Don't include your partner — we'll ask separately."
+        sub={d.hasPartner ? "Before taxes. Don't include your partner — we'll ask separately." : "Before taxes."}
       >
         <Slider
           value={d.income}
