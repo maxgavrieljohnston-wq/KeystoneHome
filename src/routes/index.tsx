@@ -944,15 +944,29 @@ function ScreenSwitch({
       </div>
     );
 
+    const showLayout = ["starter", "single", "multi", "fixer"].includes(d.homeStyle ?? "");
     return (
       <Question
         kicker="Features"
-        title="What do you need inside?"
+        title="Picture the place."
         sub="A rough wishlist — we'll factor it into your search."
       >
         <div style={{ marginBottom: 28 }}>
           <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
           <Stepper label="Bathrooms" value={d.baths} onChange={(n) => set("baths", n)} min={1} max={5} suffix={d.baths >= 5 ? "+" : ""} />
+          {showLayout && (
+            <Pills
+              label="Style of home"
+              options={[
+                { val: "ranch", label: "Ranch / single-story" },
+                { val: "twostory", label: "Two-story" },
+                { val: "split", label: "Split-level" },
+                { val: "any", label: "No preference" },
+              ]}
+              value={d.homeLayout}
+              onSelect={(v) => set("homeLayout", v)}
+            />
+          )}
           <Pills
             label="Outdoor space"
             options={[
@@ -974,7 +988,7 @@ function ScreenSwitch({
             onSelect={(v) => set("parking", v)}
           />
         </div>
-        <Cta onClick={next} disabled={!d.outdoorSpace || !d.parking}>
+        <Cta onClick={next} disabled={!d.outdoorSpace || !d.parking || (showLayout && !d.homeLayout)}>
           Continue
         </Cta>
       </Question>
