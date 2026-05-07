@@ -1940,6 +1940,11 @@ function ZipScreen({
               marginBottom: 18,
             }}
           />
+          {d.zipData && (
+            <div style={{ fontSize: 14, color: C.inkSoft, marginBottom: 18, fontStyle: "italic" }}>
+              {d.zipData.city}
+            </div>
+          )}
         </>
       )}
 
