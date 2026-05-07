@@ -1027,6 +1027,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          paddingBottom: 14,
+          borderBottom: `1px solid ${C.rule}`,
           marginBottom: 80,
         }}
       >
