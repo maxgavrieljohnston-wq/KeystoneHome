@@ -772,6 +772,39 @@ function ScreenSwitch({
       </Question>
     );
 
+  if (screen === "downGoal")
+    return (
+      <Question
+        kicker="Down payment goal"
+        title="How much do you want to put down?"
+        sub="The median first-time buyer puts down just 9% — you don't need 20% to buy. Pick a target and we'll size the plan around it."
+      >
+        <Choices
+          options={DOWN_BUCKETS.map((b) => ({
+            val: String(b.pct),
+            label: `${b.label} · ${b.tag}`,
+            desc: b.desc,
+          }))}
+          value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
+          onSelect={(v) => set("downGoalPct", parseFloat(v as string))}
+        />
+        <p
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.1em",
+            color: C.inkFaint,
+            margin: "20px 0 0",
+          }}
+        >
+          — National Association of Realtors, 2024
+        </p>
+        <Cta onClick={next} disabled={d.downGoalPct === null}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
   if (screen === "homeFeatures") {
     const Stepper = ({
       label,
