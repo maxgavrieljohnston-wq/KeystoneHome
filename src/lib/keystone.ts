@@ -246,9 +246,9 @@ export const INTROS = {
   },
   introRisk: {
     chapter: "Chapter IV",
-    kicker: "Last, your style",
-    title: "How you feel about risk decides how your savings grow.",
-    body: "Four short questions. We'll match you to a Conservative, Balanced, or Growth strategy.",
+    kicker: "Compounding — the eighth wonder of the world",
+    title: "Time to put your money to work.",
+    body: "Answer the next four questions and we'll match you with a strategy to grow your down payment faster.",
   },
   introPartnerSummary: {
     chapter: "Interlude",
