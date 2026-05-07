@@ -797,29 +797,6 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "downAmount") {
-    const homePrice = d.zipData?.avg ?? 400000;
-    const suggested = Math.round(((d.downGoalPct ?? 9) / 100) * homePrice);
-    const current = d.downAmount ?? suggested;
-    return (
-      <Question
-        kicker="Down payment goal"
-        title="What dollar amount are you aiming for?"
-        sub={`Based on a ${d.downGoalPct ?? 9}% target on a ${fmt(homePrice)} home, we suggest ${fmt(suggested)}. Adjust to your goal.`}
-      >
-        <Slider
-          value={current}
-          min={0}
-          max={Math.max(200000, suggested * 3)}
-          step={1000}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("downAmount", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-  }
-
   if (screen === "homeFeatures") {
     const Stepper = ({
       label,
