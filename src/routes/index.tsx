@@ -794,6 +794,26 @@ function ScreenSwitch({
         ? Math.min(d.credit ?? 700, d.partnerCredit)
         : d.credit ?? 700;
     const mRate = rateFromCredit(qCredit);
+
+    const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
+    const maxMonthly = takeHomeMonthly * 0.28;
+    const saved = d.saved ?? 0;
+    // Industry standard: largest down % the user can plausibly afford —
+    // down payment within current savings AND mortgage within 28% of take-home.
+    const sortedDesc = [...DOWN_BUCKETS].sort((a, b) => b.pct - a.pct);
+    const recommendedPct =
+      sortedDesc.find((b) => {
+        const down = targetPrice * (b.pct / 100);
+        const monthly = calcMortgage(targetPrice, b.pct, mRate);
+        return down <= saved && monthly <= maxMonthly;
+      })?.pct ??
+      sortedDesc.find((b) => calcMortgage(targetPrice, b.pct, mRate) <= maxMonthly)?.pct ??
+      DOWN_BUCKETS[0].pct;
+
+    const recBucket = DOWN_BUCKETS.find((b) => b.pct === recommendedPct)!;
+    const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, mRate));
+    const recDown = Math.round(targetPrice * (recommendedPct / 100));
+
     return (
       <Question
         kicker="Down payment goal"
@@ -806,12 +826,28 @@ function ScreenSwitch({
             return {
               val: String(b.pct),
               label: `${b.label} down · ${b.tag}`,
+              tag: b.pct === recommendedPct ? "Industry Standard" : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
           })}
           value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
           onSelect={(v) => set("downGoalPct", parseFloat(v as string))}
         />
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontStyle: "italic",
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: C.inkSoft,
+            marginTop: 20,
+            marginBottom: 8,
+          }}
+        >
+          Based on your current financial situation, the industry standard would
+          be {recBucket.label} ({fmt(recDown)}) — a {fmt(recMonthly)}/mo mortgage
+          sits within a comfortable share of your take-home pay.
+        </div>
         <p
           style={{
             fontFamily: "'JetBrains Mono', monospace",
