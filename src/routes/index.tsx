@@ -730,6 +730,18 @@ function ScreenSwitch({
     const effectiveDownPct = Math.max(candidate, adj.minDown);
     const target = Math.round((avgPrice * effectiveDownPct) / 100);
     const yearOptions = [1, 3, 5, 7, 10];
+    // Recommendation: 15–20% of take-home pay (approx take-home = gross * 0.78).
+    // Pick the fastest timeline whose required monthly save fits within ~20% of take-home.
+    const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
+    const maxAffordable = takeHomeMonthly * 0.2;
+    const monthlyByYear: Record<number, number> = {};
+    yearOptions.forEach((y) => {
+      monthlyByYear[y] = calcRequiredMonthly(d.saved, target, y * 12, 0);
+    });
+    const recommendedYear =
+      takeHomeMonthly > 0
+        ? yearOptions.find((y) => monthlyByYear[y] <= maxAffordable) ?? 10
+        : null;
     return (
       <Question
         kicker="When"
@@ -737,14 +749,12 @@ function ScreenSwitch({
         sub={`Here's what you'd need to set aside each month to hit ${effectiveDownPct}% down — just by saving. Next, we'll show you how investing can get you there faster.`}
       >
         <Choices
-          options={yearOptions.map((y) => {
-            const monthly = calcRequiredMonthly(d.saved, target, y * 12, 0);
-            return {
-              val: String(y),
-              label: `${y} ${y === 1 ? "year" : "years"}`,
-              desc: `${fmt(monthly)}/mo`,
-            };
-          })}
+          options={yearOptions.map((y) => ({
+            val: String(y),
+            label: `${y} ${y === 1 ? "year" : "years"}`,
+            desc: `${fmt(monthlyByYear[y])}/mo`,
+            tag: y === recommendedYear ? "Recommended" : undefined,
+          }))}
           value={String(d.timelineYears)}
           onSelect={(v) => {
             const y = parseInt(v as string, 10);
