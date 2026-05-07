@@ -733,24 +733,23 @@ function ScreenSwitch({
     const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
     const monthlyExpenses = (d.expenses ?? 0) + (d.debt ?? 0);
     const headroom = Math.max(0, takeHomeMonthly - monthlyExpenses);
-    // Max percent of take-home that won't exceed headroom (after expenses + debt).
-    const maxPct = takeHomeMonthly > 0
-      ? Math.max(1, Math.floor((headroom / takeHomeMonthly) * 100))
-      : 1;
+    // Cap at 50% of take-home OR available headroom, whichever is lower. $100 increments.
+    const halfTakeHome = takeHomeMonthly * 0.5;
+    const rawMax = Math.min(halfTakeHome, headroom);
+    const maxSave = Math.max(100, Math.floor(rawMax / 100) * 100);
 
     const remaining = Math.max(0, target - d.saved);
-    const currentPct = d.timelineBucket?.startsWith("p")
-      ? Math.min(maxPct, Math.max(1, parseInt(d.timelineBucket.slice(1), 10) || 10))
-      : Math.min(maxPct, 10);
-    const monthlySave = Math.round((takeHomeMonthly * currentPct) / 100);
+    const stored = d.timelineBucket?.startsWith("$")
+      ? parseInt(d.timelineBucket.slice(1), 10) || 100
+      : 100;
+    const monthlySave = Math.min(maxSave, Math.max(100, stored));
     const yearsToBuy = monthlySave > 0 ? remaining / monthlySave / 12 : 0;
     const yearsLabel = yearsToBuy >= 1
       ? `${yearsToBuy.toFixed(1)} ${yearsToBuy.toFixed(1) === "1.0" ? "year" : "years"}`
       : `${Math.max(1, Math.round(yearsToBuy * 12))} months`;
 
-    // Initialize on first render of this screen.
     if (!d.timelineBucket) {
-      set("timelineBucket", `p${currentPct}`);
+      set("timelineBucket", `$${monthlySave}`);
       set("timelineYears", Math.max(1, Math.round(yearsToBuy)));
     }
 
@@ -758,19 +757,18 @@ function ScreenSwitch({
       <Question
         kicker="Timeline"
         title="How long would it take using only a savings account?"
-        sub={`Choose the share of your monthly take-home pay you'd comfortably set aside toward ${effectiveDownPct}% down (${fmt(target)}). We'll show how long it would take.`}
+        sub="Choose the monthly amount you feel comfortable setting aside toward your down payment. We'll show you how long it would take. But don't worry — we can get you there faster."
       >
         <Slider
-          value={currentPct}
-          min={1}
-          max={maxPct}
-          step={1}
-          format={(v) => `${v}%`}
-          unit={`of take-home · ${fmt(monthlySave)}/mo`}
+          value={monthlySave}
+          min={100}
+          max={maxSave}
+          step={100}
+          format={(v) => fmt(v)}
+          unit={`per month toward ${fmt(target)}`}
           onChange={(v) => {
-            const mo = Math.round((takeHomeMonthly * v) / 100);
-            const yrs = mo > 0 ? Math.max(1, Math.round(remaining / mo / 12)) : 99;
-            set("timelineBucket", `p${v}`);
+            const yrs = v > 0 ? Math.max(1, Math.round(remaining / v / 12)) : 99;
+            set("timelineBucket", `$${v}`);
             set("timelineYears", yrs);
           }}
         />
@@ -792,7 +790,7 @@ function ScreenSwitch({
               marginBottom: 8,
             }}
           >
-            At {currentPct}% / mo, you'd buy in
+            At {fmt(monthlySave)} / mo, you'd buy in
           </div>
           <div
             style={{
@@ -805,19 +803,6 @@ function ScreenSwitch({
           >
             {yearsLabel}
           </div>
-        </div>
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontStyle: "italic",
-            fontSize: 14,
-            lineHeight: 1.5,
-            color: C.inkSoft,
-            marginBottom: 24,
-          }}
-        >
-          That's the timeline using only a standard savings account. Don't worry — we'll get
-          you there faster.
         </div>
         <Cta onClick={next} disabled={!d.timelineBucket}>
           Continue
