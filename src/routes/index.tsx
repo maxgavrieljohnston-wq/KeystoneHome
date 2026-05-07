@@ -2721,3 +2721,127 @@ function ReadyRow({
     </div>
   );
 }
+
+// ── BirthdayScreen ───────────────────────────────────────────────────────────
+function BirthdayScreen({
+  d,
+  set,
+  onNext,
+  which,
+}: {
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  onNext: () => void;
+  which: "user" | "partner";
+}) {
+  const ageKey = which === "user" ? "age" : "partnerAge";
+  const currentAge = which === "user" ? d.age : d.partnerAge;
+  const today = new Date();
+  const defaultYear = today.getFullYear() - (currentAge || 32);
+  const [month, setMonth] = useState<string>("1");
+  const [day, setDay] = useState<string>("1");
+  const [year, setYear] = useState<string>(String(defaultYear));
+
+  const computedAge = useMemo(() => {
+    const m = parseInt(month, 10);
+    const dd = parseInt(day, 10);
+    const y = parseInt(year, 10);
+    if (!m || !dd || !y || y < 1900 || y > today.getFullYear()) return null;
+    const dob = new Date(y, m - 1, dd);
+    if (isNaN(dob.getTime())) return null;
+    let a = today.getFullYear() - y;
+    const mDiff = today.getMonth() - (m - 1);
+    if (mDiff < 0 || (mDiff === 0 && today.getDate() < dd)) a -= 1;
+    return a;
+  }, [month, day, year, today]);
+
+  const valid = computedAge !== null && computedAge >= 18 && computedAge <= 100;
+
+  const handleNext = () => {
+    if (!valid || computedAge === null) return;
+    set(ageKey, computedAge);
+    onNext();
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: "transparent",
+    border: `1.5px solid ${C.ink}`,
+    borderRadius: 0,
+    padding: "14px 12px",
+    fontSize: 16,
+    color: C.ink,
+    width: "100%",
+    textAlign: "center",
+    fontFamily: "'JetBrains Mono', monospace",
+    outline: "none",
+  };
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 9,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: C.inkMute,
+    marginBottom: 6,
+    display: "block",
+  };
+
+  return (
+    <Question
+      kicker={which === "user" ? "About you" : "Partner"}
+      title={which === "user" ? "When were you born?" : "When was your partner born?"}
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.4fr", gap: 12, marginBottom: 16 }}>
+        <div>
+          <label style={labelStyle}>Month</label>
+          <input
+            style={inputStyle}
+            inputMode="numeric"
+            placeholder="MM"
+            value={month}
+            onChange={(e) => setMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Day</label>
+          <input
+            style={inputStyle}
+            inputMode="numeric"
+            placeholder="DD"
+            value={day}
+            onChange={(e) => setDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Year</label>
+          <input
+            style={inputStyle}
+            inputMode="numeric"
+            placeholder="YYYY"
+            value={year}
+            onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+          />
+        </div>
+      </div>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: valid ? C.inkMute : C.ember,
+          marginBottom: 24,
+          minHeight: 16,
+        }}
+      >
+        {computedAge !== null
+          ? valid
+            ? `${computedAge} years old`
+            : "Must be 18 or older"
+          : " "}
+      </div>
+      <Cta onClick={handleNext} disabled={!valid}>
+        Continue
+      </Cta>
+    </Question>
+  );
+}
