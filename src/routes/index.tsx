@@ -79,7 +79,7 @@ const FLOW = [
   "homeStyle",
   "homeFeatures",
   "timeline",
-  "factDown",
+  "downGoal",
   "introRisk",
   "risk0",
   "risk1",
@@ -95,7 +95,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
-  "zip", "homeStyle", "homeFeatures", "timeline",
+  "zip", "homeStyle", "homeFeatures", "timeline", "downGoal",
   "risk0", "risk1", "risk2", "risk3",
 ];
 
@@ -124,6 +124,7 @@ type Data = {
   parking: string | null;
   timelineYears: number;
   timelineBucket: string | null;
+  downGoalPct: number | null;
   riskAnswers: Record<number, number>;
 };
 
@@ -152,6 +153,7 @@ const INITIAL: Data = {
   parking: null,
   timelineYears: 3,
   timelineBucket: null,
+  downGoalPct: null,
   riskAnswers: {},
 };
 
