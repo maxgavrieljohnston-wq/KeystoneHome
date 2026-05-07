@@ -762,6 +762,22 @@ function ScreenSwitch({
             set("timelineBucket", `${y}y`);
           }}
         />
+        {recommendedYear && (
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontStyle: "italic",
+              fontSize: 14,
+              lineHeight: 1.5,
+              color: C.inkSoft,
+              marginBottom: 24,
+            }}
+          >
+            We recommend {recommendedYear} {recommendedYear === 1 ? "year" : "years"} because saving{" "}
+            {fmt(monthlyByYear[recommendedYear])}/mo keeps you within a comfortable share of your
+            take-home pay — fast enough to stay on track, easy enough to stick with.
+          </div>
+        )}
         <Cta onClick={next} disabled={!d.timelineBucket}>
           Continue
         </Cta>
