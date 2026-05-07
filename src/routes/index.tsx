@@ -1096,7 +1096,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
       >
         <span>~ 2 minutes</span>
         <span>No account required</span>
-        <span>Free</span>
       </div>
     </div>
   );
