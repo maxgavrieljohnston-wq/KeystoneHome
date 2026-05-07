@@ -1045,9 +1045,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        An investment account
-        <br />
-        with an <em style={{ fontStyle: "italic", fontWeight: 600 }}>address</em>.
+        An investment account for your{" "}
+        <em style={{ fontStyle: "italic", fontWeight: 600 }}>future home</em>.
       </h1>
 
       <p
@@ -1060,13 +1059,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
           maxWidth: 460,
         }}
       >
-        We simplify homeownership by automating your savings and optimizing your
-        portfolio specifically for a down payment. It's more than just an
-        investment account; it's the path to your future address.
+        Automatically invest toward your down payment with a plan built to get
+        you there faster.
       </p>
 
       <Cta onClick={onStart} large>
-        Begin the plan
+        Build My Plan →
       </Cta>
 
       <div
@@ -1083,8 +1081,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.inkFaint,
         }}
       >
-        <span>~ 5 minutes</span>
-        <span>No account</span>
+        <span>~ 2 minutes</span>
+        <span>No account required</span>
         <span>Free</span>
       </div>
     </div>
