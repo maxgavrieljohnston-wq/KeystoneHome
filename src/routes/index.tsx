@@ -947,12 +947,10 @@ function ScreenSwitch({
       values: Record<string, "nice" | "must">;
       onChange: (next: Record<string, "nice" | "must">) => void;
     }) => {
-      const cycle = (v: string) => {
-        const cur = values[v];
+       const cycle = (v: string) => {
         const next = { ...values };
-        if (!cur) next[v] = "nice";
-        else if (cur === "nice") next[v] = "must";
-        else delete next[v];
+        if (next[v]) delete next[v];
+        else next[v] = "nice";
         onChange(next);
       };
       return (
@@ -1048,7 +1046,7 @@ function ScreenSwitch({
       <Question
         kicker="Features"
         title="Picture the place."
-        sub="Tap once for nice-to-have, twice to mark a must. We'll use this to shape your search and your savings plan."
+        sub="Choose the bedrooms, baths, style, and features you'd like."
       >
         <div
           style={{
@@ -1138,7 +1136,7 @@ function ScreenSwitch({
 
           <SectionHeader
             title="Lifestyle"
-            hint="What would make it feel like home? Tap once for would-be-nice, twice for must-have."
+            hint="What would make it feel like home?"
           />
           <PriorityList
             items={lifestyleItems}
