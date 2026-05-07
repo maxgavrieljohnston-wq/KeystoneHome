@@ -80,7 +80,6 @@ const FLOW = [
   "homeFeatures",
   "timeline",
   "downGoal",
-  "downAmount",
   "introRisk",
   "risk0",
   "risk1",
@@ -96,7 +95,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
-  "zip", "homeStyle", "homeFeatures", "timeline", "downGoal", "downAmount",
+  "zip", "homeStyle", "homeFeatures", "timeline", "downGoal",
   "risk0", "risk1", "risk2", "risk3",
 ];
 
@@ -126,7 +125,6 @@ type Data = {
   timelineYears: number;
   timelineBucket: string | null;
   downGoalPct: number | null;
-  downAmount: number | null;
   riskAnswers: Record<number, number>;
 };
 
@@ -156,7 +154,6 @@ const INITIAL: Data = {
   timelineYears: 3,
   timelineBucket: null,
   downGoalPct: null,
-  downAmount: null,
   riskAnswers: {},
 };
 
@@ -796,29 +793,6 @@ function ScreenSwitch({
         </Cta>
       </Question>
     );
-
-  if (screen === "downAmount") {
-    const homePrice = d.zipData?.avg ?? 400000;
-    const suggested = Math.round(((d.downGoalPct ?? 9) / 100) * homePrice);
-    const current = d.downAmount ?? suggested;
-    return (
-      <Question
-        kicker="Down payment goal"
-        title="What dollar amount are you aiming for?"
-        sub={`Based on a ${d.downGoalPct ?? 9}% target on a ${fmt(homePrice)} home, we suggest ${fmt(suggested)}. Adjust to your goal.`}
-      >
-        <Slider
-          value={current}
-          min={0}
-          max={Math.max(200000, suggested * 3)}
-          step={1000}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("downAmount", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-  }
 
   if (screen === "homeFeatures") {
     const Stepper = ({
