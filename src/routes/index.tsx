@@ -773,9 +773,9 @@ function ScreenSwitch({
               marginBottom: 24,
             }}
           >
-            We recommend {recommendedYear} {recommendedYear === 1 ? "year" : "years"} because saving{" "}
-            {fmt(monthlyByYear[recommendedYear])}/mo keeps you within a comfortable share of your
-            take-home pay — fast enough to stay on track, easy enough to stick with.
+            Based on your current financial situation, the industry standard would be{" "}
+            {recommendedYear} {recommendedYear === 1 ? "year" : "years"} — saving{" "}
+            {fmt(monthlyByYear[recommendedYear])}/mo is a comfortable share of your take-home pay.
           </div>
         )}
         <Cta onClick={next} disabled={!d.timelineBucket}>
