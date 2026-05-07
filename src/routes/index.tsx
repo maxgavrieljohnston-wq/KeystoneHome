@@ -1059,8 +1059,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        An investment account for your{" "}
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>future home</em>.
+        An investment account for your future home.
       </h1>
 
       <p
