@@ -892,10 +892,15 @@ function ScreenSwitch({
         <Choices
           options={visibleOpts.map((b) => {
             const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
+            const isRec = b.pct === recommendedPct;
+            const recLabel =
+              dtiRequiredPct !== null && recommendedPct > 20
+                ? "★ Required"
+                : "★ Recommended";
             return {
               val: String(b.pct),
               label: `${b.label} · ${b.tag}`,
-              tag: b.pct === recommendedPct ? "★ Recommended" : undefined,
+              tag: isRec ? recLabel : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
           })}
