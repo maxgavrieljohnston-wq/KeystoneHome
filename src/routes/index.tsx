@@ -1945,9 +1945,6 @@ function ZipScreen({
         </>
       )}
 
-      {d.zipData !== null && (
-        <ZipCallout city={d.zipData!.city} avg={d.zipData!.avg} />
-      )}
 
       <Cta onClick={next} disabled={d.zip.length !== 5}>
         Continue
