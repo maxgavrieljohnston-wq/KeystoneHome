@@ -126,6 +126,8 @@ type Data = {
   outdoorSpace: string | null;
   parking: string | null;
   homeLayout: string | null;
+  lifestyle: Record<string, "nice" | "must">;
+  neighborhood: Record<string, "nice" | "must">;
   timelineYears: number;
   timelineBucket: string | null;
   downGoalPct: number | null;
@@ -156,6 +158,8 @@ const INITIAL: Data = {
   outdoorSpace: null,
   parking: null,
   homeLayout: null,
+  lifestyle: {},
+  neighborhood: {},
   timelineYears: 3,
   timelineBucket: null,
   downGoalPct: null,
