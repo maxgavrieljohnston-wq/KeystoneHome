@@ -312,10 +312,12 @@ function TopBar({
       {progress !== null && (
         <div
           style={{
-            height: 1,
-            background: "rgba(26,26,26,0.12)",
+            height: 8,
+            background: "rgba(26,26,26,0.10)",
             position: "relative",
             overflow: "hidden",
+            borderRadius: 999,
+            margin: "8px 16px 4px",
           }}
         >
           <div
@@ -323,9 +325,10 @@ function TopBar({
               position: "absolute",
               inset: 0,
               background: C.ink,
+              borderRadius: 999,
               transformOrigin: "left",
               transform: `scaleX(${progress})`,
-              transition: "transform 0.45s cubic-bezier(.5,0,.2,1)",
+              transition: "transform 0.5s cubic-bezier(.5,0,.2,1)",
             }}
           />
         </div>
