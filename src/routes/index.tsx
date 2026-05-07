@@ -809,10 +809,21 @@ function ScreenSwitch({
 
     // Find smallest down % that brings mortgage payment under the DTI cap.
     const sortedAsc = [...DOWN_BUCKETS].sort((a, b) => a.pct - b.pct);
-    let recommendedPct: number | null =
+    const smallestQualifyingPct: number | null =
       sortedAsc.find(
         (b) => calcMortgage(targetPrice, b.pct, mRate) <= maxHousing,
       )?.pct ?? null;
+
+    // Prefer 20% (no PMI, best rates) whenever it qualifies.
+    let recommendedPct: number | null = null;
+    if (
+      smallestQualifyingPct !== null &&
+      calcMortgage(targetPrice, 20, mRate) <= maxHousing
+    ) {
+      recommendedPct = 20;
+    } else {
+      recommendedPct = smallestQualifyingPct;
+    }
 
     // If even 20% down isn't enough, solve for the down % that exactly hits the cap.
     let dtiRequiredPct: number | null = null;
