@@ -828,6 +828,7 @@ function ScreenSwitch({
         </Cta>
       </Question>
     );
+  }
 
   if (screen === "homeFeatures") {
     const Stepper = ({
