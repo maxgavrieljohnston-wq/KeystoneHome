@@ -1669,8 +1669,8 @@ function Choices({
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  fontWeight: /recommended/i.test(o.tag) ? 800 : 400,
-                  color: /recommended/i.test(o.tag)
+                  fontWeight: /recommended|required/i.test(o.tag) ? 800 : 400,
+                  color: /recommended|required/i.test(o.tag)
                     ? (active ? "#FBF7F0" : C.ink)
                     : (active ? "rgba(251,247,240,0.6)" : C.inkFaint),
                   whiteSpace: "nowrap",
