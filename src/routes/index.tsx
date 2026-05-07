@@ -921,17 +921,6 @@ function ScreenSwitch({
           {explanation}
         </div>
 
-        <p
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.1em",
-            color: C.inkFaint,
-            margin: "20px 0 0",
-          }}
-        >
-          — National Association of Realtors, 2024
-        </p>
         <Cta onClick={next} disabled={d.downGoalPct === null}>
           Continue
         </Cta>
