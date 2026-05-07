@@ -139,41 +139,39 @@ export const CREDIT_BUCKETS = [
 // ── Risk quiz ──────────────────────────────────────────────────────────────
 export const RISK_QS = [
   {
-    q: "When you look at your savings, what feels better?",
-    sub: "A steady number that never goes down but grows slowly — or a balance that bounces around if it gets you the keys sooner?",
+    q: "You check your account and see it dropped a bit this month. Nothing drastic — just a temporary dip.",
+    sub: "What feels closest to your reaction?",
     opts: [
-      { label: "Steady, never going down", val: 0 },
-      { label: "Mostly steady, small swings OK", val: 1 },
-      { label: "Some bouncing for a better return", val: 2 },
-      { label: "I don't mind the swings if I get there sooner", val: 3 },
+      { label: "That makes me uneasy — I'd want things to be more stable", val: 0 },
+      { label: "I'd probably leave it alone and check back later", val: 2 },
+      { label: "I'd see it as normal and stay focused on the long-term", val: 3 },
     ],
   },
   {
-    q: "If the perfect house showed up tomorrow and you were a few thousand short…",
-    sub: "Could you wait another six months to save up — or does that thought drive you crazy?",
+    q: "You hear that your plan could grow faster over time, but it might come with some ups and downs along the way.",
+    sub: "What feels right to you?",
     opts: [
-      { label: "Drives me crazy — I'd want it now", val: 0 },
-      { label: "I'd be frustrated but I could wait", val: 1 },
-      { label: "Six more months is fine", val: 2 },
-      { label: "Happy to wait — patience pays", val: 3 },
+      { label: "I'd rather keep things predictable", val: 0 },
+      { label: "I'd be open to some growth with a balance", val: 2 },
+      { label: "I'm okay with ups and downs if it helps me get there faster", val: 3 },
     ],
   },
   {
-    q: "Think back to your last big purchase (car, vacation). How did the money leaving feel?",
+    q: "You're tracking your savings month-to-month.",
+    sub: "Which would feel better?",
     opts: [
-      { label: "Stressful — I watched the balance drop", val: 0 },
-      { label: "A little stressful, but I got over it", val: 1 },
-      { label: "Mixed — some stress, some excitement", val: 2 },
-      { label: "Just excited about the thing I was getting", val: 3 },
+      { label: "Slow, steady progress you can count on", val: 0 },
+      { label: "Steady progress with some stronger months", val: 2 },
+      { label: "Bigger jumps — even if some months are slower", val: 3 },
     ],
   },
   {
-    q: "How do you handle your bank balance day-to-day?",
+    q: "At night, thinking about your savings…",
+    sub: "Which would help you sleep better?",
     opts: [
-      { label: "I check it every single day", val: 0 },
-      { label: "A few times a week", val: 1 },
-      { label: "Once a month or so", val: 2 },
-      { label: "Auto-transfer it and forget about it", val: 3 },
+      { label: "Knowing your money is stable and protected", val: 0 },
+      { label: "Knowing it's growing at a balanced pace", val: 2 },
+      { label: "Knowing it's working hard to grow as much as possible", val: 3 },
     ],
   },
 ];
@@ -248,7 +246,7 @@ export const INTROS = {
     chapter: "Chapter IV",
     kicker: "Compounding — the eighth wonder of the world",
     title: "Time to put your money to work.",
-    body: "Answer the next four questions and we'll match you with a strategy to grow your down payment faster.",
+    body: "Answer the next four questions and we'll match you with a strategy to grow your down payment faster. There are no right answers — just what feels right to you.",
   },
   introPartnerSummary: {
     chapter: "Interlude",
