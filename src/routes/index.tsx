@@ -847,7 +847,12 @@ function ScreenSwitch({
         desc: "Needed to qualify given current debts and income",
       });
     }
-    baseOpts.sort((a, b) => a.pct - b.pct);
+    // Only show options the user would actually qualify for given DTI cap.
+    const qualifyingOpts = baseOpts.filter(
+      (o) => calcMortgage(targetPrice, o.pct, mRate) <= maxHousing,
+    );
+    const visibleOpts = qualifyingOpts.length > 0 ? qualifyingOpts : baseOpts;
+    visibleOpts.sort((a, b) => a.pct - b.pct);
 
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
     const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, mRate));
@@ -872,12 +877,12 @@ function ScreenSwitch({
         sub="Lenders qualify you on debt-to-income, not just savings. We'll factor in your income, your debts, and the home price to flag what actually works."
       >
         <Choices
-          options={baseOpts.map((b) => {
+          options={visibleOpts.map((b) => {
             const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
             return {
               val: String(b.pct),
               label: `${b.label} · ${b.tag}`,
-              tag: b.pct === recommendedPct ? "Recommended" : undefined,
+              tag: b.pct === recommendedPct ? "★ Recommended" : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
           })}
@@ -1646,7 +1651,10 @@ function Choices({
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  color: active ? "rgba(251,247,240,0.6)" : C.inkFaint,
+                  fontWeight: /recommended/i.test(o.tag) ? 800 : 400,
+                  color: /recommended/i.test(o.tag)
+                    ? (active ? "#FBF7F0" : C.ink)
+                    : (active ? "rgba(251,247,240,0.6)" : C.inkFaint),
                   whiteSpace: "nowrap",
                 }}
               >
