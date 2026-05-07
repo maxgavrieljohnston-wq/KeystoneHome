@@ -748,6 +748,9 @@ function ScreenSwitch({
         title="When do you want to buy?"
         sub="We'll tailor the plan to fit your window."
       >
+        <p className="mb-6 text-sm text-muted-foreground italic text-center">
+          The average person saves for 7 years to buy their first home. Don't worry — we can get you there faster.
+        </p>
         <Choices
           options={TIMELINE_BUCKETS.map((b) => ({
             val: b.id,
@@ -761,9 +764,6 @@ function ScreenSwitch({
             if (b) set("timelineYears", b.years);
           }}
         />
-         <p className="mt-6 text-sm text-muted-foreground italic text-center">
-          The average person saves for 7 years to buy their first home. Don't worry — we can get you there faster.
-        </p>
         <Cta onClick={next} disabled={!d.timelineBucket}>
           Continue
         </Cta>
