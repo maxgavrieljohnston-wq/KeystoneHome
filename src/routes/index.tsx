@@ -2251,7 +2251,7 @@ function Report({ d }: { d: Data }) {
                         fontWeight: isMatch ? 600 : 400,
                       }}
                     >
-                      {fmt(m)}/mo
+                      {fmtDuration(n)}
                     </td>
                   </tr>
                 );
@@ -2260,6 +2260,8 @@ function Report({ d }: { d: Data }) {
           </table>
         </div>
       </Section>
+        );
+      })()}
 
       {/* Down payment buckets */}
       <Section number="02" title="Your down payment options.">
