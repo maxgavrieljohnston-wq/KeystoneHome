@@ -432,7 +432,7 @@ function ScreenSwitch({
       <Question
         kicker="Work"
         title="How do you earn your income?"
-        sub="Lenders typically want 2 years in the same line of work. Self-employed buyers usually need 2 years of tax returns."
+        sub="Lenders generally want to see 2 years of consistent income — whether that's from a job or tax returns."
       >
         <Choices
           options={EMPLOYMENT_TYPES.map((e) => ({
