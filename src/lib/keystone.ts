@@ -193,11 +193,10 @@ export const DOWN_BUCKETS = [
 
 // ── Employment ─────────────────────────────────────────────────────────────
 export const EMPLOYMENT_TYPES = [
-  { id: "w2",       label: "W-2 employee",   desc: "Salaried or hourly. Lenders love 2+ years steady." },
-  { id: "self",     label: "Self-employed",  desc: "1099 / freelance. Plan for 2 years of tax returns." },
-  { id: "owner",    label: "Business owner", desc: "K-1 / S-corp income. Underwriting is stricter." },
-  { id: "contract", label: "Contractor",     desc: "Project-based. Document the income trail." },
-  { id: "other",    label: "Other",          desc: "Retired, student, between roles." },
+  { id: "w2",       label: "W-2 employee",   desc: "Salaried or hourly." },
+  { id: "self",     label: "Self-employed",  desc: "1099 or freelance income." },
+  { id: "owner",    label: "Business owner", desc: "K-1 or S-corp income." },
+  { id: "contract", label: "Contractor",     desc: "Project-based work." },
 ];
 
 // ── Editorial fact cards ───────────────────────────────────────────────────
