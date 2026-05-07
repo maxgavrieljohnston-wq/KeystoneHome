@@ -874,9 +874,9 @@ function ScreenSwitch({
     if (dtiRequiredPct !== null) {
       explanation = `With ${fmt(monthlyDebts)}/mo in existing debt and ${fmt(Math.round(grossMonthly))}/mo in household income, lenders cap your total debt-to-income at 43%. To bring a mortgage on a ${fmt(targetPrice)} home inside that limit, you'd need to put down at least ${recommendedPct}% (${fmt(recDown)}) — a smaller down payment wouldn't qualify for this price.`;
     } else if (recommendedPct >= 20 && recDown <= saved) {
-      explanation = `Putting 20% down (${fmt(recDown)}) means you skip private mortgage insurance entirely — that's typically $100–$300/mo you'd otherwise pay every month until you build enough equity. You also start with real ownership in the home from day one, which protects you if prices dip, and lenders reserve their best interest rates for borrowers at this threshold. Over a 30-year loan, that lower rate alone can save tens of thousands.`;
+      explanation = `Putting 20% down means you skip private mortgage insurance entirely — that's typically $100–$300/mo. Lenders also reserve their best interest rates for borrowers at this threshold, which over 30 years can save tens of thousands.`;
     } else if (recommendedPct >= 20) {
-      explanation = `Putting 20% down (${fmt(recDown)}) means you skip private mortgage insurance entirely — that's typically $100–$300/mo you'd otherwise pay every month until you build enough equity. Lenders also reserve their best interest rates for borrowers at this threshold, which over 30 years can save tens of thousands. You're about ${fmt(shortfall)} short today — that's the gap your savings plan will close.`;
+      explanation = `Putting 20% down means you skip private mortgage insurance entirely — that's typically $100–$300/mo. Lenders also reserve their best interest rates for borrowers at this threshold, which over 30 years can save tens of thousands.`;
     } else if (recDown <= saved) {
       explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your debt-to-income inside the 43% lender cap (yours would be ${(recDTI * 100).toFixed(0)}%) — and it fits within your current savings of ${fmt(saved)}, leaving more cash on hand after closing.`;
     } else {
