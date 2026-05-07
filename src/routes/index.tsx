@@ -795,37 +795,88 @@ function ScreenSwitch({
         : d.credit ?? 700;
     const mRate = rateFromCredit(qCredit);
 
-    const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
-    const maxMonthly = takeHomeMonthly * 0.28;
+    // Combined household figures
+    const hasPartner = d.hasPartner;
+    const grossMonthly =
+      ((d.income ?? 0) + (hasPartner ? d.partnerIncome ?? 0 : 0)) / 12;
+    const monthlyDebts = (d.debt ?? 0) + (hasPartner ? d.partnerDebt ?? 0 : 0);
     const saved = d.saved ?? 0;
-    // Industry standard: largest down % the user can plausibly afford —
-    // down payment within current savings AND mortgage within 28% of take-home.
-    const sortedDesc = [...DOWN_BUCKETS].sort((a, b) => b.pct - a.pct);
-    const recommendedPct =
-      sortedDesc.find((b) => {
-        const down = targetPrice * (b.pct / 100);
-        const monthly = calcMortgage(targetPrice, b.pct, mRate);
-        return down <= saved && monthly <= maxMonthly;
-      })?.pct ??
-      sortedDesc.find((b) => calcMortgage(targetPrice, b.pct, mRate) <= maxMonthly)?.pct ??
-      DOWN_BUCKETS[0].pct;
 
-    const recBucket = DOWN_BUCKETS.find((b) => b.pct === recommendedPct)!;
-    const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, mRate));
+    // Lender DTI ceiling — Qualified Mortgage standard.
+    const DTI_CAP = 0.43;
+    // Max mortgage payment lender will allow given existing debts.
+    const maxHousing = Math.max(0, grossMonthly * DTI_CAP - monthlyDebts);
+
+    // Find smallest down % that brings mortgage payment under the DTI cap.
+    const sortedAsc = [...DOWN_BUCKETS].sort((a, b) => a.pct - b.pct);
+    let recommendedPct: number | null =
+      sortedAsc.find(
+        (b) => calcMortgage(targetPrice, b.pct, mRate) <= maxHousing,
+      )?.pct ?? null;
+
+    // If even 20% down isn't enough, solve for the down % that exactly hits the cap.
+    let dtiRequiredPct: number | null = null;
+    if (recommendedPct === null && maxHousing > 0) {
+      // Binary search between 20% and 95%.
+      let lo = 20,
+        hi = 95;
+      for (let i = 0; i < 40; i++) {
+        const mid = (lo + hi) / 2;
+        const m = calcMortgage(targetPrice, mid, mRate);
+        if (m > maxHousing) lo = mid;
+        else hi = mid;
+      }
+      dtiRequiredPct = Math.ceil(hi);
+      recommendedPct = dtiRequiredPct;
+    }
+    if (recommendedPct === null) recommendedPct = 20;
+
+    // Build the option list — standard buckets, plus a custom DTI-required bucket if needed.
+    type Opt = { pct: number; label: string; tag: string; desc: string };
+    const baseOpts: Opt[] = DOWN_BUCKETS.map((b) => ({
+      pct: b.pct,
+      label: `${b.label} down`,
+      tag: b.tag,
+      desc: b.desc,
+    }));
+    if (dtiRequiredPct !== null && !baseOpts.some((o) => o.pct === dtiRequiredPct)) {
+      baseOpts.push({
+        pct: dtiRequiredPct,
+        label: `${dtiRequiredPct}% down`,
+        tag: "DTI-required",
+        desc: "Needed to qualify given current debts and income",
+      });
+    }
+    baseOpts.sort((a, b) => a.pct - b.pct);
+
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
+    const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, mRate));
+    const recDTI = grossMonthly > 0 ? (monthlyDebts + recMonthly) / grossMonthly : 0;
+    const shortfall = Math.max(0, recDown - saved);
+
+    let explanation: string;
+    if (dtiRequiredPct !== null) {
+      explanation = `With ${fmt(monthlyDebts)}/mo in existing debt and ${fmt(Math.round(grossMonthly))}/mo in household income, lenders cap your total debt-to-income at 43%. To bring a mortgage on a ${fmt(targetPrice)} home inside that limit, you'd need to put down at least ${recommendedPct}% (${fmt(recDown)}) — a smaller down payment wouldn't qualify for this price.`;
+    } else if (recommendedPct >= 20 && recDown <= saved) {
+      explanation = `${recommendedPct}% (${fmt(recDown)}) keeps your debt-to-income at ${(recDTI * 100).toFixed(0)}% — well inside the 43% lender cap — and clears the 20% threshold, so no PMI and better mortgage rates. It also fits within your current savings of ${fmt(saved)}.`;
+    } else if (recDown <= saved) {
+      explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your debt-to-income inside the 43% lender cap (yours would be ${(recDTI * 100).toFixed(0)}%) — and it fits within your current savings of ${fmt(saved)}, leaving more cash on hand after closing.`;
+    } else {
+      explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your debt-to-income inside the 43% lender cap (yours would be ${(recDTI * 100).toFixed(0)}%). You're about ${fmt(shortfall)} short of that today — that's the gap your savings plan will close.`;
+    }
 
     return (
       <Question
         kicker="Down payment goal"
         title="How much do you want to put down?"
-        sub="The median first-time buyer puts down just 9% — you don't need 20% to buy. Pick a target and we'll size the plan around it."
+        sub="Lenders qualify you on debt-to-income, not just savings. We'll factor in your income, your debts, and the home price to flag what actually works."
       >
         <Choices
-          options={DOWN_BUCKETS.map((b) => {
+          options={baseOpts.map((b) => {
             const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
             return {
               val: String(b.pct),
-              label: `${b.label} down · ${b.tag}`,
+              label: `${b.label} · ${b.tag}`,
               tag: b.pct === recommendedPct ? "Recommended" : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
@@ -844,11 +895,7 @@ function ScreenSwitch({
             marginBottom: 8,
           }}
         >
-          {recDown <= saved && recommendedPct >= 20
-            ? `We recommend ${recBucket.label} down (${fmt(recDown)}) because it fits within your current savings of ${fmt(saved)} and clears the 20% threshold — no PMI, better mortgage rates, and a ${fmt(recMonthly)}/mo payment that stays within a comfortable share of your take-home pay.`
-            : recDown <= saved
-              ? `We recommend ${recBucket.label} down (${fmt(recDown)}) because it's the largest down payment your current savings of ${fmt(saved)} comfortably support, while keeping your ${fmt(recMonthly)}/mo mortgage within a comfortable share of your take-home pay.`
-              : `We recommend ${recBucket.label} down (${fmt(recDown)}) because it keeps your ${fmt(recMonthly)}/mo mortgage within a comfortable share of your take-home pay — going higher would stretch beyond your current savings of ${fmt(saved)}.`}
+          {explanation}
         </div>
 
         <p
