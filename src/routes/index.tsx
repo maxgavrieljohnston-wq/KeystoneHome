@@ -79,7 +79,7 @@ const FLOW = [
   "homeStyle",
   "homeFeatures",
   "timeline",
-  "factDown",
+  "downGoal",
   "introRisk",
   "risk0",
   "risk1",
@@ -95,7 +95,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
-  "zip", "homeStyle", "homeFeatures", "timeline",
+  "zip", "homeStyle", "homeFeatures", "timeline", "downGoal",
   "risk0", "risk1", "risk2", "risk3",
 ];
 
@@ -124,6 +124,7 @@ type Data = {
   parking: string | null;
   timelineYears: number;
   timelineBucket: string | null;
+  downGoalPct: number | null;
   riskAnswers: Record<number, number>;
 };
 
@@ -152,6 +153,7 @@ const INITIAL: Data = {
   parking: null,
   timelineYears: 3,
   timelineBucket: null,
+  downGoalPct: null,
   riskAnswers: {},
 };
 
@@ -765,6 +767,39 @@ function ScreenSwitch({
           }}
         />
         <Cta onClick={next} disabled={!d.timelineBucket}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "downGoal")
+    return (
+      <Question
+        kicker="Down payment goal"
+        title="How much do you want to put down?"
+        sub="The median first-time buyer puts down just 9% — you don't need 20% to buy. Pick a target and we'll size the plan around it."
+      >
+        <Choices
+          options={DOWN_BUCKETS.map((b) => ({
+            val: String(b.pct),
+            label: `${b.label} · ${b.tag}`,
+            desc: b.desc,
+          }))}
+          value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
+          onSelect={(v) => set("downGoalPct", parseFloat(v as string))}
+        />
+        <p
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.1em",
+            color: C.inkFaint,
+            margin: "20px 0 0",
+          }}
+        >
+          — National Association of Realtors, 2024
+        </p>
+        <Cta onClick={next} disabled={d.downGoalPct === null}>
           Continue
         </Cta>
       </Question>
@@ -1684,9 +1719,8 @@ function Report({ d }: { d: Data }) {
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
   const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
-  // Default down payment derived from savings as % of price; floored to min, capped at 20.
-  const savingsRatio = avgPrice > 0 ? (d.saved / avgPrice) * 100 : 0;
-  const candidate = savingsRatio >= 20 ? 20 : savingsRatio >= 10 ? 10 : savingsRatio >= 5 ? 5 : 3.5;
+  // User-selected down payment goal, floored to the style's min down.
+  const candidate = d.downGoalPct ?? 9;
   const effectiveDownPct = Math.max(candidate, styleAdj.minDown);
   const downPayment = Math.round((avgPrice * effectiveDownPct) / 100);
   const months = d.timelineYears * 12;
