@@ -1719,9 +1719,8 @@ function Report({ d }: { d: Data }) {
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
   const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
-  // Default down payment derived from savings as % of price; floored to min, capped at 20.
-  const savingsRatio = avgPrice > 0 ? (d.saved / avgPrice) * 100 : 0;
-  const candidate = savingsRatio >= 20 ? 20 : savingsRatio >= 10 ? 10 : savingsRatio >= 5 ? 5 : 3.5;
+  // User-selected down payment goal, floored to the style's min down.
+  const candidate = d.downGoalPct ?? 9;
   const effectiveDownPct = Math.max(candidate, styleAdj.minDown);
   const downPayment = Math.round((avgPrice * effectiveDownPct) / 100);
   const months = d.timelineYears * 12;
