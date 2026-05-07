@@ -97,7 +97,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
   "factDemo",
-  "zip", "homeStyle", "homeFeatures", "timeline", "downGoal",
+  "zip", "homeStyle", "homeFeatures", "downGoal", "timeline",
   "introRisk",
   "risk0", "risk1", "risk2", "risk3",
 ];
