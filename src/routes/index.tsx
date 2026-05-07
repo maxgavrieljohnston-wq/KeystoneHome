@@ -826,7 +826,7 @@ function ScreenSwitch({
             return {
               val: String(b.pct),
               label: `${b.label} down · ${b.tag}`,
-              tag: b.pct === recommendedPct ? "Industry Standard" : undefined,
+              tag: b.pct === recommendedPct ? "Recommended" : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
           })}
@@ -844,10 +844,13 @@ function ScreenSwitch({
             marginBottom: 8,
           }}
         >
-          Based on your current financial situation, the industry standard would
-          be {recBucket.label} ({fmt(recDown)}) — a {fmt(recMonthly)}/mo mortgage
-          sits within a comfortable share of your take-home pay.
+          {recDown <= saved && recommendedPct >= 20
+            ? `We recommend ${recBucket.label} down (${fmt(recDown)}) because it fits within your current savings of ${fmt(saved)} and clears the 20% threshold — no PMI, better mortgage rates, and a ${fmt(recMonthly)}/mo payment that stays within a comfortable share of your take-home pay.`
+            : recDown <= saved
+              ? `We recommend ${recBucket.label} down (${fmt(recDown)}) because it's the largest down payment your current savings of ${fmt(saved)} comfortably support, while keeping your ${fmt(recMonthly)}/mo mortgage within a comfortable share of your take-home pay.`
+              : `We recommend ${recBucket.label} down (${fmt(recDown)}) because it keeps your ${fmt(recMonthly)}/mo mortgage within a comfortable share of your take-home pay — going higher would stretch beyond your current savings of ${fmt(saved)}.`}
         </div>
+
         <p
           style={{
             fontFamily: "'JetBrains Mono', monospace",
