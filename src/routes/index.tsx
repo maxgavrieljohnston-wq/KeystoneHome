@@ -785,7 +785,15 @@ function ScreenSwitch({
     );
   }
 
-  if (screen === "downGoal")
+  if (screen === "downGoal") {
+    const zd = d.zipData ?? { city: "your area", avg: 400000 };
+    const adj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
+    const targetPrice = Math.round(zd.avg * adj.priceMult);
+    const qCredit =
+      d.hasPartner && d.partnerCredit
+        ? Math.min(d.credit ?? 700, d.partnerCredit)
+        : d.credit ?? 700;
+    const mRate = rateFromCredit(qCredit);
     return (
       <Question
         kicker="Down payment goal"
@@ -793,11 +801,14 @@ function ScreenSwitch({
         sub="The median first-time buyer puts down just 9% — you don't need 20% to buy. Pick a target and we'll size the plan around it."
       >
         <Choices
-          options={DOWN_BUCKETS.map((b) => ({
-            val: String(b.pct),
-            label: `${b.label} · ${b.tag}`,
-            desc: b.desc,
-          }))}
+          options={DOWN_BUCKETS.map((b) => {
+            const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
+            return {
+              val: String(b.pct),
+              label: `${b.label} · ${fmt(monthly)}/mo`,
+              desc: `${b.tag} · ${b.desc}`,
+            };
+          })}
           value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
           onSelect={(v) => set("downGoalPct", parseFloat(v as string))}
         />
@@ -817,6 +828,7 @@ function ScreenSwitch({
         </Cta>
       </Question>
     );
+  }
 
   if (screen === "homeFeatures") {
     const Stepper = ({
