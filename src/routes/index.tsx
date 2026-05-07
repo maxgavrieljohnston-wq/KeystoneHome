@@ -805,8 +805,8 @@ function ScreenSwitch({
             const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
             return {
               val: String(b.pct),
-              label: `${b.label} · ${fmt(monthly)}/mo`,
-              desc: `${b.tag} · ${b.desc}`,
+              label: `${b.label} down · ${b.tag}`,
+              desc: `Mortgage payment: ${fmt(monthly)}/mo · ${b.desc}`,
             };
           })}
           value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
