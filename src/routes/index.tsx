@@ -2120,11 +2120,41 @@ function Report({ d }: { d: Data }) {
       </div>
 
       {/* Section 1 — Save vs Invest */}
+      {(() => {
+        // User's chosen monthly contribution = the save-only figure shown on the timeline screen.
+        const chosenMonthly = savedOnlyMonthly;
+        const monthsToTarget = (rate: number): number => {
+          const T = downPayment;
+          const S = d.saved;
+          const P = chosenMonthly;
+          if (S >= T) return 0;
+          if (P <= 0) return Infinity;
+          if (rate === 0) return Math.ceil((T - S) / P);
+          const r = rate / 12;
+          const num = T + (P * 12) / rate;
+          const den = S + (P * 12) / rate;
+          if (num <= 0 || den <= 0) return Infinity;
+          return Math.ceil(Math.log(num / den) / Math.log(1 + r));
+        };
+        const fmtDuration = (n: number): string => {
+          if (!isFinite(n)) return "—";
+          if (n <= 0) return "Already there";
+          const y = Math.floor(n / 12);
+          const m = n % 12;
+          if (y === 0) return `${m} mo`;
+          if (m === 0) return `${y} ${y === 1 ? "yr" : "yrs"}`;
+          return `${y} ${y === 1 ? "yr" : "yrs"} ${m} mo`;
+        };
+        const baseMonths = d.timelineYears * 12;
+        const investedMonths = monthsToTarget(risk.rate);
+        const monthsSaved = Math.max(0, baseMonths - investedMonths);
+        return (
       <Section number="01" title="Save, or invest?">
         <p style={SubP}>
-          To put down{" "}
-          <em style={{ fontStyle: "italic" }}>{fmt(downPayment)}</em> in{" "}
-          {d.timelineYears} years, here's what each path costs you per month.
+          Keeping the same{" "}
+          <em style={{ fontStyle: "italic" }}>{fmt(chosenMonthly)}/mo</em> you
+          picked, here's how much sooner investing gets you to{" "}
+          {fmt(downPayment)}.
         </p>
 
         <div
@@ -2139,20 +2169,20 @@ function Report({ d }: { d: Data }) {
         >
           <PathCard
             kicker="Path A · Save"
-            value={fmt(savedOnlyMonthly)}
-            unit="/ month"
+            value={fmtDuration(baseMonths)}
+            unit={`at ${fmt(chosenMonthly)}/mo`}
             note="Cash in a regular account. No growth assumed."
           />
           <PathCard
             kicker={`Path B · ${risk.label}`}
-            value={fmt(investedMonthly)}
-            unit="/ month"
+            value={fmtDuration(investedMonths)}
+            unit={`at ${fmt(chosenMonthly)}/mo`}
             note={`Invested at ~${(risk.rate * 100).toFixed(0)}% annually.`}
             highlight
           />
         </div>
 
-        {savedOnlyMonthly > investedMonthly && (
+        {monthsSaved > 0 && (
           <p
             style={{
               ...SubP,
@@ -2164,11 +2194,11 @@ function Report({ d }: { d: Data }) {
               color: C.inkSoft,
             }}
           >
-            Investing saves you{" "}
+            Investing gets you there{" "}
             <strong style={{ color: C.ember, fontStyle: "normal" }}>
-              {fmt(savedOnlyMonthly - investedMonthly)}/mo
+              {fmtDuration(monthsSaved)} sooner
             </strong>{" "}
-            — and protects against inflation while you wait.
+            — same monthly contribution, compounding does the rest.
           </p>
         )}
 
@@ -2183,7 +2213,7 @@ function Report({ d }: { d: Data }) {
           >
             <tbody>
               {STRATEGIES.map((s) => {
-                const m = calcRequiredMonthly(d.saved, downPayment, months, s.rate);
+                const n = monthsToTarget(s.rate);
                 const isMatch = s.label === risk.label;
                 return (
                   <tr
@@ -2221,7 +2251,7 @@ function Report({ d }: { d: Data }) {
                         fontWeight: isMatch ? 600 : 400,
                       }}
                     >
-                      {fmt(m)}/mo
+                      {fmtDuration(n)}
                     </td>
                   </tr>
                 );
@@ -2230,6 +2260,8 @@ function Report({ d }: { d: Data }) {
           </table>
         </div>
       </Section>
+        );
+      })()}
 
       {/* Down payment buckets */}
       <Section number="02" title="Your down payment options.">
