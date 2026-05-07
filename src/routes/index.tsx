@@ -754,7 +754,7 @@ function ScreenSwitch({
       <Question
         kicker="When"
         title="When do you want to buy?"
-        sub={`Here's what you'd need to set aside each month to hit ${fmt(target)} (${effectiveDownPct}% down on ${fmtCompact(avgPrice)}).`}
+        sub={`Here's what you'd need to set aside each month to hit ${effectiveDownPct}% down — just by saving. Next, we'll show you how investing can get you there faster.`}
       >
         <Choices
           options={yearOptions.map((y) => {
