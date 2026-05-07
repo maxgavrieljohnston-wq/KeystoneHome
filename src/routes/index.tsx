@@ -1027,6 +1027,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          paddingBottom: 14,
+          borderBottom: `1px solid ${C.rule}`,
           marginBottom: 80,
         }}
       >
@@ -1057,8 +1059,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
           color: C.ink,
         }}
       >
-        An investment account for your{" "}
-        <em style={{ fontStyle: "italic", fontWeight: 600 }}>future home</em>.
+        An investment account for your future home.
       </h1>
 
       <p
@@ -1095,7 +1096,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
       >
         <span>~ 2 minutes</span>
         <span>No account required</span>
-        <span>Free</span>
       </div>
     </div>
   );
