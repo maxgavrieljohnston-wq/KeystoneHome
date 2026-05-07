@@ -1046,7 +1046,7 @@ function ScreenSwitch({
       <Question
         kicker="Features"
         title="Picture the place."
-        sub="Tap once for nice-to-have, twice to mark a must. We'll use this to shape your search and your savings plan."
+        sub="Choose the bedrooms, baths, style, and features you'd like."
       >
         <div
           style={{
