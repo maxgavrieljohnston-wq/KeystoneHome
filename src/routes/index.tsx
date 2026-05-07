@@ -418,20 +418,7 @@ function ScreenSwitch({
     );
 
   if (screen === "age")
-    return (
-      <Question kicker="About you" title="How old are you?">
-        <Slider
-          value={d.age}
-          min={18}
-          max={75}
-          step={1}
-          format={(v) => `${v}`}
-          onChange={(v) => set("age", v)}
-          unit="years old"
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
+    return <BirthdayScreen d={d} set={set} onNext={next} which="user" />;
 
   if (screen === "employment")
     return (
