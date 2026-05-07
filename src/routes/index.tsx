@@ -753,7 +753,7 @@ function ScreenSwitch({
             val: String(y),
             label: `${y} ${y === 1 ? "year" : "years"}`,
             desc: `${fmt(monthlyByYear[y])}/mo`,
-            tag: y === recommendedYear ? "Recommended" : undefined,
+            tag: y === recommendedYear ? "Industry Standard" : undefined,
           }))}
           value={String(d.timelineYears)}
           onSelect={(v) => {
