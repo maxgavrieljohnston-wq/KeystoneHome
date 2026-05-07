@@ -1136,7 +1136,7 @@ function ScreenSwitch({
 
           <SectionHeader
             title="Lifestyle"
-            hint="What would make it feel like home? Tap once for would-be-nice, twice for must-have."
+            hint="What would make it feel like home?"
           />
           <PriorityList
             items={lifestyleItems}
