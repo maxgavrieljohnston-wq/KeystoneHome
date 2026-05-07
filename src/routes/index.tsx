@@ -780,7 +780,7 @@ function ScreenSwitch({
             return {
               val: String(b.pct),
               label: `${b.label} down · ${b.tag}`,
-              desc: `Mortgage payment: ${fmt(monthly)}/mo · ${b.desc}`,
+              desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
           })}
           value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
