@@ -892,10 +892,15 @@ function ScreenSwitch({
         <Choices
           options={visibleOpts.map((b) => {
             const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
+            const isRec = b.pct === recommendedPct;
+            const recLabel =
+              dtiRequiredPct !== null && recommendedPct > 20
+                ? "★ Required"
+                : "★ Recommended";
             return {
               val: String(b.pct),
               label: `${b.label} · ${b.tag}`,
-              tag: b.pct === recommendedPct ? "★ Recommended" : undefined,
+              tag: isRec ? recLabel : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
           })}
@@ -1664,8 +1669,8 @@ function Choices({
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  fontWeight: /recommended/i.test(o.tag) ? 800 : 400,
-                  color: /recommended/i.test(o.tag)
+                  fontWeight: /recommended|required/i.test(o.tag) ? 800 : 400,
+                  color: /recommended|required/i.test(o.tag)
                     ? (active ? "#FBF7F0" : C.ink)
                     : (active ? "rgba(251,247,240,0.6)" : C.inkFaint),
                   whiteSpace: "nowrap",
