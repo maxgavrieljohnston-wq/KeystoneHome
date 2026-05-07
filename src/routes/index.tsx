@@ -872,7 +872,7 @@ function ScreenSwitch({
 
     let explanation: string;
     if (dtiRequiredPct !== null) {
-      explanation = `With ${fmt(monthlyDebts)}/mo in existing debt and ${fmt(Math.round(grossMonthly))}/mo in household income, lenders cap your total debt-to-income at 43%. To bring a mortgage on a ${fmt(targetPrice)} home inside that limit, you'd need to put down at least ${recommendedPct}% (${fmt(recDown)}) — a smaller down payment wouldn't qualify for this price.`;
+      explanation = `Lenders cap your total debt-to-income at 43%. To bring a mortgage on a ${fmt(targetPrice)} home inside that limit, you need to put down at least ${recommendedPct}% (${fmt(recDown)}) — a smaller down payment wouldn't qualify for this price.`;
     } else if (recommendedPct >= 20 && recDown <= saved) {
       explanation = `Putting 20% down means you skip private mortgage insurance entirely — that's typically $100–$300/mo. Lenders also reserve their best interest rates for borrowers at this threshold, which over 30 years can save tens of thousands.`;
     } else if (recommendedPct >= 20) {
@@ -921,17 +921,6 @@ function ScreenSwitch({
           {explanation}
         </div>
 
-        <p
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.1em",
-            color: C.inkFaint,
-            margin: "20px 0 0",
-          }}
-        >
-          — National Association of Realtors, 2024
-        </p>
         <Cta onClick={next} disabled={d.downGoalPct === null}>
           Continue
         </Cta>
