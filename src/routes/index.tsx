@@ -62,6 +62,7 @@ const FLOW = [
   "welcome",
   "email",
   "introFinances",
+  "name",
   "partner",
   "age",
   "employment",
@@ -95,6 +96,7 @@ type Screen = (typeof FLOW)[number];
 const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
+  "name",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
@@ -106,6 +108,8 @@ const PROGRESS_SCREENS: Screen[] = [
 
 type Data = {
   email: string;
+  firstName: string;
+  lastName: string;
   age: number;
   employment: string | null;
   income: number;
@@ -138,6 +142,8 @@ type Data = {
 
 const INITIAL: Data = {
   email: "",
+  firstName: "",
+  lastName: "",
   age: 32,
   employment: null,
   income: 75000,
@@ -542,6 +548,55 @@ function ScreenSwitch({
           onChange={(v) => set("saved", v)}
         />
         <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "name")
+    return (
+      <Question
+        kicker="Introductions"
+        title="What's your name?"
+        sub="So we can make this feel a little more personal."
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
+          <input
+            type="text"
+            placeholder="First name"
+            value={d.firstName}
+            onChange={(e) => set("firstName", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Last name"
+            value={d.lastName}
+            onChange={(e) => set("lastName", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+        </div>
+        <Cta onClick={next} disabled={!d.firstName.trim() || !d.lastName.trim()}>
+          Continue
+        </Cta>
       </Question>
     );
 
