@@ -199,6 +199,51 @@ export const EMPLOYMENT_TYPES = [
   { id: "contract", label: "Contractor",     desc: "Project-based work." },
 ];
 
+/**
+ * Lender-side adjustments by employment type. Not shown to the user.
+ * Reflects how underwriters treat variable-income borrowers:
+ *  - 2-yr averaged income with a haircut for non-W-2
+ *  - tighter DTI ceiling
+ *  - small rate add-on for documentation risk
+ */
+export type EmploymentAdj = {
+  /** Multiplier applied to gross income for qualifying purposes */
+  incomeFactor: number;
+  /** Override DTI cap (Qualified Mortgage standard is 0.43) */
+  dtiCap: number;
+  /** Basis points added to the mortgage rate */
+  rateAdd: number;
+};
+
+export function employmentAdjustment(id?: string | null): EmploymentAdj {
+  switch (id) {
+    case "self":
+      return { incomeFactor: 0.85, dtiCap: 0.41, rateAdd: 0.0025 };
+    case "contract":
+      return { incomeFactor: 0.85, dtiCap: 0.41, rateAdd: 0.0025 };
+    case "owner":
+      return { incomeFactor: 0.90, dtiCap: 0.42, rateAdd: 0.00125 };
+    case "w2":
+    default:
+      return { incomeFactor: 1.0, dtiCap: 0.43, rateAdd: 0 };
+  }
+}
+
+/** Combine two borrowers — use the stricter of each dimension. */
+export function combinedEmploymentAdjustment(
+  a?: string | null,
+  b?: string | null,
+): EmploymentAdj {
+  const A = employmentAdjustment(a);
+  if (b == null) return A;
+  const B = employmentAdjustment(b);
+  return {
+    incomeFactor: Math.min(A.incomeFactor, B.incomeFactor),
+    dtiCap: Math.min(A.dtiCap, B.dtiCap),
+    rateAdd: Math.max(A.rateAdd, B.rateAdd),
+  };
+}
+
 // ── Editorial fact cards ───────────────────────────────────────────────────
 export const FACTS = {
   factDemo: {

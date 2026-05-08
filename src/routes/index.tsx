@@ -18,6 +18,7 @@ import {
   getPriceByZip,
   rateFromCredit,
   styleAdjustments,
+  combinedEmploymentAdjustment,
 } from "@/lib/keystone";
 
 export const Route = createFileRoute("/")({
@@ -819,17 +820,24 @@ function ScreenSwitch({
       d.hasPartner && d.partnerCredit
         ? Math.min(d.credit ?? 700, d.partnerCredit)
         : d.credit ?? 700;
-    const mRate = rateFromCredit(qCredit);
+    const empAdj = combinedEmploymentAdjustment(
+      d.employment,
+      d.hasPartner ? d.partnerEmployment : null,
+    );
+    const mRate = rateFromCredit(qCredit) + empAdj.rateAdd;
 
     // Combined household figures
     const hasPartner = d.hasPartner;
-    const grossMonthly =
-      ((d.income ?? 0) + (hasPartner ? d.partnerIncome ?? 0 : 0)) / 12;
+    const grossAnnual =
+      (d.income ?? 0) + (hasPartner ? d.partnerIncome ?? 0 : 0);
+    // Underwriters discount non-W-2 income (2-yr averaging haircut).
+    const qualifyingAnnual = grossAnnual * empAdj.incomeFactor;
+    const grossMonthly = qualifyingAnnual / 12;
     const monthlyDebts = (d.debt ?? 0) + (hasPartner ? d.partnerDebt ?? 0 : 0);
     const saved = d.saved ?? 0;
 
-    // Lender DTI ceiling — Qualified Mortgage standard.
-    const DTI_CAP = 0.43;
+    // Lender DTI ceiling — Qualified Mortgage standard, tightened for variable income.
+    const DTI_CAP = empAdj.dtiCap;
     // Max mortgage payment lender will allow given existing debts.
     const maxHousing = Math.max(0, grossMonthly * DTI_CAP - monthlyDebts);
 
@@ -2132,7 +2140,11 @@ function Report({ d }: { d: Data }) {
   const investedMonthly = calcRequiredMonthly(d.saved, downPayment, months, risk.rate);
   const savedOnlyMonthly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
-  const mortgageRate = rateFromCredit(qualifyingCredit);
+  const empAdjReady = combinedEmploymentAdjustment(
+    d.employment,
+    hasPartner ? d.partnerEmployment : null,
+  );
+  const mortgageRate = rateFromCredit(qualifyingCredit) + empAdjReady.rateAdd;
   const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
   const taxIns = (avgPrice * 0.018) / 12;
   const pmi =
@@ -2156,7 +2168,8 @@ function Report({ d }: { d: Data }) {
     0,
     Math.min(100, ((qualifyingCredit - 580) / (820 - 580)) * 100),
   );
-  const dti = (combinedDebt + totalHousing) / monthlyIncome;
+  const qualifyingMonthlyIncome = (monthlyIncome * empAdjReady.incomeFactor) || 1;
+  const dti = (combinedDebt + totalHousing) / qualifyingMonthlyIncome;
   const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.28) / 0.2) * 100));
   const savingsScore = Math.max(0, Math.min(100, (d.saved / Math.max(downPayment, 1)) * 100));
   const timelineScore = Math.max(0, Math.min(100, (d.timelineYears / 5) * 100));
