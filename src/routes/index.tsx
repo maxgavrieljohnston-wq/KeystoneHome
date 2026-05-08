@@ -142,6 +142,8 @@ type Data = {
 
 const INITIAL: Data = {
   email: "",
+  firstName: "",
+  lastName: "",
   age: 32,
   employment: null,
   income: 75000,
