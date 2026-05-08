@@ -820,17 +820,24 @@ function ScreenSwitch({
       d.hasPartner && d.partnerCredit
         ? Math.min(d.credit ?? 700, d.partnerCredit)
         : d.credit ?? 700;
-    const mRate = rateFromCredit(qCredit);
+    const empAdj = combinedEmploymentAdjustment(
+      d.employment,
+      d.hasPartner ? d.partnerEmployment : null,
+    );
+    const mRate = rateFromCredit(qCredit) + empAdj.rateAdd;
 
     // Combined household figures
     const hasPartner = d.hasPartner;
-    const grossMonthly =
-      ((d.income ?? 0) + (hasPartner ? d.partnerIncome ?? 0 : 0)) / 12;
+    const grossAnnual =
+      (d.income ?? 0) + (hasPartner ? d.partnerIncome ?? 0 : 0);
+    // Underwriters discount non-W-2 income (2-yr averaging haircut).
+    const qualifyingAnnual = grossAnnual * empAdj.incomeFactor;
+    const grossMonthly = qualifyingAnnual / 12;
     const monthlyDebts = (d.debt ?? 0) + (hasPartner ? d.partnerDebt ?? 0 : 0);
     const saved = d.saved ?? 0;
 
-    // Lender DTI ceiling — Qualified Mortgage standard.
-    const DTI_CAP = 0.43;
+    // Lender DTI ceiling — Qualified Mortgage standard, tightened for variable income.
+    const DTI_CAP = empAdj.dtiCap;
     // Max mortgage payment lender will allow given existing debts.
     const maxHousing = Math.max(0, grossMonthly * DTI_CAP - monthlyDebts);
 
