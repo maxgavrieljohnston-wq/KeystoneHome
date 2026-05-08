@@ -64,6 +64,20 @@ export function rateFromCredit(score?: number | null): number {
   return 0.0925;
 }
 
+/**
+ * LTV-based rate adjustment (loan-level price adjustment, expressed as rate add).
+ * Lenders reserve their best pricing for borrowers at 20%+ down; rates step up
+ * as LTV climbs. Not shown to the user.
+ */
+export function rateAddFromDownPct(downPct: number): number {
+  if (downPct >= 25) return -0.00125; // small discount for very low LTV
+  if (downPct >= 20) return 0;
+  if (downPct >= 15) return 0.00125;
+  if (downPct >= 10) return 0.0025;
+  if (downPct >= 5)  return 0.00375;
+  return 0.005; // 3-5% down (FHA-tier LTV)
+}
+
 // ── ZIP → city + price ─────────────────────────────────────────────────────
 export function getPriceByZip(zip: string): { city: string; avg: number } {
   const p = parseInt(zip.slice(0, 3));
