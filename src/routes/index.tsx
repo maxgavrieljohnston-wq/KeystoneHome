@@ -17,6 +17,7 @@ import {
   fmtCompact,
   getPriceByZip,
   rateFromCredit,
+  rateAddFromDownPct,
   styleAdjustments,
   combinedEmploymentAdjustment,
 } from "@/lib/keystone";
