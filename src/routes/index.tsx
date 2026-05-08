@@ -2140,7 +2140,11 @@ function Report({ d }: { d: Data }) {
   const investedMonthly = calcRequiredMonthly(d.saved, downPayment, months, risk.rate);
   const savedOnlyMonthly = calcRequiredMonthly(d.saved, downPayment, months, 0);
 
-  const mortgageRate = rateFromCredit(qualifyingCredit);
+  const empAdjReady = combinedEmploymentAdjustment(
+    d.employment,
+    hasPartner ? d.partnerEmployment : null,
+  );
+  const mortgageRate = rateFromCredit(qualifyingCredit) + empAdjReady.rateAdd;
   const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
   const taxIns = (avgPrice * 0.018) / 12;
   const pmi =
