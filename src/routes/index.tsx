@@ -108,6 +108,8 @@ const PROGRESS_SCREENS: Screen[] = [
 
 type Data = {
   email: string;
+  firstName: string;
+  lastName: string;
   age: number;
   employment: string | null;
   income: number;
