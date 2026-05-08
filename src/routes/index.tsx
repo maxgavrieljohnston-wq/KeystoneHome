@@ -2147,7 +2147,10 @@ function Report({ d }: { d: Data }) {
     d.employment,
     hasPartner ? d.partnerEmployment : null,
   );
-  const mortgageRate = rateFromCredit(qualifyingCredit) + empAdjReady.rateAdd;
+  const mortgageRate =
+    rateFromCredit(qualifyingCredit) +
+    empAdjReady.rateAdd +
+    rateAddFromDownPct(effectiveDownPct);
   const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
   const taxIns = (avgPrice * 0.018) / 12;
   const pmi =
