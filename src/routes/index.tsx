@@ -96,6 +96,7 @@ type Screen = (typeof FLOW)[number];
 const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
+  "name",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
