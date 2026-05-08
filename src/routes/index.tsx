@@ -825,6 +825,8 @@ function ScreenSwitch({
       d.hasPartner ? d.partnerEmployment : null,
     );
     const mRate = rateFromCredit(qCredit) + empAdj.rateAdd;
+    // Per-option rate including LTV adjustment (lenders price by down %).
+    const rateFor = (pct: number) => mRate + rateAddFromDownPct(pct);
 
     // Combined household figures
     const hasPartner = d.hasPartner;
