@@ -848,14 +848,14 @@ function ScreenSwitch({
     const sortedAsc = [...DOWN_BUCKETS].sort((a, b) => a.pct - b.pct);
     const smallestQualifyingPct: number | null =
       sortedAsc.find(
-        (b) => calcMortgage(targetPrice, b.pct, mRate) <= maxHousing,
+        (b) => calcMortgage(targetPrice, b.pct, rateFor(b.pct)) <= maxHousing,
       )?.pct ?? null;
 
     // Prefer 20% (no PMI, best rates) whenever it qualifies.
     let recommendedPct: number | null = null;
     if (
       smallestQualifyingPct !== null &&
-      calcMortgage(targetPrice, 20, mRate) <= maxHousing
+      calcMortgage(targetPrice, 20, rateFor(20)) <= maxHousing
     ) {
       recommendedPct = 20;
     } else {
@@ -870,7 +870,7 @@ function ScreenSwitch({
         hi = 95;
       for (let i = 0; i < 40; i++) {
         const mid = (lo + hi) / 2;
-        const m = calcMortgage(targetPrice, mid, mRate);
+        const m = calcMortgage(targetPrice, mid, rateFor(mid));
         if (m > maxHousing) lo = mid;
         else hi = mid;
       }
@@ -897,13 +897,13 @@ function ScreenSwitch({
     }
     // Only show options the user would actually qualify for given DTI cap.
     const qualifyingOpts = baseOpts.filter(
-      (o) => calcMortgage(targetPrice, o.pct, mRate) <= maxHousing,
+      (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
     );
     const visibleOpts = qualifyingOpts.length > 0 ? qualifyingOpts : baseOpts;
     visibleOpts.sort((a, b) => a.pct - b.pct);
 
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
-    const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, mRate));
+    const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, rateFor(recommendedPct)));
     const recDTI = grossMonthly > 0 ? (monthlyDebts + recMonthly) / grossMonthly : 0;
     const shortfall = Math.max(0, recDown - saved);
 
