@@ -805,11 +805,6 @@ function ScreenSwitch({
       ? `${yearsToBuy.toFixed(1)} ${yearsToBuy.toFixed(1) === "1.0" ? "year" : "years"}`
       : `${Math.max(1, Math.round(yearsToBuy * 12))} months`;
 
-    if (!d.timelineBucket) {
-      set("timelineBucket", `$${monthlySave}`);
-      set("timelineYears", Math.max(1, Math.round(yearsToBuy)));
-    }
-
     return (
       <Question
         kicker="Timeline"
