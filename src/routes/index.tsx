@@ -871,7 +871,7 @@ function ScreenSwitch({
     return (
       <Question
         kicker="Timeline"
-        title="How long would it take using only a savings account?"
+        title="How long would it take without an investment account?"
         sub="Choose the monthly amount you feel comfortable setting aside toward your down payment. We'll show you how long it would take. But don't worry — we can get you there faster."
       >
         <Slider
