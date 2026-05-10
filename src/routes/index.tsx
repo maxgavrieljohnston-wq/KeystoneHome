@@ -128,6 +128,7 @@ type Data = {
   partnerIncome: number;
   partnerExpenses: number;
   partnerDebt: number;
+  partnerSaved: number;
   partnerCredit: number | null;
   zip: string;
   zipData: { city: string; avg: number } | null;
