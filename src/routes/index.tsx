@@ -2226,7 +2226,7 @@ function Report({ d }: { d: Data }) {
   );
   const qualifyingMonthlyIncome = (monthlyIncome * empAdjReady.incomeFactor) || 1;
   const dti = (combinedDebt + totalHousing) / qualifyingMonthlyIncome;
-  const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.28) / 0.2) * 100));
+  const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.45) / 0.2) * 100));
   const savingsScore = Math.max(0, Math.min(100, (d.saved / Math.max(downPayment, 1)) * 100));
   const timelineScore = Math.max(0, Math.min(100, (d.timelineYears / 5) * 100));
   const readiness = Math.round(
