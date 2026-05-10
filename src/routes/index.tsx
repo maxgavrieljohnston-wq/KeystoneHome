@@ -831,6 +831,25 @@ function ScreenSwitch({
       </Question>
     );
 
+  if (screen === "partnerSavings")
+    return (
+      <Question
+        kicker="Partner"
+        title="What has your partner saved?"
+        sub="Cash, savings, investments earmarked for the home."
+      >
+        <Slider
+          value={d.partnerSaved}
+          min={0}
+          max={200000}
+          step={500}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("partnerSaved", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
   if (screen === "partnerCredit")
     return (
       <Question
