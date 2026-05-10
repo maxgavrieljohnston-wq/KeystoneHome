@@ -989,28 +989,8 @@ function ScreenSwitch({
     }
     if (recommendedPct === null) recommendedPct = 20;
 
-    // Build the option list — standard buckets, plus a custom DTI-required bucket if needed.
-    type Opt = { pct: number; label: string; tag: string; desc: string };
-    const baseOpts: Opt[] = DOWN_BUCKETS.map((b) => ({
-      pct: b.pct,
-      label: `${b.label} down`,
-      tag: b.tag,
-      desc: b.desc,
-    }));
-    if (dtiRequiredPct !== null && !baseOpts.some((o) => o.pct === dtiRequiredPct)) {
-      baseOpts.push({
-        pct: dtiRequiredPct,
-        label: `${dtiRequiredPct}% down`,
-        tag: "DTI-required",
-        desc: "Needed to qualify given current debts and income",
-      });
-    }
-    // Only show options the user would actually qualify for given DTI cap.
-    const qualifyingOpts = baseOpts.filter(
-      (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
-    );
-    const visibleOpts = qualifyingOpts.length > 0 ? qualifyingOpts : baseOpts;
-    visibleOpts.sort((a, b) => a.pct - b.pct);
+    // Build the option list via shared helper (so results page mirrors it exactly).
+    const visibleOpts = computeOfferedDownOpts(d);
 
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
     const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, rateFor(recommendedPct)));
