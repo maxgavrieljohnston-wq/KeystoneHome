@@ -688,6 +688,76 @@ function ScreenSwitch({
       </Question>
     );
 
+  if (screen === "partnerInfo")
+    return (
+      <Question
+        kicker="Your partner"
+        title="What's your partner's name and email?"
+        sub="So we can personalize their side of the plan."
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
+          <input
+            type="text"
+            placeholder="First name"
+            value={d.partnerFirstName}
+            onChange={(e) => set("partnerFirstName", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Last name"
+            value={d.partnerLastName}
+            onChange={(e) => set("partnerLastName", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+          <input
+            type="email"
+            inputMode="email"
+            placeholder="partner@email.com"
+            value={d.partnerEmail}
+            onChange={(e) => set("partnerEmail", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+        </div>
+        <Cta
+          onClick={next}
+          disabled={!d.partnerFirstName.trim() || !d.partnerLastName.trim() || !d.partnerEmail.includes("@")}
+        >
+          Continue
+        </Cta>
+      </Question>
+    );
+
   if (screen === "partnerAge")
     return <BirthdayScreen d={d} set={set} onNext={next} which="partner" />;
 
