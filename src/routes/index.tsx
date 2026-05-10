@@ -460,7 +460,7 @@ function ScreenSwitch({
         <Slider
           value={d.income}
           min={20000}
-          max={400000}
+          max={200000}
           step={1000}
           format={(v) => fmt(v)}
           onChange={(v) => set("income", v)}
@@ -542,7 +542,7 @@ function ScreenSwitch({
         <Slider
           value={d.saved}
           min={0}
-          max={300000}
+          max={200000}
           step={500}
           format={(v) => fmt(v)}
           onChange={(v) => set("saved", v)}
