@@ -2573,6 +2573,8 @@ function Report({ d }: { d: Data }) {
           })}
         </div>
       </Section>
+        );
+      })()}
 
       {/* Section 3 — Affordability */}
       <Section number="03" title="What it costs to live there.">
