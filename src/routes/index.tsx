@@ -954,15 +954,19 @@ function ScreenSwitch({
     const effectiveDownPct = Math.max(candidate, adj.minDown);
     const target = Math.round((avgPrice * effectiveDownPct) / 100);
 
-    const takeHomeMonthly = ((d.income ?? 0) * 0.78) / 12;
-    const monthlyExpenses = (d.expenses ?? 0) + (d.debt ?? 0);
+    const householdIncome = (d.income ?? 0) + (d.hasPartner ? d.partnerIncome ?? 0 : 0);
+    const householdExpenses = (d.expenses ?? 0) + (d.hasPartner ? d.partnerExpenses ?? 0 : 0);
+    const householdDebt = (d.debt ?? 0) + (d.hasPartner ? d.partnerDebt ?? 0 : 0);
+    const householdSaved = (d.saved ?? 0) + (d.hasPartner ? d.partnerSaved ?? 0 : 0);
+    const takeHomeMonthly = (householdIncome * 0.78) / 12;
+    const monthlyExpenses = householdExpenses + householdDebt;
     const headroom = Math.max(0, takeHomeMonthly - monthlyExpenses);
     // Cap at 50% of take-home OR available headroom, whichever is lower. $100 increments.
     const halfTakeHome = takeHomeMonthly * 0.5;
     const rawMax = Math.min(halfTakeHome, headroom);
     const maxSave = Math.max(100, Math.floor(rawMax / 100) * 100);
 
-    const remaining = Math.max(0, target - d.saved);
+    const remaining = Math.max(0, target - householdSaved);
     // Constrain slider so years range from 15 (min monthly) down to 1 (max monthly), $100 increments.
     const fifteenYearMonthly = Math.max(100, Math.ceil(remaining / 15 / 12 / 100) * 100);
     const oneYearMonthly = Math.max(fifteenYearMonthly, Math.ceil(remaining / 12 / 100) * 100);
