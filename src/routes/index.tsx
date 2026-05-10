@@ -789,7 +789,7 @@ function ScreenSwitch({
         <Slider
           value={d.partnerIncome}
           min={0}
-          max={400000}
+          max={200000}
           step={1000}
           format={(v) => fmt(v)}
           onChange={(v) => set("partnerIncome", v)}
