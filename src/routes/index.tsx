@@ -856,13 +856,15 @@ function ScreenSwitch({
     const maxSave = Math.max(100, Math.floor(rawMax / 100) * 100);
 
     const remaining = Math.max(0, target - d.saved);
-    // Default monthly amount targets a ~15-year timeline so the user starts there and scales up.
-    const fifteenYearMonthly = Math.max(100, Math.round(remaining / 15 / 12 / 100) * 100);
-    const defaultMonthly = Math.min(maxSave, fifteenYearMonthly);
+    // Constrain slider so years range from 15 (min monthly) down to 1 (max monthly), $100 increments.
+    const fifteenYearMonthly = Math.max(100, Math.ceil(remaining / 15 / 12 / 100) * 100);
+    const oneYearMonthly = Math.max(fifteenYearMonthly, Math.ceil(remaining / 12 / 100) * 100);
+    const minMonthly = Math.min(fifteenYearMonthly, Math.max(100, Math.floor(maxSave / 100) * 100));
+    const sliderMax = Math.max(minMonthly, Math.min(oneYearMonthly, maxSave));
     const stored = d.timelineBucket?.startsWith("$")
-      ? parseInt(d.timelineBucket.slice(1), 10) || defaultMonthly
-      : defaultMonthly;
-    const monthlySave = Math.min(maxSave, Math.max(100, stored));
+      ? parseInt(d.timelineBucket.slice(1), 10) || minMonthly
+      : minMonthly;
+    const monthlySave = Math.min(sliderMax, Math.max(minMonthly, stored));
     const yearsToBuy = monthlySave > 0 ? remaining / monthlySave / 12 : 0;
     const yearsLabel = yearsToBuy >= 1
       ? `${yearsToBuy.toFixed(1)} ${yearsToBuy.toFixed(1) === "1.0" ? "year" : "years"}`
@@ -876,8 +878,8 @@ function ScreenSwitch({
       >
         <Slider
           value={monthlySave}
-          min={100}
-          max={maxSave}
+          min={minMonthly}
+          max={sliderMax}
           step={100}
           format={(v) => fmt(v)}
           unit={`per month toward ${fmt(target)}`}
