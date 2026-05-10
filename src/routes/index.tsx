@@ -77,6 +77,7 @@ const FLOW = [
   "partnerIncome",
   "partnerExpenses",
   "partnerDebt",
+  "partnerSavings",
   "partnerCredit",
   "factDemo",
   "zip",
@@ -100,7 +101,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "name",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
-  "partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
+  "partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerSavings", "partnerCredit",
   "factDemo",
   "zip", "homeStyle", "homeFeatures", "downGoal", "timeline",
   "introRisk",
@@ -127,6 +128,7 @@ type Data = {
   partnerIncome: number;
   partnerExpenses: number;
   partnerDebt: number;
+  partnerSaved: number;
   partnerCredit: number | null;
   zip: string;
   zipData: { city: string; avg: number } | null;
@@ -164,6 +166,7 @@ const INITIAL: Data = {
   partnerIncome: 0,
   partnerExpenses: 0,
   partnerDebt: 0,
+  partnerSaved: 0,
   partnerCredit: null,
   zip: "",
   zipData: null,
@@ -266,7 +269,7 @@ function KeystoneApp() {
 
   const shouldSkip = (idx: number) => {
     const s = FLOW[idx];
-    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerSavings", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
@@ -823,6 +826,25 @@ function ScreenSwitch({
           step={25}
           format={(v) => fmt(v)}
           onChange={(v) => set("partnerDebt", v)}
+        />
+        <Cta onClick={next}>Continue</Cta>
+      </Question>
+    );
+
+  if (screen === "partnerSavings")
+    return (
+      <Question
+        kicker="Partner"
+        title="What has your partner saved?"
+        sub="Cash, savings, investments earmarked for the home."
+      >
+        <Slider
+          value={d.partnerSaved}
+          min={0}
+          max={200000}
+          step={500}
+          format={(v) => fmt(v)}
+          onChange={(v) => set("partnerSaved", v)}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
