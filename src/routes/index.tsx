@@ -2581,7 +2581,7 @@ function Report({ d }: { d: Data }) {
               ◆ {verdict}
             </span>
             <span style={{ fontSize: 12, color: C.inkMute }}>
-              {Math.round(housingRatio * 100)}% of your income · lenders prefer ≤28%
+              {Math.round(housingRatio * 100)}% of your income · lenders prefer ≤45%
             </span>
           </div>
         </div>
