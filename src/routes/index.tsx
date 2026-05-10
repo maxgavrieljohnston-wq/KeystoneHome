@@ -878,8 +878,8 @@ function ScreenSwitch({
       >
         <Slider
           value={monthlySave}
-          min={100}
-          max={maxSave}
+          min={minMonthly}
+          max={sliderMax}
           step={100}
           format={(v) => fmt(v)}
           unit={`per month toward ${fmt(target)}`}
