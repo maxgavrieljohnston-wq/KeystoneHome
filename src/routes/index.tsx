@@ -856,9 +856,12 @@ function ScreenSwitch({
     const maxSave = Math.max(100, Math.floor(rawMax / 100) * 100);
 
     const remaining = Math.max(0, target - d.saved);
+    // Default monthly amount targets a ~15-year timeline so the user starts there and scales up.
+    const fifteenYearMonthly = Math.max(100, Math.round(remaining / 15 / 12 / 100) * 100);
+    const defaultMonthly = Math.min(maxSave, fifteenYearMonthly);
     const stored = d.timelineBucket?.startsWith("$")
-      ? parseInt(d.timelineBucket.slice(1), 10) || 100
-      : 100;
+      ? parseInt(d.timelineBucket.slice(1), 10) || defaultMonthly
+      : defaultMonthly;
     const monthlySave = Math.min(maxSave, Math.max(100, stored));
     const yearsToBuy = monthlySave > 0 ? remaining / monthlySave / 12 : 0;
     const yearsLabel = yearsToBuy >= 1
