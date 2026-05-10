@@ -166,6 +166,7 @@ const INITIAL: Data = {
   partnerIncome: 0,
   partnerExpenses: 0,
   partnerDebt: 0,
+  partnerSaved: 0,
   partnerCredit: null,
   zip: "",
   zipData: null,
