@@ -2213,9 +2213,9 @@ function Report({ d }: { d: Data }) {
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = totalHousing / monthlyIncome;
   const verdict =
-    housingRatio <= 0.28 ? "Affordable" : housingRatio <= 0.36 ? "A stretch" : "Difficult";
+    housingRatio <= 0.45 ? "Affordable" : housingRatio <= 0.55 ? "A stretch" : "Difficult";
   const verdictTone =
-    housingRatio <= 0.28 ? C.sage : housingRatio <= 0.36 ? C.gold : C.ember;
+    housingRatio <= 0.45 ? C.sage : housingRatio <= 0.55 ? C.gold : C.ember;
 
   const eFundMin = combinedExpenses * 3;
   const eFundOk = d.saved >= eFundMin;
@@ -2226,7 +2226,7 @@ function Report({ d }: { d: Data }) {
   );
   const qualifyingMonthlyIncome = (monthlyIncome * empAdjReady.incomeFactor) || 1;
   const dti = (combinedDebt + totalHousing) / qualifyingMonthlyIncome;
-  const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.28) / 0.2) * 100));
+  const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.45) / 0.2) * 100));
   const savingsScore = Math.max(0, Math.min(100, (d.saved / Math.max(downPayment, 1)) * 100));
   const timelineScore = Math.max(0, Math.min(100, (d.timelineYears / 5) * 100));
   const readiness = Math.round(
@@ -2581,7 +2581,7 @@ function Report({ d }: { d: Data }) {
               ◆ {verdict}
             </span>
             <span style={{ fontSize: 12, color: C.inkMute }}>
-              {Math.round(housingRatio * 100)}% of your income · lenders prefer ≤28%
+              {Math.round(housingRatio * 100)}% of your income · lenders prefer ≤45%
             </span>
           </div>
         </div>
