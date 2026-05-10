@@ -71,6 +71,7 @@ const FLOW = [
   "debt",
   "savings",
   "credit",
+  "partnerInfo",
   "partnerAge",
   "partnerEmployment",
   "partnerIncome",
@@ -99,7 +100,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "name",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
-  "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
+  "partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit",
   "factDemo",
   "zip", "homeStyle", "homeFeatures", "downGoal", "timeline",
   "introRisk",
@@ -118,6 +119,9 @@ type Data = {
   credit: number | null;
   saved: number;
   hasPartner: boolean | null;
+  partnerFirstName: string;
+  partnerLastName: string;
+  partnerEmail: string;
   partnerAge: number;
   partnerEmployment: string | null;
   partnerIncome: number;
@@ -152,6 +156,9 @@ const INITIAL: Data = {
   credit: null,
   saved: 15000,
   hasPartner: null,
+  partnerFirstName: "",
+  partnerLastName: "",
+  partnerEmail: "",
   partnerAge: 32,
   partnerEmployment: null,
   partnerIncome: 0,
@@ -259,7 +266,7 @@ function KeystoneApp() {
 
   const shouldSkip = (idx: number) => {
     const s = FLOW[idx];
-    const partnerOnly = ["partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
@@ -676,6 +683,76 @@ function ScreenSwitch({
           onSelect={(v) => set("hasPartner", v === 1)}
         />
         <Cta onClick={next} disabled={d.hasPartner === null}>
+          Continue
+        </Cta>
+      </Question>
+    );
+
+  if (screen === "partnerInfo")
+    return (
+      <Question
+        kicker="Your partner"
+        title="What's your partner's name and email?"
+        sub="So we can personalize their side of the plan."
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
+          <input
+            type="text"
+            placeholder="First name"
+            value={d.partnerFirstName}
+            onChange={(e) => set("partnerFirstName", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Last name"
+            value={d.partnerLastName}
+            onChange={(e) => set("partnerLastName", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+          <input
+            type="email"
+            inputMode="email"
+            placeholder="partner@email.com"
+            value={d.partnerEmail}
+            onChange={(e) => set("partnerEmail", e.target.value)}
+            style={{
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              borderBottom: `1.5px solid ${C.ink}`,
+              padding: "12px 0",
+              fontSize: 22,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              color: C.ink,
+              outline: "none",
+            }}
+          />
+        </div>
+        <Cta
+          onClick={next}
+          disabled={!d.partnerFirstName.trim() || !d.partnerLastName.trim() || !d.partnerEmail.includes("@")}
+        >
           Continue
         </Cta>
       </Question>
