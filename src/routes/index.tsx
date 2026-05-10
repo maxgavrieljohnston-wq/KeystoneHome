@@ -2457,15 +2457,61 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
-      {/* Down payment buckets */}
+      {/* Down payment buckets — mirror the options the user was offered earlier in the flow */}
+      {(() => {
+        const DTI_CAP_R = empAdjReady.dtiCap;
+        const grossMonthlyR = monthlyIncome * empAdjReady.incomeFactor;
+        const maxHousingR = Math.max(0, grossMonthlyR * DTI_CAP_R - combinedDebt);
+        const baseRateR = rateFromCredit(qualifyingCredit) + empAdjReady.rateAdd;
+        const rateForR = (pct: number) => baseRateR + rateAddFromDownPct(pct);
+
+        type Opt = { pct: number; label: string; tag: string; desc: string };
+        const baseOptsR: Opt[] = DOWN_BUCKETS.map((b) => ({
+          pct: b.pct,
+          label: b.label,
+          tag: b.tag,
+          desc: b.desc,
+        }));
+
+        const anyQualifies = baseOptsR.some(
+          (o) => calcMortgage(avgPrice, o.pct, rateForR(o.pct)) <= maxHousingR,
+        );
+        if (!anyQualifies && maxHousingR > 0) {
+          let lo = 20, hi = 95;
+          for (let i = 0; i < 40; i++) {
+            const mid = (lo + hi) / 2;
+            const m = calcMortgage(avgPrice, mid, rateForR(mid));
+            if (m > maxHousingR) lo = mid;
+            else hi = mid;
+          }
+          const dtiRequiredPctR = Math.ceil(hi);
+          if (!baseOptsR.some((o) => o.pct === dtiRequiredPctR)) {
+            baseOptsR.push({
+              pct: dtiRequiredPctR,
+              label: `${dtiRequiredPctR}%`,
+              tag: "DTI-required",
+              desc: "Needed to qualify given current debts and income",
+            });
+          }
+        }
+        const qualifyingOptsR = baseOptsR.filter(
+          (o) => calcMortgage(avgPrice, o.pct, rateForR(o.pct)) <= maxHousingR,
+        );
+        const visibleOptsR = (qualifyingOptsR.length > 0 ? qualifyingOptsR : baseOptsR).sort(
+          (a, b) => a.pct - b.pct,
+        );
+
+        return (
       <Section number="02" title="Your down payment options.">
         <p style={SubP}>
           Based on {fmt(d.saved)} saved against {fmtCompact(avgPrice)}, we modeled your plan at{" "}
-          <em style={{ fontStyle: "italic" }}>{effectiveDownPct}% down</em>. Here's what each path
-          would actually mean for you.
+          <em style={{ fontStyle: "italic" }}>{effectiveDownPct}% down</em>.{" "}
+          {visibleOptsR.length === 1
+            ? "Given your numbers, this is the path that qualifies."
+            : "Here's what each path would actually mean for you."}
         </p>
         <div style={{ marginTop: 14 }}>
-          {DOWN_BUCKETS.map((b) => {
+          {visibleOptsR.map((b) => {
             const dp = Math.round((avgPrice * b.pct) / 100);
             const m = calcMortgage(avgPrice, b.pct, mortgageRate);
             const pmiB = b.pct < 20 ? (avgPrice * (1 - b.pct / 100) * 0.005) / 12 : 0;
@@ -2527,6 +2573,8 @@ function Report({ d }: { d: Data }) {
           })}
         </div>
       </Section>
+        );
+      })()}
 
       {/* Section 3 — Affordability */}
       <Section number="03" title="What it costs to live there.">
