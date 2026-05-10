@@ -2499,47 +2499,8 @@ function Report({ d }: { d: Data }) {
 
       {/* Down payment buckets — mirror the options the user was offered earlier in the flow */}
       {(() => {
-        const DTI_CAP_R = empAdjReady.dtiCap;
-        const grossMonthlyR = monthlyIncome * empAdjReady.incomeFactor;
-        const maxHousingR = Math.max(0, grossMonthlyR * DTI_CAP_R - combinedDebt);
-        const baseRateR = rateFromCredit(qualifyingCredit) + empAdjReady.rateAdd;
-        const rateForR = (pct: number) => baseRateR + rateAddFromDownPct(pct);
-
-        type Opt = { pct: number; label: string; tag: string; desc: string };
-        const baseOptsR: Opt[] = DOWN_BUCKETS.map((b) => ({
-          pct: b.pct,
-          label: b.label,
-          tag: b.tag,
-          desc: b.desc,
-        }));
-
-        const anyQualifies = baseOptsR.some(
-          (o) => calcMortgage(avgPrice, o.pct, rateForR(o.pct)) <= maxHousingR,
-        );
-        if (!anyQualifies && maxHousingR > 0) {
-          let lo = 20, hi = 95;
-          for (let i = 0; i < 40; i++) {
-            const mid = (lo + hi) / 2;
-            const m = calcMortgage(avgPrice, mid, rateForR(mid));
-            if (m > maxHousingR) lo = mid;
-            else hi = mid;
-          }
-          const dtiRequiredPctR = Math.ceil(hi);
-          if (!baseOptsR.some((o) => o.pct === dtiRequiredPctR)) {
-            baseOptsR.push({
-              pct: dtiRequiredPctR,
-              label: `${dtiRequiredPctR}%`,
-              tag: "DTI-required",
-              desc: "Needed to qualify given current debts and income",
-            });
-          }
-        }
-        const qualifyingOptsR = baseOptsR.filter(
-          (o) => calcMortgage(avgPrice, o.pct, rateForR(o.pct)) <= maxHousingR,
-        );
-        const visibleOptsR = (qualifyingOptsR.length > 0 ? qualifyingOptsR : baseOptsR).sort(
-          (a, b) => a.pct - b.pct,
-        );
+        // Mirror exactly the down-payment options offered on the question screen.
+        const visibleOptsR = computeOfferedDownOpts(d);
 
         return (
       <Section number="02" title="Your down payment options.">
