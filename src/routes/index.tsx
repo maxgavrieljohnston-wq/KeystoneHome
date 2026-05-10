@@ -2213,9 +2213,9 @@ function Report({ d }: { d: Data }) {
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = totalHousing / monthlyIncome;
   const verdict =
-    housingRatio <= 0.28 ? "Affordable" : housingRatio <= 0.36 ? "A stretch" : "Difficult";
+    housingRatio <= 0.45 ? "Affordable" : housingRatio <= 0.55 ? "A stretch" : "Difficult";
   const verdictTone =
-    housingRatio <= 0.28 ? C.sage : housingRatio <= 0.36 ? C.gold : C.ember;
+    housingRatio <= 0.45 ? C.sage : housingRatio <= 0.55 ? C.gold : C.ember;
 
   const eFundMin = combinedExpenses * 3;
   const eFundOk = d.saved >= eFundMin;
