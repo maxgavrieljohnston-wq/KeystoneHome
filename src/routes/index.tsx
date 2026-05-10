@@ -174,6 +174,66 @@ const INITIAL: Data = {
   riskAnswers: {},
 };
 
+// Single source of truth: which down-payment options to offer the user.
+// Used both on the down-payment question screen AND on the final results page,
+// so the results page mirrors exactly what the user was offered earlier.
+type DownOpt = { pct: number; label: string; tag: string; desc: string };
+function computeOfferedDownOpts(d: Data): DownOpt[] {
+  const zd = d.zipData ?? { city: "your area", avg: 400000 };
+  const adj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
+  const targetPrice = Math.round(zd.avg * adj.priceMult);
+  const qCredit =
+    d.hasPartner && d.partnerCredit
+      ? Math.min(d.credit ?? 700, d.partnerCredit)
+      : d.credit ?? 700;
+  const empAdj = combinedEmploymentAdjustment(
+    d.employment,
+    d.hasPartner ? d.partnerEmployment : null,
+  );
+  const mRate = rateFromCredit(qCredit) + empAdj.rateAdd;
+  const rateFor = (pct: number) => mRate + rateAddFromDownPct(pct);
+
+  const grossAnnual = (d.income ?? 0) + (d.hasPartner ? d.partnerIncome ?? 0 : 0);
+  const grossMonthly = (grossAnnual * empAdj.incomeFactor) / 12;
+  const monthlyDebts = (d.debt ?? 0) + (d.hasPartner ? d.partnerDebt ?? 0 : 0);
+  const maxHousing = Math.max(0, grossMonthly * empAdj.dtiCap - monthlyDebts);
+
+  const baseOpts: DownOpt[] = DOWN_BUCKETS.map((b) => ({
+    pct: b.pct,
+    label: `${b.label} down`,
+    tag: b.tag,
+    desc: b.desc,
+  }));
+
+  const anyQualifies = baseOpts.some(
+    (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
+  );
+  if (!anyQualifies && maxHousing > 0) {
+    let lo = 20, hi = 95;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      const m = calcMortgage(targetPrice, mid, rateFor(mid));
+      if (m > maxHousing) lo = mid;
+      else hi = mid;
+    }
+    const dtiRequiredPct = Math.ceil(hi);
+    if (!baseOpts.some((o) => o.pct === dtiRequiredPct)) {
+      baseOpts.push({
+        pct: dtiRequiredPct,
+        label: `${dtiRequiredPct}% down`,
+        tag: "DTI-required",
+        desc: "Needed to qualify given current debts and income",
+      });
+    }
+  }
+
+  const qualifying = baseOpts.filter(
+    (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
+  );
+  const visible = qualifying.length > 0 ? qualifying : baseOpts;
+  return visible.sort((a, b) => a.pct - b.pct);
+}
+
 // ── Root component ───────────────────────────────────────────────────────────
 function KeystoneApp() {
   const [d, setD] = useState<Data>(INITIAL);
@@ -929,28 +989,8 @@ function ScreenSwitch({
     }
     if (recommendedPct === null) recommendedPct = 20;
 
-    // Build the option list — standard buckets, plus a custom DTI-required bucket if needed.
-    type Opt = { pct: number; label: string; tag: string; desc: string };
-    const baseOpts: Opt[] = DOWN_BUCKETS.map((b) => ({
-      pct: b.pct,
-      label: `${b.label} down`,
-      tag: b.tag,
-      desc: b.desc,
-    }));
-    if (dtiRequiredPct !== null && !baseOpts.some((o) => o.pct === dtiRequiredPct)) {
-      baseOpts.push({
-        pct: dtiRequiredPct,
-        label: `${dtiRequiredPct}% down`,
-        tag: "DTI-required",
-        desc: "Needed to qualify given current debts and income",
-      });
-    }
-    // Only show options the user would actually qualify for given DTI cap.
-    const qualifyingOpts = baseOpts.filter(
-      (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
-    );
-    const visibleOpts = qualifyingOpts.length > 0 ? qualifyingOpts : baseOpts;
-    visibleOpts.sort((a, b) => a.pct - b.pct);
+    // Build the option list via shared helper (so results page mirrors it exactly).
+    const visibleOpts = computeOfferedDownOpts(d);
 
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
     const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, rateFor(recommendedPct)));
@@ -2459,47 +2499,8 @@ function Report({ d }: { d: Data }) {
 
       {/* Down payment buckets — mirror the options the user was offered earlier in the flow */}
       {(() => {
-        const DTI_CAP_R = empAdjReady.dtiCap;
-        const grossMonthlyR = monthlyIncome * empAdjReady.incomeFactor;
-        const maxHousingR = Math.max(0, grossMonthlyR * DTI_CAP_R - combinedDebt);
-        const baseRateR = rateFromCredit(qualifyingCredit) + empAdjReady.rateAdd;
-        const rateForR = (pct: number) => baseRateR + rateAddFromDownPct(pct);
-
-        type Opt = { pct: number; label: string; tag: string; desc: string };
-        const baseOptsR: Opt[] = DOWN_BUCKETS.map((b) => ({
-          pct: b.pct,
-          label: b.label,
-          tag: b.tag,
-          desc: b.desc,
-        }));
-
-        const anyQualifies = baseOptsR.some(
-          (o) => calcMortgage(avgPrice, o.pct, rateForR(o.pct)) <= maxHousingR,
-        );
-        if (!anyQualifies && maxHousingR > 0) {
-          let lo = 20, hi = 95;
-          for (let i = 0; i < 40; i++) {
-            const mid = (lo + hi) / 2;
-            const m = calcMortgage(avgPrice, mid, rateForR(mid));
-            if (m > maxHousingR) lo = mid;
-            else hi = mid;
-          }
-          const dtiRequiredPctR = Math.ceil(hi);
-          if (!baseOptsR.some((o) => o.pct === dtiRequiredPctR)) {
-            baseOptsR.push({
-              pct: dtiRequiredPctR,
-              label: `${dtiRequiredPctR}%`,
-              tag: "DTI-required",
-              desc: "Needed to qualify given current debts and income",
-            });
-          }
-        }
-        const qualifyingOptsR = baseOptsR.filter(
-          (o) => calcMortgage(avgPrice, o.pct, rateForR(o.pct)) <= maxHousingR,
-        );
-        const visibleOptsR = (qualifyingOptsR.length > 0 ? qualifyingOptsR : baseOptsR).sort(
-          (a, b) => a.pct - b.pct,
-        );
+        // Mirror exactly the down-payment options offered on the question screen.
+        const visibleOptsR = computeOfferedDownOpts(d);
 
         return (
       <Section number="02" title="Your down payment options.">
@@ -2539,7 +2540,7 @@ function Report({ d }: { d: Data }) {
                     minWidth: 56,
                   }}
                 >
-                  {b.label}
+                  {b.pct}%
                 </div>
                 <div>
                   <div style={{ fontSize: 13, color: C.ink, marginBottom: 2 }}>
