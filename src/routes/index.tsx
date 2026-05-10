@@ -788,7 +788,7 @@ function ScreenSwitch({
 
   if (screen === "partnerIncome")
     return (
-      <Question kicker="Partner" title="Partner's gross annual income?">
+      <Question kicker="Partner" title="Partner's gross annual income?" sub="Before taxes.">
         <Slider
           value={d.partnerIncome}
           min={0}
@@ -803,7 +803,11 @@ function ScreenSwitch({
 
   if (screen === "partnerExpenses")
     return (
-      <Question kicker="Partner" title="Partner's monthly expenses?">
+      <Question
+        kicker="Partner"
+        title="Partner's monthly expenses?"
+        sub="Rent, groceries, transport, subscriptions — the must-pays."
+      >
         <Slider
           value={d.partnerExpenses}
           min={0}
@@ -818,7 +822,11 @@ function ScreenSwitch({
 
   if (screen === "partnerDebt")
     return (
-      <Question kicker="Partner" title="Partner's monthly debt?">
+      <Question
+        kicker="Partner"
+        title="Partner's monthly debt?"
+        sub="Student loans, car payments, credit cards minimums."
+      >
         <Slider
           value={d.partnerDebt}
           min={0}
