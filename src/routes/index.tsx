@@ -2540,7 +2540,7 @@ function Report({ d }: { d: Data }) {
                     minWidth: 56,
                   }}
                 >
-                  {b.label}
+                  {b.pct}%
                 </div>
                 <div>
                   <div style={{ fontSize: 13, color: C.ink, marginBottom: 2 }}>
