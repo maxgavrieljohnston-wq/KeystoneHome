@@ -1,52 +1,128 @@
-## Goal
+# Keystone Paywall — Plus & Pro
 
-Right now the app is a one-shot intake — anyone landing on the page fills out the questionnaire, drops their email, and gets a plan. There's no way for a returning user to come back and see the plan they already created. This adds that.
+Add a two-tier subscription paywall. Free users still get the basic plan outline; paid users unlock personalized planning, calculators, exports, alerts, and check-ins.
 
-## What returning users will experience
+## Tiers & Pricing
 
-1. They open the app (web or installed from App Store).
-2. They tap **"Sign in"** — either from the top of the landing page or from the email-capture step ("Already have an account? Sign in").
-3. They choose how to sign in:
-   - Continue with Google
-   - Continue with Apple
-   - Email me a sign-in link (magic link — no password to remember)
-4. They land on a simple **dashboard** showing their saved plan, with options to retake the questionnaire or update their info.
+| Tier | Monthly | Annual | Audience |
+|---|---|---|---|
+| Free | $0 | — | Top-of-funnel, exploring |
+| **Plus** | $12 | $99 (~31% off) | Active planners, 6–24 mo out |
+| **Pro** | $29 | $249 (~28% off) | Near-buyers, 0–6 mo out |
+
+## Feature Matrix
+
+| Feature | Free | Plus | Pro |
+|---|---|---|---|
+| Basic plan outline | ✓ | ✓ | ✓ |
+| Dashboard + saved answers | ✓ | ✓ | ✓ |
+| Personalized monthly action plan | — | ✓ | ✓ |
+| Affordability calculator (live by-ZIP rates) | — | ✓ | ✓ |
+| Down payment tracker w/ milestones | — | ✓ | ✓ |
+| Credit score roadmap | — | ✓ | ✓ |
+| Monthly progress check-in emails | — | ✓ | ✓ |
+| Lender-ready summary PDF export | — | — | ✓ |
+| Pre-approval prep checklist + doc upload | — | — | ✓ |
+| Rate watch alerts | — | — | ✓ |
+| AI advisor chat | — | — | ✓ |
+
+## User Flow
+
+```text
+Questionnaire → Email capture → Free plan outline reveal
+                                        ↓
+                              [Soft paywall section]
+                              "Unlock your full plan"
+                              ┌──────────┬──────────┐
+                              │   Plus   │   Pro    │
+                              │  $12/mo  │  $29/mo  │
+                              └─────┬────┴────┬─────┘
+                                    ↓         ↓
+                              Stripe Checkout (test or live)
+                                    ↓
+                              Success → /dashboard
+                                    ↓
+                              Premium tabs unlocked
+                                    ↓
+                              Free users see "Upgrade" lock cards
+```
 
 ## What we'll build
 
-### 1. New `/login` page
-A clean sign-in screen with three options: Google, Apple, and "Email me a magic link." Matches the design of the existing email-capture step. Includes a "← Back to home" link.
+### 1. Payments setup
+- Enable **Lovable's built-in Stripe payments** (no API keys needed).
+- Create Plus and Pro products with monthly + annual prices.
+- Tax option **2 (calculation only)** by default — fits a US digital subscription without locking us out of international buyers later.
 
-### 2. Sign-in entry points
-- **Top nav on landing page**: small "Sign in" link in the header (visible on the marketing/intake page).
-- **Email-capture step**: small "Already have an account? Sign in" link below the existing Google/Apple/email options.
+### 2. Subscription schema
+- `subscriptions` table: `user_id`, `tier` (`free|plus|pro`), `status`, `stripe_customer_id`, `stripe_subscription_id`, `current_period_end`, `cancel_at_period_end`.
+- RLS: users read their own row only; service role writes.
+- Helper: `get_my_tier()` server function returning `'free' | 'plus' | 'pro'` for use across UI + server gates.
 
-### 3. New `/dashboard` page (protected)
-Shown after login. Displays:
-- Greeting with the user's name
-- Their saved plan summary (pulled from the `leads` table, matched by email)
-- "Retake questionnaire" button → restarts the intake flow
-- "Sign out" button
+### 3. Stripe webhook
+- `/api/public/stripe-webhook` route, signature verified.
+- Handles `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed` → keeps `subscriptions` row in sync.
 
-If a logged-in user has no saved plan yet, the dashboard prompts them to take the questionnaire.
+### 4. Paywall UI on plan reveal (in `src/routes/index.tsx`)
+- After the existing free plan outline, append a **pricing section** (Plus / Pro side-by-side, annual toggle).
+- "Most popular" badge on Plus annual.
+- Each CTA → Stripe Checkout (passes user email + selected price).
+- "Maybe later" link → continues to `/dashboard` on Free.
 
-### 4. Auth callback handling
-When users come back from Google/Apple/magic-link, they land on a callback route that completes sign-in and forwards them to `/dashboard`.
+### 5. Dashboard upgrades (`src/routes/dashboard.tsx`)
+- New left-rail / tabbed nav:
+  - Plan summary (existing)
+  - Action plan (Plus+)
+  - Affordability (Plus+)
+  - Savings tracker (Plus+)
+  - Credit roadmap (Plus+)
+  - Lender PDF (Pro)
+  - Pre-approval (Pro)
+  - Rate alerts (Pro)
+  - Advisor chat (Pro)
+- Locked tabs render a **gated card** with the feature description + upgrade CTA.
+- "Manage subscription" button → Stripe customer portal.
 
-### 5. Magic link emails
-Magic-link sign-in needs to send a branded email. We'll set up Lovable's auth email templates so the link comes from your domain and matches your branding.
+### 6. Premium feature implementations (v1)
+- **Action plan**: generated via Lovable AI (`google/gemini-2.5-flash`) from saved answers — month-by-month savings/debt/credit moves.
+- **Affordability calculator**: client-side form + standard 28/36 DTI math; rate input defaults to a current national avg constant (manual update to start, rate API later).
+- **Savings tracker**: simple `savings_progress` table (user_id, current_amount, goal_amount, updated_at), edit form + progress bar + milestone copy.
+- **Credit roadmap**: AI-generated ranked actions from credit score + answers.
+- **Lender PDF**: server function builds branded PDF (react-pdf) from saved plan, returns download URL.
+- **Pre-approval checklist**: static checklist with persistent check state per user (`checklist_items` table) + Lovable Cloud Storage bucket for doc uploads.
+- **Rate alerts**: `rate_alert_subscriptions` table (user_id, target_rate, zip). Daily cron compares against stored current rate; sends branded email when triggered. (Rate value updated manually for v1; auto-pull later.)
+- **Advisor chat**: Lovable AI chat (`openai/gpt-5-mini`) seeded with user's plan as system context. Stored per-thread in `advisor_messages`.
 
-## Technical details
+### 7. Monthly check-in emails (Plus+)
+- pg_cron job, monthly per user.
+- Branded react-email template (matches existing magic-link style) summarizing progress + next month's focus.
 
-- **Auth methods**: Google + Apple via Lovable Cloud managed OAuth (already wired up). Magic link via Supabase `signInWithOtp`.
-- **Routes added**: `src/routes/login.tsx`, `src/routes/dashboard.tsx`, `src/routes/auth.callback.tsx`.
-- **Dashboard data**: server function with `requireSupabaseAuth` middleware that looks up the `leads` row by the authenticated user's email and returns the saved answers.
-- **Profile linking**: the `profiles` table + `handle_new_user` trigger already exist, so each new sign-in auto-creates a profile row. No schema changes needed.
-- **Magic-link email setup**: scaffold Lovable's auth email templates so the magic-link email is branded. Requires an email domain — if none is configured yet, we'll prompt you to set one up.
-- **Session gating**: `/dashboard` uses `beforeLoad` to redirect unauthenticated users to `/login`.
+### 8. Server-side gating
+- All premium server functions wrap `requireSupabaseAuth` + a `requireTier('plus' | 'pro')` middleware that reads `subscriptions` and 403s if insufficient.
+- UI hides/locks but the server is the source of truth.
 
-## Out of scope (can be follow-ups)
+## Out of scope (follow-ups)
+- Live mortgage rate API integration (manual constant in v1).
+- Plaid for bank-linked savings tracking.
+- Team/family plans.
+- Refund/proration UI (Stripe portal handles for now).
 
-- Editing individual answers on the dashboard (only retake-from-scratch for now).
-- Account settings page (change email, delete account).
-- Linking a logged-in user's existing `leads` row if they originally submitted with a different email than they now sign in with.
+## Technical notes
+
+- **Provider**: Lovable's built-in Stripe payments (`enable_stripe_payments`). Test mode auto-provisioned; live requires account claim.
+- **New routes**: `src/routes/api/public/stripe-webhook.ts`, `src/routes/api/public/cron/monthly-checkins.ts`, `src/routes/api/public/cron/rate-alerts.ts`, dashboard becomes a layout with child tab routes under `src/routes/dashboard/`.
+- **New server fns** in `src/lib/`: `subscription.functions.ts`, `action-plan.functions.ts`, `affordability.functions.ts`, `savings.functions.ts`, `credit.functions.ts`, `lender-pdf.functions.ts`, `advisor.functions.ts`.
+- **New tables**: `subscriptions`, `savings_progress`, `checklist_items`, `rate_alert_subscriptions`, `advisor_messages`.
+- **New email templates**: `monthly-checkin.tsx`, `rate-alert.tsx`.
+- **New deps**: `@react-pdf/renderer` (for lender PDF). Stripe SDK comes with the payments integration.
+- **AI**: uses existing `LOVABLE_API_KEY` via Lovable AI Gateway — no extra keys.
+- **Cron**: pg_cron hitting the public cron routes on the stable `project--{id}.lovable.app` URL.
+
+## Build order (so each step is shippable)
+
+1. Enable Stripe payments + create Plus/Pro products.
+2. `subscriptions` table + webhook + checkout flow + paywall section on index.
+3. Dashboard tab layout + gated cards + Stripe portal link.
+4. Action plan + savings tracker + affordability calc + credit roadmap (Plus features).
+5. Lender PDF + pre-approval checklist + advisor chat (Pro features).
+6. Monthly check-in emails + rate alerts cron.
