@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { upsertLead } from "@/lib/leads.functions";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
@@ -479,37 +481,7 @@ function ScreenSwitch({
 }) {
   if (screen === "welcome") return <Welcome onStart={next} />;
 
-  if (screen === "email")
-    return (
-      <Question
-        kicker="Your turn"
-        title="Where should we send your plan?"
-        sub="Just for the report. We don't spam."
-      >
-        <input
-          type="email"
-          inputMode="email"
-          placeholder="you@email.com"
-          value={d.email}
-          onChange={(e) => set("email", e.target.value)}
-          style={{
-            width: "100%",
-            background: "transparent",
-            border: "none",
-            borderBottom: `1.5px solid ${C.ink}`,
-            padding: "12px 0",
-            fontSize: 22,
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            color: C.ink,
-            outline: "none",
-            marginBottom: 28,
-          }}
-        />
-        <Cta onClick={next} disabled={!d.email.includes("@")}>
-          Continue
-        </Cta>
-      </Question>
-    );
+  if (screen === "email") return <EmailScreen d={d} set={set} next={next} />;
 
   if (screen === "age")
     return <BirthdayScreen d={d} set={set} onNext={next} which="user" />;
@@ -2325,6 +2297,16 @@ function ZipScreen({
 
 
 function Report({ d }: { d: Data }) {
+  const saveLead = useServerFn(upsertLead);
+  useEffect(() => {
+    const email = (d.email ?? "").trim().toLowerCase();
+    if (!email.includes("@")) return;
+    saveLead({
+      data: { email, answers: d as unknown as Record<string, unknown>, completed: true },
+    }).catch((err) => console.error("[saveLead:report]", err));
+    // Run once on mount; d is a snapshot of completed answers
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
@@ -3096,6 +3078,58 @@ function ReadyRow({
         />
       </div>
     </div>
+  );
+}
+
+// ── EmailScreen ──────────────────────────────────────────────────────────────
+function EmailScreen({
+  d,
+  set,
+  next,
+}: {
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  next: () => void;
+}) {
+  const saveLead = useServerFn(upsertLead);
+  const handleContinue = () => {
+    const email = d.email.trim().toLowerCase();
+    if (!email.includes("@")) return;
+    // Fire-and-forget; never block the flow on save failure
+    saveLead({ data: { email, answers: d as unknown as Record<string, unknown>, completed: false } }).catch(
+      (err) => console.error("[saveLead:email]", err),
+    );
+    next();
+  };
+  return (
+    <Question
+      kicker="Your turn"
+      title="Where should we send your plan?"
+      sub="Just for the report. We don't spam."
+    >
+      <input
+        type="email"
+        inputMode="email"
+        placeholder="you@email.com"
+        value={d.email}
+        onChange={(e) => set("email", e.target.value)}
+        style={{
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          borderBottom: `1.5px solid ${C.ink}`,
+          padding: "12px 0",
+          fontSize: 22,
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          color: C.ink,
+          outline: "none",
+          marginBottom: 28,
+        }}
+      />
+      <Cta onClick={handleContinue} disabled={!d.email.includes("@")}>
+        Continue
+      </Cta>
+    </Question>
   );
 }
 
