@@ -2312,15 +2312,42 @@ function ZipScreen({
 
 function Report({ d }: { d: Data }) {
   const saveLead = useServerFn(upsertLead);
+  const submit = useServerFn(submitPlan);
+  const [limitState, setLimitState] = useState<
+    | { reason: "limit_reached"; used: number | null; limit: number | null }
+    | null
+  >(null);
   useEffect(() => {
     const email = (d.email ?? "").trim().toLowerCase();
     if (!email.includes("@")) return;
+    // Keep the lead row updated for drop-off capture
     saveLead({
       data: { email, answers: d as unknown as Record<string, unknown>, completed: true },
     }).catch((err) => console.error("[saveLead:report]", err));
+    // Persist as a plan (enforces 3-free limit, sends summary email)
+    submit({
+      data: {
+        email,
+        answers: d as unknown as Record<string, unknown>,
+        environment: getPaddleEnvironment(),
+      },
+    })
+      .then((res) => {
+        if (!res.ok && res.reason === "limit_reached") {
+          setLimitState({
+            reason: "limit_reached",
+            used: res.used,
+            limit: res.limit,
+          });
+        }
+      })
+      .catch((err) => console.error("[submitPlan]", err));
     // Run once on mount; d is a snapshot of completed answers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  if (limitState) {
+    return <LimitReachedGate used={limitState.used} limit={limitState.limit} />;
+  }
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
