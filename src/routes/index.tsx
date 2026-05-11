@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
+import { submitPlan } from "@/lib/plans.functions";
+import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
@@ -2312,17 +2312,66 @@ function ZipScreen({
 }
 
 
+function LimitReachedGate({ used, limit }: { used: number | null; limit: number | null }) {
+  return (
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "60px 24px", fontFamily: "'Cormorant Garamond', Georgia, serif", color: "#1a1a1a" }}>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#c4452d", marginBottom: 16 }}>
+        — Free plan limit reached
+      </div>
+      <h1 style={{ fontWeight: 400, fontSize: 38, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 18px" }}>
+        You've used {used ?? limit} of your {limit ?? 3} free plans.
+      </h1>
+      <p style={{ fontSize: 17, lineHeight: 1.5, color: "#3d3d3d", margin: "0 0 28px" }}>
+        Upgrade to keep building plans and unlock saved history, partner mode, PDF export, and more.
+      </p>
+      <Link to="/pricing" style={{ display: "inline-block", padding: "14px 22px", background: "#1a1a1a", color: "#f5efe6", textDecoration: "none", borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+        See upgrade options →
+      </Link>
+      <div style={{ marginTop: 18, fontSize: 13, color: "#6b6b6b" }}>
+        Already a member? <Link to="/login" style={{ color: "#c4452d" }}>Sign in</Link> to view your saved plans.
+      </div>
+    </div>
+  );
+}
+
 function Report({ d }: { d: Data }) {
   const saveLead = useServerFn(upsertLead);
+  const submit = useServerFn(submitPlan);
+  const [limitState, setLimitState] = useState<
+    | { reason: "limit_reached"; used: number | null; limit: number | null }
+    | null
+  >(null);
   useEffect(() => {
     const email = (d.email ?? "").trim().toLowerCase();
     if (!email.includes("@")) return;
+    // Keep the lead row updated for drop-off capture
     saveLead({
       data: { email, answers: d as unknown as Record<string, unknown>, completed: true },
     }).catch((err) => console.error("[saveLead:report]", err));
+    // Persist as a plan (enforces 3-free limit, sends summary email)
+    submit({
+      data: {
+        email,
+        answers: d as unknown as Record<string, unknown>,
+        environment: getPaddleEnvironment(),
+      },
+    })
+      .then((res) => {
+        if (!res.ok && res.reason === "limit_reached") {
+          setLimitState({
+            reason: "limit_reached",
+            used: res.used,
+            limit: res.limit,
+          });
+        }
+      })
+      .catch((err) => console.error("[submitPlan]", err));
     // Run once on mount; d is a snapshot of completed answers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  if (limitState) {
+    return <LimitReachedGate used={limitState.used} limit={limitState.limit} />;
+  }
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
@@ -3152,47 +3201,14 @@ function EmailScreen({
   next: () => void;
 }) {
   const saveLead = useServerFn(upsertLead);
-  const handleContinue = (emailOverride?: string) => {
-    const email = (emailOverride ?? d.email).trim().toLowerCase();
+  const handleContinue = () => {
+    const email = d.email.trim().toLowerCase();
     if (!email.includes("@")) return;
-    // Fire-and-forget; never block the flow on save failure
+    // Fire-and-forget draft save; never block the flow on save failure
     saveLead({ data: { email, answers: { ...d, email } as unknown as Record<string, unknown>, completed: false } }).catch(
       (err) => console.error("[saveLead:email]", err),
     );
     next();
-  };
-
-  // If user comes back from Google OAuth, pull their email and continue.
-  useEffect(() => {
-    let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      const email = data.session?.user?.email;
-      if (cancelled || !email) return;
-      set("email", email);
-      handleContinue(email);
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      console.error("[google sign-in]", result.error);
-    }
-  };
-
-  const handleApple = async () => {
-    const result = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      console.error("[apple sign-in]", result.error);
-    }
   };
 
   return (
@@ -3220,69 +3236,9 @@ function EmailScreen({
           marginBottom: 28,
         }}
       />
-      <Cta onClick={() => handleContinue()} disabled={!d.email.includes("@")}>
+      <Cta onClick={handleContinue} disabled={!d.email.includes("@")}>
         Continue
       </Cta>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0 16px", color: C.ink, opacity: 0.5, fontSize: 12, letterSpacing: 1, textTransform: "uppercase" }}>
-        <div style={{ flex: 1, height: 1, background: C.ink, opacity: 0.2 }} />
-        or
-        <div style={{ flex: 1, height: 1, background: C.ink, opacity: 0.2 }} />
-      </div>
-
-      <button
-        type="button"
-        onClick={handleGoogle}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          padding: "12px 16px",
-          background: "#fff",
-          border: `1.5px solid ${C.ink}`,
-          borderRadius: 8,
-          fontSize: 15,
-          fontWeight: 500,
-          color: C.ink,
-          cursor: "pointer",
-        }}
-      >
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/>
-          <path fill="#34A853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
-          <path fill="#FBBC05" d="M3.97 10.71A5.41 5.41 0 0 1 3.68 9c0-.59.1-1.17.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/>
-          <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
-        </svg>
-        Continue with Google
-      </button>
-
-      <button
-        type="button"
-        onClick={handleApple}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          padding: "12px 16px",
-          marginTop: 10,
-          background: "#000",
-          border: `1.5px solid #000`,
-          borderRadius: 8,
-          fontSize: 15,
-          fontWeight: 500,
-          color: "#fff",
-          cursor: "pointer",
-        }}
-      >
-        <svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true" fill="#fff">
-          <path d="M13.07 9.56c-.02-2.18 1.78-3.23 1.86-3.28-1.02-1.49-2.6-1.69-3.16-1.71-1.34-.13-2.62.79-3.31.79-.69 0-1.74-.77-2.86-.75-1.47.02-2.83.85-3.59 2.16-1.53 2.65-.39 6.58 1.1 8.73.73 1.05 1.6 2.24 2.74 2.2 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.4 1.2-2.46-.03-.01-2.31-.89-2.34-3.53zM10.92 3.04c.6-.73 1.01-1.74.9-2.74-.87.04-1.93.58-2.55 1.31-.55.64-1.04 1.67-.91 2.66.97.07 1.96-.49 2.56-1.23z"/>
-        </svg>
-        Continue with Apple
-      </button>
 
       <div
         style={{

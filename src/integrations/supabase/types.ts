@@ -128,6 +128,30 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          answers: Json
+          created_at: string
+          email: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          email: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          email?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -232,6 +256,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_plan_with_limit: {
+        Args: {
+          p_answers: Json
+          p_email: string
+          p_environment?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
