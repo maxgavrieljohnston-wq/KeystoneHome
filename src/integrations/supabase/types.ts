@@ -46,7 +46,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      upsert_lead: {
+        Args: { p_answers: Json; p_completed: boolean; p_email: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
