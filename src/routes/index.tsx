@@ -3071,6 +3071,58 @@ function ReadyRow({
   );
 }
 
+// ── EmailScreen ──────────────────────────────────────────────────────────────
+function EmailScreen({
+  d,
+  set,
+  next,
+}: {
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  next: () => void;
+}) {
+  const saveLead = useServerFn(upsertLead);
+  const handleContinue = () => {
+    const email = d.email.trim().toLowerCase();
+    if (!email.includes("@")) return;
+    // Fire-and-forget; never block the flow on save failure
+    saveLead({ data: { email, answers: d as unknown as Record<string, unknown>, completed: false } }).catch(
+      (err) => console.error("[saveLead:email]", err),
+    );
+    next();
+  };
+  return (
+    <Question
+      kicker="Your turn"
+      title="Where should we send your plan?"
+      sub="Just for the report. We don't spam."
+    >
+      <input
+        type="email"
+        inputMode="email"
+        placeholder="you@email.com"
+        value={d.email}
+        onChange={(e) => set("email", e.target.value)}
+        style={{
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          borderBottom: `1.5px solid ${C.ink}`,
+          padding: "12px 0",
+          fontSize: 22,
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          color: C.ink,
+          outline: "none",
+          marginBottom: 28,
+        }}
+      />
+      <Cta onClick={handleContinue} disabled={!d.email.includes("@")}>
+        Continue
+      </Cta>
+    </Question>
+  );
+}
+
 // ── BirthdayScreen ───────────────────────────────────────────────────────────
 function BirthdayScreen({
   d,
