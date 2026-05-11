@@ -40,6 +40,7 @@ function DashboardPage() {
     queryKey: ["my-plan"],
     queryFn: () => fetchPlan(),
   });
+  const sub = useSubscription();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
