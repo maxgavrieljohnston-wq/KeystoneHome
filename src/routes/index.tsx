@@ -2297,6 +2297,16 @@ function ZipScreen({
 
 
 function Report({ d }: { d: Data }) {
+  const saveLead = useServerFn(upsertLead);
+  useEffect(() => {
+    const email = (d.email ?? "").trim().toLowerCase();
+    if (!email.includes("@")) return;
+    saveLead({
+      data: { email, answers: d as unknown as Record<string, unknown>, completed: true },
+    }).catch((err) => console.error("[saveLead:report]", err));
+    // Run once on mount; d is a snapshot of completed answers
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
