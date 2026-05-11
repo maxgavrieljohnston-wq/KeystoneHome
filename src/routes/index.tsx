@@ -481,37 +481,7 @@ function ScreenSwitch({
 }) {
   if (screen === "welcome") return <Welcome onStart={next} />;
 
-  if (screen === "email")
-    return (
-      <Question
-        kicker="Your turn"
-        title="Where should we send your plan?"
-        sub="Just for the report. We don't spam."
-      >
-        <input
-          type="email"
-          inputMode="email"
-          placeholder="you@email.com"
-          value={d.email}
-          onChange={(e) => set("email", e.target.value)}
-          style={{
-            width: "100%",
-            background: "transparent",
-            border: "none",
-            borderBottom: `1.5px solid ${C.ink}`,
-            padding: "12px 0",
-            fontSize: 22,
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            color: C.ink,
-            outline: "none",
-            marginBottom: 28,
-          }}
-        />
-        <Cta onClick={next} disabled={!d.email.includes("@")}>
-          Continue
-        </Cta>
-      </Question>
-    );
+  if (screen === "email") return <EmailScreen d={d} set={set} next={next} />;
 
   if (screen === "age")
     return <BirthdayScreen d={d} set={set} onNext={next} which="user" />;
