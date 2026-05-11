@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -1528,6 +1528,19 @@ function Welcome({ onStart }: { onStart: () => void }) {
         }}
       >
         <Wordmark />
+        <Link
+          to="/login"
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+            textDecoration: "none",
+          }}
+        >
+          Sign in
+        </Link>
       </div>
 
       <div
@@ -3168,6 +3181,23 @@ function EmailScreen({
         </svg>
         Continue with Apple
       </button>
+
+      <div
+        style={{
+          marginTop: 22,
+          textAlign: "center",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: C.inkMute,
+        }}
+      >
+        Already have an account?{" "}
+        <Link to="/login" style={{ color: C.ember, textDecoration: "none" }}>
+          Sign in
+        </Link>
+      </div>
     </Question>
   );
 }
