@@ -175,7 +175,7 @@ export const getMyPlans = createServerFn({ method: "GET" })
     let orphanPlans: Array<{
       id: string;
       email: string;
-      answers: unknown;
+      answers: Record<string, unknown>;
       created_at: string;
     }> = [];
     if (email) {
