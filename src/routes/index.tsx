@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
@@ -3103,7 +3105,7 @@ function EmailScreen({
   };
 
   // If user comes back from Google OAuth, pull their email and continue.
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
       const email = data.session?.user?.email;
