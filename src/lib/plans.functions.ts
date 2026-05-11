@@ -164,26 +164,23 @@ export const getMyPlans = createServerFn({ method: "GET" })
     const { supabase, userId, claims } = context;
     const email = (claims.email as string | undefined)?.toLowerCase();
 
-    // Plans tied to this user_id (RLS-visible)
     const { data: ownedPlans } = await supabase
       .from("plans")
-      .select("id, email, answers, created_at")
+      .select("id, email, title, answers, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    // Plans created anonymously under this email before the user signed up
     type PlanRow = NonNullable<typeof ownedPlans>[number];
     let orphanPlans: PlanRow[] = [];
     if (email) {
       const { data } = await supabaseAdmin
         .from("plans")
-        .select("id, email, answers, created_at")
+        .select("id, email, title, answers, created_at")
         .ilike("email", email)
         .is("user_id", null)
         .order("created_at", { ascending: false });
       orphanPlans = (data ?? []) as PlanRow[];
 
-      // Backfill user_id on orphan rows so RLS sees them next time
       if (orphanPlans.length > 0) {
         await supabaseAdmin
           .from("plans")
@@ -198,3 +195,158 @@ export const getMyPlans = createServerFn({ method: "GET" })
     );
     return { plans: merged, email: email ?? null };
   });
+
+const planIdSchema = z.object({ planId: z.string().uuid() });
+
+async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
+  const { data, error } = await supabaseAdmin.rpc("has_active_subscription", {
+    user_uuid: userId,
+    check_env: env,
+  } as never);
+  if (error) {
+    console.warn("[has_active_subscription]", error);
+    return false;
+  }
+  return Boolean(data);
+}
+
+export const renamePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ planId: z.string().uuid(), title: z.string().trim().min(1).max(80) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("plans")
+      .update({ title: data.title })
+      .eq("id", data.planId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const deletePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => planIdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("plans")
+      .delete()
+      .eq("id", data.planId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const exportPlanPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        environment: z.enum(["sandbox", "live"]).default("live"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    // Verify entitlement (Plus or Pro)
+    const allowed = await userHasActiveSub(context.userId, data.environment);
+    if (!allowed) {
+      throw new Response("Upgrade required", { status: 403 });
+    }
+
+    const { data: plan, error } = await supabaseAdmin
+      .from("plans")
+      .select("id, email, title, answers, created_at")
+      .eq("id", data.planId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!plan) throw new Response("Not found", { status: 404 });
+
+    const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([612, 792]);
+    const serif = await doc.embedFont(StandardFonts.TimesRoman);
+    const serifBold = await doc.embedFont(StandardFonts.TimesRomanBold);
+    const mono = await doc.embedFont(StandardFonts.Courier);
+
+    const ink = rgb(0.1, 0.1, 0.1);
+    const ember = rgb(0.77, 0.27, 0.18);
+    const mute = rgb(0.42, 0.42, 0.42);
+
+    let y = 740;
+    page.drawText("KEYSTONE", { x: 50, y, size: 14, font: mono, color: ink });
+    y -= 30;
+    page.drawText("— YOUR HOMEBUYING PLAN", {
+      x: 50,
+      y,
+      size: 9,
+      font: mono,
+      color: ember,
+    });
+    y -= 36;
+    const title = (plan.title as string | null) || "Homebuying plan";
+    page.drawText(title, { x: 50, y, size: 26, font: serifBold, color: ink });
+    y -= 22;
+    page.drawText(`Prepared for ${plan.email}`, { x: 50, y, size: 11, font: serif, color: mute });
+    y -= 14;
+    page.drawText(`Generated ${new Date().toLocaleDateString()}`, {
+      x: 50,
+      y,
+      size: 11,
+      font: serif,
+      color: mute,
+    });
+    y -= 30;
+    page.drawLine({ start: { x: 50, y }, end: { x: 562, y }, color: ink, thickness: 0.6 });
+    y -= 30;
+
+    const a = (plan.answers ?? {}) as Record<string, unknown>;
+    const money = (n: unknown) =>
+      typeof n === "number" ? `$${n.toLocaleString()}` : String(n ?? "—");
+    const rows: Array<[string, string]> = [];
+    const push = (label: string, v: unknown, fmt?: (x: unknown) => string) => {
+      if (v === null || v === undefined || v === "") return;
+      rows.push([label, fmt ? fmt(v) : String(v)]);
+    };
+    push("Name", [a.firstName, a.lastName].filter(Boolean).join(" "));
+    push("ZIP", a.zip);
+    push("Phone", a.phone);
+    push("Annual income", a.income, money);
+    push("Monthly expenses", a.expenses, money);
+    push("Total debt", a.debt, money);
+    push("Saved so far", a.saved, money);
+    push("Credit score", a.credit);
+    push("Timeline", a.timelineBucket);
+    push("Down payment goal", a.downGoalPct, (v) => `${v}%`);
+
+    for (const [k, v] of rows) {
+      page.drawText(k.toUpperCase(), { x: 50, y, size: 9, font: mono, color: mute });
+      page.drawText(v, { x: 280, y, size: 13, font: serif, color: ink });
+      y -= 22;
+      page.drawLine({
+        start: { x: 50, y: y + 6 },
+        end: { x: 562, y: y + 6 },
+        color: rgb(0.85, 0.82, 0.75),
+        thickness: 0.4,
+      });
+    }
+
+    y -= 20;
+    page.drawText("Keystone — your path to homeownership.", {
+      x: 50,
+      y,
+      size: 10,
+      font: serif,
+      color: mute,
+    });
+
+    const bytes = await doc.save();
+    // Convert to base64 for transport
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    const base64 = btoa(binary);
+    return { ok: true as const, base64, filename: `${title.replace(/[^a-z0-9]+/gi, "-")}.pdf` };
+  });
+
