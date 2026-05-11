@@ -3181,6 +3181,23 @@ function EmailScreen({
         </svg>
         Continue with Apple
       </button>
+
+      <div
+        style={{
+          marginTop: 22,
+          textAlign: "center",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: C.inkMute,
+        }}
+      >
+        Already have an account?{" "}
+        <Link to="/login" style={{ color: C.ember, textDecoration: "none" }}>
+          Sign in
+        </Link>
+      </div>
     </Question>
   );
 }
