@@ -3128,6 +3128,15 @@ function EmailScreen({
     }
   };
 
+  const handleApple = async () => {
+    const result = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      console.error("[apple sign-in]", result.error);
+    }
+  };
+
   return (
     <Question
       kicker="Your turn"
@@ -3189,6 +3198,32 @@ function EmailScreen({
           <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
         </svg>
         Continue with Google
+      </button>
+
+      <button
+        type="button"
+        onClick={handleApple}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          padding: "12px 16px",
+          marginTop: 10,
+          background: "#000",
+          border: `1.5px solid #000`,
+          borderRadius: 8,
+          fontSize: 15,
+          fontWeight: 500,
+          color: "#fff",
+          cursor: "pointer",
+        }}
+      >
+        <svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true" fill="#fff">
+          <path d="M13.07 9.56c-.02-2.18 1.78-3.23 1.86-3.28-1.02-1.49-2.6-1.69-3.16-1.71-1.34-.13-2.62.79-3.31.79-.69 0-1.74-.77-2.86-.75-1.47.02-2.83.85-3.59 2.16-1.53 2.65-.39 6.58 1.1 8.73.73 1.05 1.6 2.24 2.74 2.2 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.4 1.2-2.46-.03-.01-2.31-.89-2.34-3.53zM10.92 3.04c.6-.73 1.01-1.74.9-2.74-.87.04-1.93.58-2.55 1.31-.55.64-1.04 1.67-.91 2.66.97.07 1.96-.49 2.56-1.23z"/>
+        </svg>
+        Continue with Apple
       </button>
     </Question>
   );
