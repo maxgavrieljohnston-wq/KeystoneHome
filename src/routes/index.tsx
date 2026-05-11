@@ -1536,7 +1536,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
             fontSize: 11,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: C.inkMute,
+            color: C.ember,
             textDecoration: "none",
           }}
         >
