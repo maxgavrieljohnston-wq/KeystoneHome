@@ -1528,6 +1528,19 @@ function Welcome({ onStart }: { onStart: () => void }) {
         }}
       >
         <Wordmark />
+        <Link
+          to="/login"
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+            textDecoration: "none",
+          }}
+        >
+          Sign in
+        </Link>
       </div>
 
       <div
