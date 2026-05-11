@@ -172,12 +172,8 @@ export const getMyPlans = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
 
     // Plans created anonymously under this email before the user signed up
-    let orphanPlans: Array<{
-      id: string;
-      email: string;
-      answers: Record<string, unknown>;
-      created_at: string;
-    }> = [];
+    type PlanRow = NonNullable<typeof ownedPlans>[number];
+    let orphanPlans: PlanRow[] = [];
     if (email) {
       const { data } = await supabaseAdmin
         .from("plans")
@@ -185,7 +181,7 @@ export const getMyPlans = createServerFn({ method: "GET" })
         .ilike("email", email)
         .is("user_id", null)
         .order("created_at", { ascending: false });
-      orphanPlans = (data ?? []) as typeof orphanPlans;
+      orphanPlans = (data ?? []) as PlanRow[];
 
       // Backfill user_id on orphan rows so RLS sees them next time
       if (orphanPlans.length > 0) {
