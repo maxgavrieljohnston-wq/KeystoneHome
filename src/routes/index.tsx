@@ -2774,6 +2774,105 @@ function Report({ d }: { d: Data }) {
   );
 }
 
+// ── Report paywall ───────────────────────────────────────────────────────────
+function ReportPaywall() {
+  const { isPlus, isPro, tier, loading } = useSubscription();
+  if (loading) return null;
+  if (isPro) return null;
+
+  const features = isPlus
+    ? [
+        "AI homebuying coach",
+        "Side-by-side scenario comparison",
+        "Live mortgage rate alerts",
+        "Priority support",
+      ]
+    : [
+        "Save unlimited plans",
+        "Partner / household mode",
+        "Export your plan as PDF",
+        "AI homebuying coach (Pro)",
+        "Live mortgage rate alerts (Pro)",
+      ];
+
+  return (
+    <section
+      style={{
+        marginTop: 48,
+        padding: 28,
+        borderRadius: 14,
+        background: C.ink,
+        color: C.paper,
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          margin: "0 0 12px",
+        }}
+      >
+        {isPlus ? "Upgrade to Pro" : "Unlock the full plan"}
+      </p>
+      <h3
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 36,
+          fontWeight: 400,
+          letterSpacing: "-0.02em",
+          lineHeight: 1.05,
+          margin: 0,
+        }}
+      >
+        {isPlus
+          ? "Go further with your personal coach."
+          : "Save this plan. Track it. Reach it faster."}
+      </h3>
+      <p style={{ fontSize: 16, color: "#d6cfc1", marginTop: 10, lineHeight: 1.5 }}>
+        You're on the{" "}
+        <span style={{ textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>
+          {tier}
+        </span>{" "}
+        plan. Upgrade to unlock:
+      </p>
+      <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 24px" }}>
+        {features.map((f) => (
+          <li
+            key={f}
+            style={{
+              fontSize: 16,
+              padding: "8px 0",
+              borderTop: "1px solid #3a3a3a",
+            }}
+          >
+            ✦ {f}
+          </li>
+        ))}
+      </ul>
+      <Link
+        to="/pricing"
+        style={{
+          display: "inline-block",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 12,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          padding: "14px 22px",
+          borderRadius: 8,
+          background: C.paper,
+          color: C.ink,
+          textDecoration: "none",
+        }}
+      >
+        See plans →
+      </Link>
+    </section>
+  );
+}
+
 // ── Report sub-components ────────────────────────────────────────────────────
 const SubP: React.CSSProperties = {
   fontSize: 14,
