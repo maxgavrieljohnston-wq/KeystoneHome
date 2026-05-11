@@ -965,7 +965,7 @@ function ScreenSwitch({
     const zipData = d.zipData ?? { city: "your area", avg: 400000 };
     const styleIds = d.homeStyle ? [d.homeStyle] : [];
     const adj = styleAdjustments(styleIds);
-    const avgPrice = Math.round(zipData.avg * adj.priceMult);
+    const avgPrice = Math.round(zipData.avg * computeFeatureMult(d));
     const candidate = d.downGoalPct ?? 10;
     const effectiveDownPct = Math.max(candidate, adj.minDown);
     const target = Math.round((avgPrice * effectiveDownPct) / 100);
