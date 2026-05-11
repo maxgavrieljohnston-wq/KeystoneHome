@@ -1567,8 +1567,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
           maxWidth: 460,
         }}
       >
-        Automatically invest toward your down payment with a plan built to get
-        you there faster.
+        Built for first-time home buyers who want a plan, not just another
+        savings account.
       </p>
 
       <Cta onClick={onStart} large>
@@ -1590,7 +1590,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
         }}
       >
         <span>~ 2 minutes</span>
-        <span>No account required</span>
+        <span>Free plan preview</span>
       </div>
     </div>
   );
