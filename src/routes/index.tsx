@@ -2619,13 +2619,6 @@ function Report({ d }: { d: Data }) {
 
         return (
       <Section number="02" title="Your down payment options.">
-        <p style={SubP}>
-          Based on {fmt(d.saved)} saved against {fmtCompact(avgPrice)}, we modeled your plan at{" "}
-          <em style={{ fontStyle: "italic" }}>{effectiveDownPct}% down</em>.{" "}
-          {visibleOptsR.length === 1
-            ? "Given your numbers, this is the path that qualifies."
-            : "Here's what each path would actually mean for you."}
-        </p>
         <div style={{ marginTop: 14 }}>
           {visibleOptsR.map((b) => {
             const dp = Math.round((avgPrice * b.pct) / 100);
