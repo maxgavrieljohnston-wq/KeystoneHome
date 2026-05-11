@@ -1132,9 +1132,54 @@ function ScreenSwitch({
         title="How much do you want to put down?"
         sub="Lenders qualify you on debt-to-income, not just savings. We'll factor in your income, your debts, and the home price to flag what actually works."
       >
+        <div
+          style={{
+            marginTop: 4,
+            marginBottom: 18,
+            padding: "16px 16px 14px",
+            border: `1px solid ${C.ink}`,
+            background: C.cream,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: C.inkMute,
+            }}
+          >
+            Estimated home price · {zd.city}
+          </div>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 38,
+              lineHeight: 1.05,
+              color: C.ink,
+              marginTop: 6,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {fmt(targetPrice)}
+          </div>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontStyle: "italic",
+              fontSize: 13,
+              color: C.inkSoft,
+              marginTop: 6,
+            }}
+          >
+            Based on the features you picked.
+          </div>
+        </div>
         <Choices
           options={visibleOpts.map((b) => {
             const monthly = Math.round(calcMortgage(targetPrice, b.pct, mRate));
+            const downAmt = Math.round(targetPrice * (b.pct / 100));
             const isRec = b.pct === recommendedPct;
             const recLabel =
               dtiRequiredPct !== null && recommendedPct > 20
@@ -1142,7 +1187,7 @@ function ScreenSwitch({
                 : "★ Recommended";
             return {
               val: String(b.pct),
-              label: `${b.label} · ${b.tag}`,
+              label: `${b.label} · ${fmt(downAmt)} · ${b.tag}`,
               tag: isRec ? recLabel : undefined,
               desc: `Monthly mortgage payment: ${fmt(monthly)} · ${b.desc}`,
             };
