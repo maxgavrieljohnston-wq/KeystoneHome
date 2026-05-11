@@ -2312,6 +2312,28 @@ function ZipScreen({
 }
 
 
+function LimitReachedGate({ used, limit }: { used: number | null; limit: number | null }) {
+  return (
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "60px 24px", fontFamily: "'Cormorant Garamond', Georgia, serif", color: "#1a1a1a" }}>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#c4452d", marginBottom: 16 }}>
+        — Free plan limit reached
+      </div>
+      <h1 style={{ fontWeight: 400, fontSize: 38, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 18px" }}>
+        You've used {used ?? limit} of your {limit ?? 3} free plans.
+      </h1>
+      <p style={{ fontSize: 17, lineHeight: 1.5, color: "#3d3d3d", margin: "0 0 28px" }}>
+        Upgrade to keep building plans and unlock saved history, partner mode, PDF export, and more.
+      </p>
+      <Link to="/pricing" style={{ display: "inline-block", padding: "14px 22px", background: "#1a1a1a", color: "#f5efe6", textDecoration: "none", borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+        See upgrade options →
+      </Link>
+      <div style={{ marginTop: 18, fontSize: 13, color: "#6b6b6b" }}>
+        Already a member? <Link to="/login" style={{ color: "#c4452d" }}>Sign in</Link> to view your saved plans.
+      </div>
+    </div>
+  );
+}
+
 function Report({ d }: { d: Data }) {
   const saveLead = useServerFn(upsertLead);
   const submit = useServerFn(submitPlan);
