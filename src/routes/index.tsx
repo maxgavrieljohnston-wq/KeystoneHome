@@ -115,6 +115,7 @@ const PROGRESS_SCREENS: Screen[] = [
 
 type Data = {
   email: string;
+  phone: string;
   firstName: string;
   lastName: string;
   age: number;
@@ -153,6 +154,7 @@ type Data = {
 
 const INITIAL: Data = {
   email: "",
+  phone: "",
   firstName: "",
   lastName: "",
   age: 32,
@@ -3201,14 +3203,30 @@ function EmailScreen({
   next: () => void;
 }) {
   const saveLead = useServerFn(upsertLead);
+  const phoneDigits = d.phone.replace(/\D/g, "");
+  const phoneValid = phoneDigits.length >= 10;
+  const emailValid = d.email.includes("@");
   const handleContinue = () => {
     const email = d.email.trim().toLowerCase();
-    if (!email.includes("@")) return;
+    if (!emailValid || !phoneValid) return;
     // Fire-and-forget draft save; never block the flow on save failure
     saveLead({ data: { email, answers: { ...d, email } as unknown as Record<string, unknown>, completed: false } }).catch(
       (err) => console.error("[saveLead:email]", err),
     );
     next();
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: "transparent",
+    border: "none",
+    borderBottom: `1.5px solid ${C.ink}`,
+    padding: "12px 0",
+    fontSize: 22,
+    fontFamily: "'Cormorant Garamond', Georgia, serif",
+    color: C.ink,
+    outline: "none",
+    marginBottom: 22,
   };
 
   return (
@@ -3223,20 +3241,18 @@ function EmailScreen({
         placeholder="you@email.com"
         value={d.email}
         onChange={(e) => set("email", e.target.value)}
-        style={{
-          width: "100%",
-          background: "transparent",
-          border: "none",
-          borderBottom: `1.5px solid ${C.ink}`,
-          padding: "12px 0",
-          fontSize: 22,
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          color: C.ink,
-          outline: "none",
-          marginBottom: 28,
-        }}
+        style={inputStyle}
       />
-      <Cta onClick={handleContinue} disabled={!d.email.includes("@")}>
+      <input
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
+        placeholder="(555) 123-4567"
+        value={d.phone}
+        onChange={(e) => set("phone", e.target.value)}
+        style={{ ...inputStyle, marginBottom: 28 }}
+      />
+      <Cta onClick={handleContinue} disabled={!emailValid || !phoneValid}>
         Continue
       </Cta>
 
