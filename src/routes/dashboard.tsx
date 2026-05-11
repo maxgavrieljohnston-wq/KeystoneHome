@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlan } from "@/lib/account.functions";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -39,6 +40,7 @@ function DashboardPage() {
     queryKey: ["my-plan"],
     queryFn: () => fetchPlan(),
   });
+  const sub = useSubscription();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -143,7 +145,116 @@ function DashboardPage() {
             updatedAt={lead.updated_at}
           />
         )}
+
+        <PremiumPanel tier={sub.tier} isPlus={sub.isPlus} isPro={sub.isPro} />
       </div>
+    </div>
+  );
+}
+
+const PREMIUM_FEATURES: Array<{ id: string; label: string; tier: "plus" | "pro" }> = [
+  { id: "save", label: "Save unlimited plans", tier: "plus" },
+  { id: "partner", label: "Partner / household mode", tier: "plus" },
+  { id: "pdf", label: "Export plan as PDF", tier: "plus" },
+  { id: "coach", label: "AI homebuying coach", tier: "pro" },
+  { id: "compare", label: "Side-by-side scenario comparison", tier: "pro" },
+  { id: "alerts", label: "Live mortgage rate alerts", tier: "pro" },
+];
+
+function PremiumPanel({ tier, isPlus, isPro }: { tier: string; isPlus: boolean; isPro: boolean }) {
+  const tierLabel = isPro ? "Pro" : isPlus ? "Plus" : "Free";
+  return (
+    <div
+      style={{
+        marginTop: 32,
+        padding: 24,
+        border: `1.5px solid ${C.ink}`,
+        borderRadius: 10,
+        background: "#fff",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: C.ember,
+          }}
+        >
+          Premium features
+        </div>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            padding: "4px 10px",
+            borderRadius: 999,
+            border: `1px solid ${C.ink}`,
+            color: C.ink,
+          }}
+        >
+          {tierLabel} plan
+        </span>
+      </div>
+
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {PREMIUM_FEATURES.map((f) => {
+          const unlocked = f.tier === "plus" ? isPlus : isPro;
+          return (
+            <li
+              key={f.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "12px 0",
+                borderBottom: `1px solid ${C.inkFaint}`,
+                gap: 12,
+              }}
+            >
+              <span style={{ fontSize: 17, color: unlocked ? C.ink : C.inkMute }}>
+                {unlocked ? "✓" : "🔒"} {f.label}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: unlocked ? "#2d7a4f" : C.inkFaint,
+                }}
+              >
+                {unlocked ? "Unlocked" : f.tier}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {!isPro && (
+        <Link
+          to="/pricing"
+          style={{
+            display: "inline-block",
+            marginTop: 20,
+            padding: "12px 22px",
+            background: C.ink,
+            color: C.paper,
+            textDecoration: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+          }}
+        >
+          {isPlus ? "Upgrade to Pro →" : "Unlock premium →"}
+        </Link>
+      )}
     </div>
   );
 }
