@@ -29,14 +29,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Keystone" },
+      { name: "description", content: "Built for first time home buyers looking for a plan - not just another savings account" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Keystone" },
+      { property: "og:description", content: "Built for first time home buyers looking for a plan - not just another savings account" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Keystone" },
+      { name: "twitter:description", content: "Built for first time home buyers looking for a plan - not just another savings account" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e993783f-528c-4928-b3ed-05a424747059/id-preview-feea84c9--d20de6ac-1a25-490f-9fbc-a06d3b5c6242.lovable.app-1778465246339.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e993783f-528c-4928-b3ed-05a424747059/id-preview-feea84c9--d20de6ac-1a25-490f-9fbc-a06d3b5c6242.lovable.app-1778465246339.png" },
     ],
     links: [
       {
