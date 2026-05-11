@@ -2328,7 +2328,7 @@ function Report({ d }: { d: Data }) {
   const zipData = d.zipData ?? { city: "your area", avg: 400000 };
   const styleIds = d.homeStyle ? [d.homeStyle] : [];
   const styleAdj = useMemo(() => styleAdjustments(styleIds), [d.homeStyle]);
-  const avgPrice = Math.round(zipData.avg * styleAdj.priceMult);
+  const avgPrice = Math.round(zipData.avg * computeFeatureMult(d));
   // User-selected down payment goal, floored to the style's min down.
   const candidate = d.downGoalPct ?? 9;
   const effectiveDownPct = Math.max(candidate, styleAdj.minDown);
