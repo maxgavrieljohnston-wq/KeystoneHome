@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { UpgradeGateProvider } from "@/hooks/useUpgradeGate";
 
 import appCss from "../styles.css?url";
 
@@ -75,8 +76,10 @@ function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
-      <PaymentTestModeBanner />
-      <Outlet />
+      <UpgradeGateProvider>
+        <PaymentTestModeBanner />
+        <Outlet />
+      </UpgradeGateProvider>
     </QueryClientProvider>
   );
 }

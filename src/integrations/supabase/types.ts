@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -134,6 +158,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          title: string | null
           user_id: string | null
         }
         Insert: {
@@ -141,6 +166,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          title?: string | null
           user_id?: string | null
         }
         Update: {
@@ -148,6 +174,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          title?: string | null
           user_id?: string | null
         }
         Relationships: []
