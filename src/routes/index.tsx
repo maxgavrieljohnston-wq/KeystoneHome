@@ -2750,6 +2750,8 @@ function Report({ d }: { d: Data }) {
         <LineRow label="Total" val={fmt(totalHousing)} bold />
       </Section>
 
+      <ReportPaywall />
+
       {/* Footer */}
       <div
         style={{
