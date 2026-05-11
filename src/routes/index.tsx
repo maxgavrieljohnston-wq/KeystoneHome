@@ -184,6 +184,22 @@ const INITIAL: Data = {
   riskAnswers: {},
 };
 
+// Feature-adjusted price multiplier — same math used live on "Picture the place".
+function computeFeatureMult(d: Data): number {
+  const baseAdj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
+  let m = baseAdj.priceMult;
+  m += Math.max(0, (d.beds ?? 0) - 3) * 0.05;
+  m += Math.max(0, (d.baths ?? 0) - 2) * 0.03;
+  if (d.outdoorSpace === "patio") m += 0.02;
+  if (d.outdoorSpace === "yard") m += 0.05;
+  if (d.parking === "driveway") m += 0.02;
+  if (d.parking === "garage") m += 0.05;
+  const w = (v: "nice" | "must") => (v === "must" ? 0.025 : 0.01);
+  Object.values(d.lifestyle ?? {}).forEach((v) => (m += w(v as "nice" | "must")));
+  Object.values(d.neighborhood ?? {}).forEach((v) => (m += w(v as "nice" | "must")));
+  return m;
+}
+
 // Single source of truth: which down-payment options to offer the user.
 // Used both on the down-payment question screen AND on the final results page,
 // so the results page mirrors exactly what the user was offered earlier.
@@ -191,7 +207,7 @@ type DownOpt = { pct: number; label: string; tag: string; desc: string };
 function computeOfferedDownOpts(d: Data): DownOpt[] {
   const zd = d.zipData ?? { city: "your area", avg: 400000 };
   const adj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
-  const targetPrice = Math.round(zd.avg * adj.priceMult);
+  const targetPrice = Math.round(zd.avg * computeFeatureMult(d));
   const qCredit =
     d.hasPartner && d.partnerCredit
       ? Math.min(d.credit ?? 700, d.partnerCredit)
