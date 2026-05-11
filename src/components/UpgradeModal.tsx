@@ -1,0 +1,259 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+
+const C = {
+  paper: "#f5efe6",
+  ink: "#1a1a1a",
+  inkSoft: "#3d3d3d",
+  inkMute: "#6b6b6b",
+  inkFaint: "#a39888",
+  ember: "#c4452d",
+};
+
+export type RequiredTier = "plus" | "pro";
+
+export function UpgradeModal({
+  open,
+  onClose,
+  requiredTier,
+  featureName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  requiredTier: RequiredTier;
+  featureName: string;
+}) {
+  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
+  const [email, setEmail] = useState<string | undefined>();
+  const [userId, setUserId] = useState<string | undefined>();
+  const { openCheckout, loading } = usePaddleCheckout();
+
+  useEffect(() => {
+    if (!open) return;
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? undefined);
+      setUserId(data.user?.id ?? undefined);
+    });
+  }, [open]);
+
+  if (!open) return null;
+
+  const tiers = [
+    {
+      id: "plus" as const,
+      name: "Plus",
+      monthlyPriceId: "plus_monthly",
+      yearlyPriceId: "plus_yearly",
+      monthly: 9,
+      yearly: 86,
+      features: ["Unlimited saved plans", "Partner mode", "PDF export", "Email reminders"],
+    },
+    {
+      id: "pro" as const,
+      name: "Pro",
+      monthlyPriceId: "pro_monthly",
+      yearlyPriceId: "pro_yearly",
+      monthly: 19,
+      yearly: 182,
+      features: ["Everything in Plus", "AI homebuying coach", "Scenario compare", "Rate alerts"],
+      highlight: true,
+    },
+  ];
+
+  // If feature requires Pro, hide Plus option
+  const visible = requiredTier === "pro" ? tiers.filter((t) => t.id === "pro") : tiers;
+
+  const handlePick = async (tier: typeof tiers[number]) => {
+    const priceId = billing === "monthly" ? tier.monthlyPriceId : tier.yearlyPriceId;
+    await openCheckout({ priceId, customerEmail: email, userId });
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(26,26,26,0.55)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: C.paper,
+          color: C.ink,
+          borderRadius: 14,
+          maxWidth: 560,
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          padding: 28,
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.3)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: C.ember,
+                marginBottom: 8,
+              }}
+            >
+              Premium feature
+            </div>
+            <h2 style={{ margin: 0, fontWeight: 400, fontSize: 28, letterSpacing: "-0.01em" }}>
+              Unlock {featureName}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: 28,
+              cursor: "pointer",
+              color: C.inkMute,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 20px", lineHeight: 1.5 }}>
+          {requiredTier === "pro"
+            ? "This feature is part of Pro — your personal homebuying coach."
+            : "Upgrade to Plus or Pro to unlock this and more."}
+        </p>
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              padding: 4,
+              border: `1px solid ${C.ink}`,
+              borderRadius: 999,
+            }}
+          >
+            {(["monthly", "yearly"] as const).map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => setBilling(b)}
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  padding: "8px 16px",
+                  borderRadius: 999,
+                  border: "none",
+                  cursor: "pointer",
+                  background: billing === b ? C.ink : "transparent",
+                  color: billing === b ? C.paper : C.ink,
+                }}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: visible.length > 1 ? "1fr 1fr" : "1fr",
+            gap: 12,
+          }}
+        >
+          {visible.map((tier) => {
+            const price = billing === "monthly" ? tier.monthly : Math.round(tier.yearly / 12);
+            return (
+              <div
+                key={tier.id}
+                style={{
+                  border: `1.5px solid ${C.ink}`,
+                  borderRadius: 10,
+                  padding: 18,
+                  background: tier.highlight ? C.ink : "transparent",
+                  color: tier.highlight ? C.paper : C.ink,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div style={{ fontSize: 22, fontWeight: 400 }}>{tier.name}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
+                  <span style={{ fontSize: 32, fontWeight: 400 }}>${price}</span>
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      opacity: 0.7,
+                    }}
+                  >
+                    /mo
+                  </span>
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: "12px 0", flex: 1, fontSize: 14 }}>
+                  {tier.features.map((f) => (
+                    <li key={f} style={{ padding: "4px 0", opacity: 0.9 }}>
+                      ✓ {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => handlePick(tier)}
+                  disabled={loading}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    padding: "12px 14px",
+                    borderRadius: 8,
+                    border: "none",
+                    cursor: loading ? "default" : "pointer",
+                    background: tier.highlight ? C.paper : C.ink,
+                    color: tier.highlight ? C.ink : C.paper,
+                    opacity: loading ? 0.6 : 1,
+                  }}
+                >
+                  {loading ? "Opening…" : `Choose ${tier.name}`}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <p
+          style={{
+            textAlign: "center",
+            margin: "16px 0 0",
+            fontSize: 12,
+            color: C.inkMute,
+          }}
+        >
+          Cancel anytime.
+        </p>
+      </div>
+    </div>
+  );
+}
