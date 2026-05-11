@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
+import { submitPlan } from "@/lib/plans.functions";
+import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect, useMemo, useState } from "react";
 import {
