@@ -2736,63 +2736,6 @@ function Report({ d }: { d: Data }) {
         <LineRow label="Total" val={fmt(totalHousing)} bold />
       </Section>
 
-      {/* Section 3 — Readiness */}
-      <Section number="04" title={`${readinessLabel}.`}>
-        <p style={SubP}>
-          A composite of your credit, debt-to-income, savings progress, and
-          timeline.
-        </p>
-
-        <div style={{ margin: "28px 0 22px" }}>
-          <div
-            style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontSize: 96,
-              lineHeight: 1,
-              letterSpacing: "-0.04em",
-              color: C.ink,
-              fontWeight: 400,
-            }}
-          >
-            {readiness}
-            <span style={{ fontSize: 32, color: C.inkFaint }}> / 100</span>
-          </div>
-        </div>
-
-        <ReadyRow label="Credit"   score={creditScoreNorm} note={`${qualifyingCredit} score`} />
-        <ReadyRow label="DTI"      score={dtiScore}        note={`${Math.round(dti * 100)}% of income`} />
-        <ReadyRow label="Savings"  score={savingsScore}    note={`${fmt(d.saved)} of ${fmt(downPayment)}`} />
-        <ReadyRow label="Timeline" score={timelineScore}   note={`${d.timelineYears} year${d.timelineYears > 1 ? "s" : ""}`} />
-
-        {!eFundOk && (
-          <div
-            style={{
-              marginTop: 24,
-              padding: 16,
-              border: `1.5px solid ${C.gold}`,
-              background: "rgba(168,133,58,0.08)",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: C.gold,
-                marginBottom: 6,
-              }}
-            >
-              ◆ Build a buffer first
-            </div>
-            <div style={{ fontSize: 13, color: C.inkSoft, lineHeight: 1.55 }}>
-              Lenders want to see ~3 months of expenses ({fmt(eFundMin)}) in
-              reserve before you close. You're at {fmt(d.saved)}.
-            </div>
-          </div>
-        )}
-      </Section>
-
       {/* Footer */}
       <div
         style={{
