@@ -1058,7 +1058,7 @@ function ScreenSwitch({
   if (screen === "downGoal") {
     const zd = d.zipData ?? { city: "your area", avg: 400000 };
     const adj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
-    const targetPrice = Math.round(zd.avg * adj.priceMult);
+    const targetPrice = Math.round(zd.avg * computeFeatureMult(d));
     const qCredit =
       d.hasPartner && d.partnerCredit
         ? Math.min(d.credit ?? 700, d.partnerCredit)
