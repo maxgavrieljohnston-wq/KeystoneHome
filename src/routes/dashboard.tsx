@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlan } from "@/lib/account.functions";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
