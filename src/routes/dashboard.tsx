@@ -12,6 +12,8 @@ export const Route = createFileRoute("/dashboard")({
     ],
   }),
   beforeLoad: async () => {
+    // Supabase session lives in localStorage; only meaningful on the client.
+    if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({ to: "/login" });
