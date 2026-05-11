@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const SITE_NAME = "Keystone";
 const SENDER_DOMAIN = "notify.keystonehomeowners.com";
@@ -48,48 +49,35 @@ function renderPlanEmail(opts: {
   return { html, text };
 }
 
+async function lookupUserIdByEmail(email: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .schema("auth" as never)
+      .from("users" as never)
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (error) {
+      console.warn("[lookupUserIdByEmail]", error);
+      return null;
+    }
+    return (data as { id?: string } | null)?.id ?? null;
+  } catch (err) {
+    console.warn("[lookupUserIdByEmail] threw", err);
+    return null;
+  }
+}
+
 export const submitPlan = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => submitSchema.parse(input))
   .handler(async ({ data }) => {
-    // Look up an existing user with this email so we can attach user_id
-    // (for RLS-visible "my plans") and check subs by user as well as email.
-    let userId: string | null = null;
-    try {
-      const { data: list } = await supabaseAdmin.auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-      });
-      // listUsers doesn't filter; do a direct query instead
-      const { data: u } = await supabaseAdmin
-        .from("profiles")
-        .select("user_id")
-        .limit(1)
-        .maybeSingle();
-      void list;
-      void u;
-    } catch {
-      // ignore
-    }
-    // More reliable: query auth.users via admin
-    try {
-      const { data: row } = await supabaseAdmin
-        .schema("auth" as never)
-        .from("users" as never)
-        .select("id")
-        .eq("email", data.email)
-        .maybeSingle();
-      if (row && (row as { id?: string }).id) {
-        userId = (row as { id: string }).id;
-      }
-    } catch (err) {
-      console.warn("[submitPlan] auth.users lookup failed", err);
-    }
+    const userId = await lookupUserIdByEmail(data.email);
 
     const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
       "create_plan_with_limit",
       {
         p_email: data.email,
-        p_user_id: userId,
+        p_user_id: (userId ?? null) as never,
         p_answers: data.answers as never,
         p_environment: data.environment,
       },
@@ -100,7 +88,7 @@ export const submitPlan = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "server_error" as const };
     }
 
-    const result = rpcResult as {
+    const result = rpcResult as unknown as {
       ok: boolean;
       reason?: string;
       plan_id?: string;
@@ -115,6 +103,7 @@ export const submitPlan = createServerFn({ method: "POST" })
         reason: (result.reason ?? "unknown") as
           | "limit_reached"
           | "invalid_email"
+          | "server_error"
           | "unknown",
         used: result.used ?? null,
         limit: result.limit ?? null,
@@ -169,8 +158,47 @@ export const submitPlan = createServerFn({ method: "POST" })
     };
   });
 
-export const getMyPlans = createServerFn({ method: "GET" }).handler(async () => {
-  // Reads via service role; we filter by the requesting user's email below.
-  // But this server fn has no auth context — instead we expose an authed variant:
-  return { ok: true as const };
-});
+export const getMyPlans = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId, claims } = context;
+    const email = (claims.email as string | undefined)?.toLowerCase();
+
+    // Plans tied to this user_id (RLS-visible)
+    const { data: ownedPlans } = await supabase
+      .from("plans")
+      .select("id, email, answers, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    // Plans created anonymously under this email before the user signed up
+    let orphanPlans: Array<{
+      id: string;
+      email: string;
+      answers: unknown;
+      created_at: string;
+    }> = [];
+    if (email) {
+      const { data } = await supabaseAdmin
+        .from("plans")
+        .select("id, email, answers, created_at")
+        .ilike("email", email)
+        .is("user_id", null)
+        .order("created_at", { ascending: false });
+      orphanPlans = (data ?? []) as typeof orphanPlans;
+
+      // Backfill user_id on orphan rows so RLS sees them next time
+      if (orphanPlans.length > 0) {
+        await supabaseAdmin
+          .from("plans")
+          .update({ user_id: userId })
+          .ilike("email", email)
+          .is("user_id", null);
+      }
+    }
+
+    const merged = [...(ownedPlans ?? []), ...orphanPlans].sort((a, b) =>
+      a.created_at < b.created_at ? 1 : -1,
+    );
+    return { plans: merged, email: email ?? null };
+  });
