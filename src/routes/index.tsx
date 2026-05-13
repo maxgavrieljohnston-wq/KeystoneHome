@@ -71,18 +71,12 @@ const FLOW = [
   "partner",
   "age",
   "employment",
-  "income",
-  "expenses",
-  "debt",
-  "savings",
+  "finances",
   "credit",
   "partnerInfo",
   "partnerAge",
   "partnerEmployment",
-  "partnerIncome",
-  "partnerExpenses",
-  "partnerDebt",
-  "partnerSavings",
+  "partnerFinances",
   "partnerCredit",
   "factDemo",
   "zip",
@@ -105,8 +99,8 @@ const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
   "partner",
-  "age", "employment", "income", "expenses", "debt", "savings", "credit",
-  "partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerSavings", "partnerCredit",
+  "age", "employment", "finances", "credit",
+  "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "factDemo",
   "zip", "homeStyle", "homeFeatures", "downGoal", "timeline",
   "introRisk",
@@ -513,60 +507,24 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "income")
+  if (screen === "finances")
     return (
       <Question
-        kicker="Income"
-        title="What's your gross annual income?"
-        sub={d.hasPartner ? "Before taxes. Don't include your partner — we'll ask separately." : "Before taxes."}
+        kicker="Your finances"
+        title="Tell us about your money."
+        sub={d.hasPartner
+          ? "Just yours for now — we'll ask about your partner separately."
+          : "Annual income before taxes; monthly figures for the rest."}
       >
-        <Slider
-          value={d.income}
-          min={20000}
-          max={200000}
-          step={1000}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("income", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "expenses")
-    return (
-      <Question
-        kicker="Spending"
-        title="Monthly expenses?"
-        sub="Rent, groceries, transport, subscriptions — the must-pays."
-      >
-        <Slider
-          value={d.expenses}
-          min={500}
-          max={15000}
-          step={50}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("expenses", v)}
-          unit="per month"
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "debt")
-    return (
-      <Question
-        kicker="Debt"
-        title="Monthly debt payments?"
-        sub="Student loans, car payments, credit cards minimums."
-      >
-        <Slider
-          value={d.debt}
-          min={0}
-          max={5000}
-          step={25}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("debt", v)}
-          unit="per month"
+        <FinancesForm
+          income={d.income}
+          expenses={d.expenses}
+          debt={d.debt}
+          saved={d.saved}
+          onIncome={(v) => set("income", v)}
+          onExpenses={(v) => set("expenses", v)}
+          onDebt={(v) => set("debt", v)}
+          onSaved={(v) => set("saved", v)}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
@@ -595,24 +553,6 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "savings")
-    return (
-      <Question
-        kicker="Savings"
-        title="What have you saved already?"
-        sub="Cash, savings, investments earmarked for the home."
-      >
-        <Slider
-          value={d.saved}
-          min={0}
-          max={200000}
-          step={500}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("saved", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
 
   if (screen === "name")
     return (
@@ -779,73 +719,22 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "partnerIncome")
-    return (
-      <Question kicker="Partner" title="Partner's gross annual income?" sub="Before taxes.">
-        <Slider
-          value={d.partnerIncome}
-          min={0}
-          max={200000}
-          step={1000}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerIncome", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "partnerExpenses")
+  if (screen === "partnerFinances")
     return (
       <Question
         kicker="Partner"
-        title="Partner's monthly expenses?"
-        sub="Rent, groceries, transport, subscriptions — the must-pays."
+        title="Your partner's finances."
+        sub="Annual income before taxes; monthly figures for the rest."
       >
-        <Slider
-          value={d.partnerExpenses}
-          min={0}
-          max={15000}
-          step={50}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerExpenses", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "partnerDebt")
-    return (
-      <Question
-        kicker="Partner"
-        title="Partner's monthly debt?"
-        sub="Student loans, car payments, credit cards minimums."
-      >
-        <Slider
-          value={d.partnerDebt}
-          min={0}
-          max={5000}
-          step={25}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerDebt", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "partnerSavings")
-    return (
-      <Question
-        kicker="Partner"
-        title="What has your partner saved?"
-        sub="Cash, savings, investments earmarked for the home."
-      >
-        <Slider
-          value={d.partnerSaved}
-          min={0}
-          max={200000}
-          step={500}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerSaved", v)}
+        <FinancesForm
+          income={d.partnerIncome}
+          expenses={d.partnerExpenses}
+          debt={d.partnerDebt}
+          saved={d.partnerSaved}
+          onIncome={(v) => set("partnerIncome", v)}
+          onExpenses={(v) => set("partnerExpenses", v)}
+          onDebt={(v) => set("partnerDebt", v)}
+          onSaved={(v) => set("partnerSaved", v)}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
@@ -2310,6 +2199,141 @@ function ZipScreen({
         Continue
       </Cta>
     </Question>
+  );
+}
+
+// ── Money input ──────────────────────────────────────────────────────────────
+function MoneyInput({
+  label,
+  unit,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  unit?: string;
+  value: number;
+  onChange: (v: number) => void;
+  placeholder?: string;
+}) {
+  const [text, setText] = useState<string>(value ? String(value) : "");
+  useEffect(() => {
+    setText(value ? String(value) : "");
+  }, [value]);
+  const display =
+    text === "" ? "" : Number(text).toLocaleString("en-US");
+  return (
+    <label style={{ display: "block", marginBottom: 22 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: C.inkMute,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+        {unit && <span style={{ marginLeft: 8, opacity: 0.7 }}>· {unit}</span>}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          borderBottom: `1.5px solid ${C.ink}`,
+          paddingBottom: 6,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 32,
+            color: C.inkMute,
+            marginRight: 6,
+          }}
+        >
+          $
+        </span>
+        <input
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={display}
+          placeholder={placeholder ?? "0"}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9]/g, "");
+            setText(raw);
+            onChange(raw === "" ? 0 : Number(raw));
+          }}
+          style={{
+            flex: 1,
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontWeight: 400,
+            fontSize: 32,
+            letterSpacing: "-0.02em",
+            color: C.ink,
+            padding: 0,
+            minWidth: 0,
+          }}
+        />
+      </div>
+    </label>
+  );
+}
+
+// ── Finances form (income / expenses / debt / saved) ────────────────────────
+function FinancesForm({
+  income,
+  expenses,
+  debt,
+  saved,
+  onIncome,
+  onExpenses,
+  onDebt,
+  onSaved,
+}: {
+  income: number;
+  expenses: number;
+  debt: number;
+  saved: number;
+  onIncome: (v: number) => void;
+  onExpenses: (v: number) => void;
+  onDebt: (v: number) => void;
+  onSaved: (v: number) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <MoneyInput
+        label="Gross annual income"
+        unit="per year"
+        value={income}
+        onChange={onIncome}
+        placeholder="75,000"
+      />
+      <MoneyInput
+        label="Monthly expenses"
+        unit="per month"
+        value={expenses}
+        onChange={onExpenses}
+        placeholder="3,000"
+      />
+      <MoneyInput
+        label="Monthly debt payments"
+        unit="per month"
+        value={debt}
+        onChange={onDebt}
+        placeholder="400"
+      />
+      <MoneyInput
+        label="Already saved for the home"
+        value={saved}
+        onChange={onSaved}
+        placeholder="15,000"
+      />
+    </div>
   );
 }
 
