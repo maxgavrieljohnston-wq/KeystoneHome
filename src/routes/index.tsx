@@ -507,60 +507,24 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "income")
+  if (screen === "finances")
     return (
       <Question
-        kicker="Income"
-        title="What's your gross annual income?"
-        sub={d.hasPartner ? "Before taxes. Don't include your partner — we'll ask separately." : "Before taxes."}
+        kicker="Your finances"
+        title="Tell us about your money."
+        sub={d.hasPartner
+          ? "Just yours for now — we'll ask about your partner separately."
+          : "Annual income before taxes; monthly figures for the rest."}
       >
-        <Slider
-          value={d.income}
-          min={20000}
-          max={200000}
-          step={1000}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("income", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "expenses")
-    return (
-      <Question
-        kicker="Spending"
-        title="Monthly expenses?"
-        sub="Rent, groceries, transport, subscriptions — the must-pays."
-      >
-        <Slider
-          value={d.expenses}
-          min={500}
-          max={15000}
-          step={50}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("expenses", v)}
-          unit="per month"
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "debt")
-    return (
-      <Question
-        kicker="Debt"
-        title="Monthly debt payments?"
-        sub="Student loans, car payments, credit cards minimums."
-      >
-        <Slider
-          value={d.debt}
-          min={0}
-          max={5000}
-          step={25}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("debt", v)}
-          unit="per month"
+        <FinancesForm
+          income={d.income}
+          expenses={d.expenses}
+          debt={d.debt}
+          saved={d.saved}
+          onIncome={(v) => set("income", v)}
+          onExpenses={(v) => set("expenses", v)}
+          onDebt={(v) => set("debt", v)}
+          onSaved={(v) => set("saved", v)}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
