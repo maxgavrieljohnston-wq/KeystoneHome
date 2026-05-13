@@ -719,73 +719,22 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "partnerIncome")
-    return (
-      <Question kicker="Partner" title="Partner's gross annual income?" sub="Before taxes.">
-        <Slider
-          value={d.partnerIncome}
-          min={0}
-          max={200000}
-          step={1000}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerIncome", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "partnerExpenses")
+  if (screen === "partnerFinances")
     return (
       <Question
         kicker="Partner"
-        title="Partner's monthly expenses?"
-        sub="Rent, groceries, transport, subscriptions — the must-pays."
+        title="Your partner's finances."
+        sub="Annual income before taxes; monthly figures for the rest."
       >
-        <Slider
-          value={d.partnerExpenses}
-          min={0}
-          max={15000}
-          step={50}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerExpenses", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "partnerDebt")
-    return (
-      <Question
-        kicker="Partner"
-        title="Partner's monthly debt?"
-        sub="Student loans, car payments, credit cards minimums."
-      >
-        <Slider
-          value={d.partnerDebt}
-          min={0}
-          max={5000}
-          step={25}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerDebt", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-
-  if (screen === "partnerSavings")
-    return (
-      <Question
-        kicker="Partner"
-        title="What has your partner saved?"
-        sub="Cash, savings, investments earmarked for the home."
-      >
-        <Slider
-          value={d.partnerSaved}
-          min={0}
-          max={200000}
-          step={500}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("partnerSaved", v)}
+        <FinancesForm
+          income={d.partnerIncome}
+          expenses={d.partnerExpenses}
+          debt={d.partnerDebt}
+          saved={d.partnerSaved}
+          onIncome={(v) => set("partnerIncome", v)}
+          onExpenses={(v) => set("partnerExpenses", v)}
+          onDebt={(v) => set("partnerDebt", v)}
+          onSaved={(v) => set("partnerSaved", v)}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
