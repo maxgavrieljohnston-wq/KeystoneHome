@@ -36,10 +36,17 @@ function friendlyError(msg: string): string {
 function LoginPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" });
+  
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState(search.email ?? "");
+  const [password, setPassword] = useState("");
+  
+  // Signup flow steps
+  const [step, setStep] = useState<"email" | "otp" | "password">("email");
+  const [otp, setOtp] = useState("");
+  
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,23 +58,82 @@ function LoginPage() {
 
   const validEmail = email.trim().includes("@");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSent(null);
-    const trimmed = email.trim().toLowerCase();
+    if (!validEmail || !password) return;
+
+    setBusy(true);
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setBusy(false);
+    
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      navigate({ to: "/dashboard" });
+    }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
     if (!validEmail) return;
 
     setBusy(true);
     const { error: err } = await supabase.auth.signInWithOtp({
-      email: trimmed,
+      email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        shouldCreateUser: true,
       },
     });
     setBusy(false);
-    if (err) { setError(friendlyError(err.message)); return; }
-    setSent(trimmed);
+    
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      setStep("otp");
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!otp) return;
+
+    setBusy(true);
+    const { error: err } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otp.trim(),
+      type: "email",
+    });
+    setBusy(false);
+
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      setStep("password");
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!password) return;
+
+    setBusy(true);
+    const { error: err } = await supabase.auth.updateUser({
+      password,
+    });
+    setBusy(false);
+
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      navigate({ to: "/dashboard" });
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -109,30 +175,162 @@ function LoginPage() {
         </Link>
 
         <div style={{ height: 48 }} />
+        
+        {step === "email" && (
+          <div style={{ display: "flex", gap: 24, marginBottom: 32 }}>
+            <button
+              type="button"
+              onClick={() => setTab("signin")}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 12,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: tab === "signin" ? C.ink : C.inkFaint,
+                borderBottom: tab === "signin" ? `1px solid ${C.ink}` : "none",
+                cursor: "pointer",
+                paddingBottom: 4,
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("signup")}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 12,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: tab === "signup" ? C.ink : C.inkFaint,
+                borderBottom: tab === "signup" ? `1px solid ${C.ink}` : "none",
+                cursor: "pointer",
+                paddingBottom: 4,
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
 
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: C.ember,
-            marginBottom: 16,
-          }}
-        >
-          — Sign in
-        </div>
+        {tab === "signin" && step === "email" && (
+          <div>
+            <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
+              Welcome back.
+            </h1>
+            <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
+              Sign in to view your homebuying plan.
+            </p>
 
-        <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
-          Get a sign-in link.
-        </h1>
+            <form onSubmit={handleSignIn}>
+              <input
+                type="email"
+                inputMode="email"
+                placeholder="Username (email)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={inputStyle}
+                autoComplete="username"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ ...inputStyle, marginBottom: 32 }}
+                autoComplete="current-password"
+              />
 
-        <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
-          Enter your email and we'll send you a one-tap link to open your plan. No passwords needed.
-        </p>
+              <button
+                type="submit"
+                disabled={busy || !validEmail || !password}
+                style={{
+                  width: "100%",
+                  padding: "14px 16px",
+                  background: C.ink,
+                  color: C.paper,
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  cursor: busy ? "default" : "pointer",
+                  opacity: busy || !validEmail || !password ? 0.5 : 1,
+                }}
+              >
+                {busy ? "Signing in…" : "Sign In"}
+              </button>
 
-        {sent ? (
-          <div style={{ padding: 18, border: `1.5px solid ${C.ink}`, borderRadius: 10, background: "#fff" }}>
+              {error && (
+                <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                  {error}
+                </div>
+              )}
+            </form>
+          </div>
+        )}
+
+        {tab === "signup" && step === "email" && (
+          <div>
+            <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
+              Create your account.
+            </h1>
+            <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
+              Enter your email. We'll send a code to verify it.
+            </p>
+
+            <form onSubmit={handleSendOtp}>
+              <input
+                type="email"
+                inputMode="email"
+                placeholder="Username (email)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ ...inputStyle, marginBottom: 32 }}
+                autoComplete="email"
+              />
+
+              <button
+                type="submit"
+                disabled={busy || !validEmail}
+                style={{
+                  width: "100%",
+                  padding: "14px 16px",
+                  background: C.ink,
+                  color: C.paper,
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  cursor: busy ? "default" : "pointer",
+                  opacity: busy || !validEmail ? 0.5 : 1,
+                }}
+              >
+                {busy ? "Sending…" : "Send verification code"}
+              </button>
+
+              {error && (
+                <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                  {error}
+                </div>
+              )}
+            </form>
+          </div>
+        )}
+
+        {tab === "signup" && step === "otp" && (
+          <div>
             <div
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
@@ -140,91 +338,146 @@ function LoginPage() {
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
                 color: C.ember,
-                marginBottom: 8,
+                marginBottom: 16,
               }}
             >
               — Check your inbox
             </div>
-            <div style={{ fontSize: 18, color: C.ink, marginBottom: 8 }}>
-              We sent a sign-in link to <strong>{sent}</strong>.
-            </div>
-            <div style={{ fontSize: 14, color: C.inkSoft }}>
-              Tap the link in the email to open your plan. The link expires shortly, so use it soon.
-            </div>
-            <button
-              type="button"
-              onClick={() => { setSent(null); }}
-              style={{
-                marginTop: 16,
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: C.ember,
-                cursor: "pointer",
-              }}
-            >
-              Use a different email →
-            </button>
+            <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
+              Verify your email.
+            </h1>
+            <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
+              We sent a 6-digit code to <strong>{email}</strong>.
+            </p>
+
+            <form onSubmit={handleVerifyOtp}>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="6-digit code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                style={{ ...inputStyle, marginBottom: 32, letterSpacing: "0.2em" }}
+                autoComplete="one-time-code"
+              />
+
+              <button
+                type="submit"
+                disabled={busy || !otp}
+                style={{
+                  width: "100%",
+                  padding: "14px 16px",
+                  background: C.ink,
+                  color: C.paper,
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  cursor: busy ? "default" : "pointer",
+                  opacity: busy || !otp ? 0.5 : 1,
+                }}
+              >
+                {busy ? "Verifying…" : "Verify code"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("email");
+                  setOtp("");
+                  setError(null);
+                }}
+                style={{
+                  marginTop: 20,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: C.inkMute,
+                  cursor: "pointer",
+                  width: "100%",
+                  textAlign: "center",
+                }}
+              >
+                ← Back to email
+              </button>
+
+              {error && (
+                <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, textAlign: "center" }}>
+                  {error}
+                </div>
+              )}
+            </form>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <input
-              type="email"
-              inputMode="email"
-              placeholder="you@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle}
-              autoComplete="email"
-            />
-
-            <button
-              type="submit"
-              disabled={busy || !validEmail}
-              style={{
-                width: "100%",
-                padding: "14px 16px",
-                background: C.ink,
-                color: C.paper,
-                border: "none",
-                borderRadius: 8,
-                fontSize: 14,
-                fontWeight: 500,
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                cursor: busy ? "default" : "pointer",
-                opacity: busy || !validEmail ? 0.5 : 1,
-              }}
-            >
-              {busy ? "Sending…" : "Email me a sign-in link"}
-            </button>
-
-            {error && (
-              <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
-                {error}
-              </div>
-            )}
-          </form>
         )}
 
-        <div
-          style={{
-            marginTop: 36, paddingTop: 16, borderTop: `1px solid ${C.ink}`,
-            fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
-            letterSpacing: "0.12em", textTransform: "uppercase",
-            color: C.inkFaint, textAlign: "center",
-          }}
-        >
-          New here?{" "}
-          <Link to="/" style={{ color: C.ember, textDecoration: "none" }}>
-            Build your plan →
-          </Link>
-        </div>
+        {tab === "signup" && step === "password" && (
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: C.sage || C.inkSoft, // using sage if exists
+                marginBottom: 16,
+              }}
+            >
+              — Email verified
+            </div>
+            <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
+              Secure your account.
+            </h1>
+            <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
+              Create a password so you can sign in easily next time.
+            </p>
+
+            <form onSubmit={handleSetPassword}>
+              <input
+                type="password"
+                placeholder="New password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ ...inputStyle, marginBottom: 32 }}
+                autoComplete="new-password"
+              />
+
+              <button
+                type="submit"
+                disabled={busy || !password}
+                style={{
+                  width: "100%",
+                  padding: "14px 16px",
+                  background: C.ink,
+                  color: C.paper,
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  cursor: busy ? "default" : "pointer",
+                  opacity: busy || !password ? 0.5 : 1,
+                }}
+              >
+                {busy ? "Saving…" : "Save password"}
+              </button>
+
+              {error && (
+                <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, textAlign: "center" }}>
+                  {error}
+                </div>
+              )}
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
