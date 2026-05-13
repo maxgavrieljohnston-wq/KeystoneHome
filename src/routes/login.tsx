@@ -46,9 +46,10 @@ function LoginPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" });
   
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"signin" | "signup">(search.signup ? "signup" : "signin");
   const [email, setEmail] = useState(search.email ?? "");
   const [password, setPassword] = useState("");
+  const { openCheckout } = usePaddleCheckout();
   
   // Signup flow steps
   const [step, setStep] = useState<"email" | "otp" | "password">("email");
@@ -60,10 +61,10 @@ function LoginPage() {
   useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled && data.session) navigate({ to: "/dashboard" });
+      if (!cancelled && data.session && !search.plan) navigate({ to: "/dashboard" });
     });
     return () => { cancelled = true; };
-  }, [navigate]);
+  }, [navigate, search.plan]);
 
   const validEmail = email.trim().includes("@");
 
