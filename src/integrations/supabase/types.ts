@@ -203,6 +203,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_reminder_at: string | null
+          next_reminder_at: string | null
+          reminders_enabled: boolean
           updated_at: string
           user_id: string
         }
@@ -211,6 +214,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_reminder_at?: string | null
+          next_reminder_at?: string | null
+          reminders_enabled?: boolean
           updated_at?: string
           user_id: string
         }
@@ -219,6 +225,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_reminder_at?: string | null
+          next_reminder_at?: string | null
+          reminders_enabled?: boolean
           updated_at?: string
           user_id?: string
         }
