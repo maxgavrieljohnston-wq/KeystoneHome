@@ -2415,6 +2415,11 @@ function LimitReachedGate({ used, limit }: { used: number | null; limit: number 
 function Report({ d }: { d: Data }) {
   const saveLead = useServerFn(upsertLead);
   const submit = useServerFn(submitPlan);
+  const exportFn = useServerFn(exportPlanPdf);
+  const sub = useSubscription();
+  const gate = useUpgradeGate();
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [limitState, setLimitState] = useState<
     | { reason: "limit_reached"; used: number | null; limit: number | null }
     | null
@@ -2422,7 +2427,6 @@ function Report({ d }: { d: Data }) {
   useEffect(() => {
     const email = (d.email ?? "").trim().toLowerCase();
     if (!email.includes("@")) return;
-    // Keep the lead row updated for drop-off capture
     saveLead({
       data: { 
         email, 
@@ -2433,7 +2437,6 @@ function Report({ d }: { d: Data }) {
         completed: true 
       },
     }).catch((err) => console.error("[saveLead:report]", err));
-    // Persist as a plan (enforces 3-free limit, sends summary email)
     submit({
       data: {
         email,
@@ -2451,12 +2454,43 @@ function Report({ d }: { d: Data }) {
             used: res.used,
             limit: res.limit,
           });
+        } else if (res.ok && res.planId) {
+          setPlanId(res.planId);
         }
       })
       .catch((err) => console.error("[submitPlan]", err));
-    // Run once on mount; d is a snapshot of completed answers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleExportPdf = async () => {
+    if (!sub.isPlus) {
+      gate.openUpgrade("plus", "PDF export");
+      return;
+    }
+    if (!planId) {
+      alert("Hang on — your plan is still saving. Try again in a moment.");
+      return;
+    }
+    setExporting(true);
+    try {
+      const res = await exportFn({
+        data: { planId, environment: getPaddleEnvironment() },
+      });
+      const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("Couldn't export PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
   if (limitState) {
     return <LimitReachedGate used={limitState.used} limit={limitState.limit} />;
   }
