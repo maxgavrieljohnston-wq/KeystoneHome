@@ -83,6 +83,9 @@ export const submitPlan = createServerFn({ method: "POST" })
         p_user_id: (userId ?? null) as never,
         p_answers: data.answers as never,
         p_environment: data.environment,
+        p_first_name: data.firstName || null,
+        p_last_name: data.lastName || null,
+        p_phone: data.phone || null,
       },
     );
 
