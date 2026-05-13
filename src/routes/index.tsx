@@ -65,7 +65,6 @@ const C = {
 // ── Flow ─────────────────────────────────────────────────────────────────────
 const FLOW = [
   "welcome",
-  "name",
   "email",
   "introFinances",
   "partner",
@@ -95,7 +94,6 @@ const FLOW = [
 type Screen = (typeof FLOW)[number];
 
 const PROGRESS_SCREENS: Screen[] = [
-  "name",
   "email",
   "introFinances",
   "partner",
@@ -286,7 +284,7 @@ function KeystoneApp() {
 
   const shouldSkip = (idx: number) => {
     const s = FLOW[idx];
-    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerSavings", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
@@ -554,54 +552,6 @@ function ScreenSwitch({
     );
 
 
-  if (screen === "name")
-    return (
-      <Question
-        kicker="Introductions"
-        title="What's your name?"
-        sub="So we can make this feel a little more personal."
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 28 }}>
-          <input
-            type="text"
-            placeholder="First name"
-            value={d.firstName}
-            onChange={(e) => set("firstName", e.target.value)}
-            style={{
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              borderBottom: `1.5px solid ${C.ink}`,
-              padding: "12px 0",
-              fontSize: 22,
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              color: C.ink,
-              outline: "none",
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Last name"
-            value={d.lastName}
-            onChange={(e) => set("lastName", e.target.value)}
-            style={{
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              borderBottom: `1.5px solid ${C.ink}`,
-              padding: "12px 0",
-              fontSize: 22,
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              color: C.ink,
-              outline: "none",
-            }}
-          />
-        </div>
-        <Cta onClick={next} disabled={!d.firstName.trim() || !d.lastName.trim()}>
-          Continue
-        </Cta>
-      </Question>
-    );
 
   if (screen === "partner")
     return (
@@ -3240,22 +3190,21 @@ function EmailScreen({
   const phoneDigits = d.phone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length >= 10;
   const emailValid = d.email.includes("@");
+  const nameValid = d.firstName.trim().length > 0 && d.lastName.trim().length > 0;
+  const canContinue = nameValid && emailValid && phoneValid;
   const handleContinue = () => {
     const email = d.email.trim().toLowerCase();
-    if (!emailValid || !phoneValid) return;
-    // Fire-and-forget draft save; never block the flow on save failure
-    saveLead({ 
-      data: { 
-        email, 
+    if (!canContinue) return;
+    saveLead({
+      data: {
+        email,
         firstName: d.firstName.trim() || undefined,
         lastName: d.lastName.trim() || undefined,
         phone: d.phone.trim() || undefined,
-        answers: { ...d, email } as unknown as Record<string, unknown>, 
-        completed: false 
-      } 
-    }).catch(
-      (err) => console.error("[saveLead:email]", err),
-    );
+        answers: { ...d, email } as unknown as Record<string, unknown>,
+        completed: false,
+      },
+    }).catch((err) => console.error("[saveLead:email]", err));
     next();
   };
 
@@ -3274,13 +3223,32 @@ function EmailScreen({
 
   return (
     <Question
-      kicker="Your turn"
-      title="Where should we send your plan?"
-      sub="Just for the report. We don't spam."
+      kicker="Introductions"
+      title="Let's get acquainted."
+      sub="Your name and where to send your plan. We don't spam."
     >
+      <div style={{ display: "flex", gap: 12, marginBottom: 0 }}>
+        <input
+          type="text"
+          autoComplete="given-name"
+          placeholder="First name"
+          value={d.firstName}
+          onChange={(e) => set("firstName", e.target.value)}
+          style={inputStyle}
+        />
+        <input
+          type="text"
+          autoComplete="family-name"
+          placeholder="Last name"
+          value={d.lastName}
+          onChange={(e) => set("lastName", e.target.value)}
+          style={inputStyle}
+        />
+      </div>
       <input
         type="email"
         inputMode="email"
+        autoComplete="email"
         placeholder="you@email.com"
         value={d.email}
         onChange={(e) => set("email", e.target.value)}
@@ -3295,7 +3263,7 @@ function EmailScreen({
         onChange={(e) => set("phone", e.target.value)}
         style={{ ...inputStyle, marginBottom: 28 }}
       />
-      <Cta onClick={handleContinue} disabled={!emailValid || !phoneValid}>
+      <Cta onClick={handleContinue} disabled={!canContinue}>
         Continue
       </Cta>
 
