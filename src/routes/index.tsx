@@ -286,7 +286,7 @@ function KeystoneApp() {
 
   const shouldSkip = (idx: number) => {
     const s = FLOW[idx];
-    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerSavings", "partnerCredit", "introPartnerSummary"];
+    const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
