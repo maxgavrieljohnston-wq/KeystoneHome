@@ -65,9 +65,9 @@ const C = {
 // ── Flow ─────────────────────────────────────────────────────────────────────
 const FLOW = [
   "welcome",
+  "name",
   "email",
   "introFinances",
-  "name",
   "partner",
   "age",
   "employment",
