@@ -22,6 +22,16 @@ export interface SubscriptionState {
 
 export function useSubscription(): SubscriptionState {
   const [userId, setUserId] = useState<string | null>(null);
+  const [devBypass, setDevBypass] = useState(false);
+
+  useEffect(() => {
+    const checkBypass = () => {
+      setDevBypass(localStorage.getItem("dev_bypass_pro") === "true");
+    };
+    checkBypass();
+    window.addEventListener("dev_bypass_changed", checkBypass);
+    return () => window.removeEventListener("dev_bypass_changed", checkBypass);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
