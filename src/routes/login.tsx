@@ -141,6 +141,14 @@ function LoginPage() {
 
     if (err) {
       setError(friendlyError(err.message));
+    } else if (search.plan && search.billing) {
+      const priceId = `${search.plan}_${search.billing}`;
+      const { data: u } = await supabase.auth.getUser();
+      await openCheckout({
+        priceId,
+        customerEmail: u.user?.email ?? email.trim(),
+        userId: u.user?.id,
+      });
     } else {
       navigate({ to: "/dashboard" });
     }
