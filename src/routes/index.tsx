@@ -3190,22 +3190,21 @@ function EmailScreen({
   const phoneDigits = d.phone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length >= 10;
   const emailValid = d.email.includes("@");
+  const nameValid = d.firstName.trim().length > 0 && d.lastName.trim().length > 0;
+  const canContinue = nameValid && emailValid && phoneValid;
   const handleContinue = () => {
     const email = d.email.trim().toLowerCase();
-    if (!emailValid || !phoneValid) return;
-    // Fire-and-forget draft save; never block the flow on save failure
-    saveLead({ 
-      data: { 
-        email, 
+    if (!canContinue) return;
+    saveLead({
+      data: {
+        email,
         firstName: d.firstName.trim() || undefined,
         lastName: d.lastName.trim() || undefined,
         phone: d.phone.trim() || undefined,
-        answers: { ...d, email } as unknown as Record<string, unknown>, 
-        completed: false 
-      } 
-    }).catch(
-      (err) => console.error("[saveLead:email]", err),
-    );
+        answers: { ...d, email } as unknown as Record<string, unknown>,
+        completed: false,
+      },
+    }).catch((err) => console.error("[saveLead:email]", err));
     next();
   };
 
@@ -3224,13 +3223,32 @@ function EmailScreen({
 
   return (
     <Question
-      kicker="Your turn"
-      title="Where should we send your plan?"
-      sub="Just for the report. We don't spam."
+      kicker="Introductions"
+      title="Let's get acquainted."
+      sub="Your name and where to send your plan. We don't spam."
     >
+      <div style={{ display: "flex", gap: 12, marginBottom: 0 }}>
+        <input
+          type="text"
+          autoComplete="given-name"
+          placeholder="First name"
+          value={d.firstName}
+          onChange={(e) => set("firstName", e.target.value)}
+          style={inputStyle}
+        />
+        <input
+          type="text"
+          autoComplete="family-name"
+          placeholder="Last name"
+          value={d.lastName}
+          onChange={(e) => set("lastName", e.target.value)}
+          style={inputStyle}
+        />
+      </div>
       <input
         type="email"
         inputMode="email"
+        autoComplete="email"
         placeholder="you@email.com"
         value={d.email}
         onChange={(e) => set("email", e.target.value)}
@@ -3245,7 +3263,7 @@ function EmailScreen({
         onChange={(e) => set("phone", e.target.value)}
         style={{ ...inputStyle, marginBottom: 28 }}
       />
-      <Cta onClick={handleContinue} disabled={!emailValid || !phoneValid}>
+      <Cta onClick={handleContinue} disabled={!canContinue}>
         Continue
       </Cta>
 
