@@ -2579,17 +2579,39 @@ function Report({ d }: { d: Data }) {
         }}
       >
         <Wordmark small />
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: C.inkFaint,
-          }}
-        >
-          The Report
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={exporting}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              padding: "7px 12px",
+              border: `1px solid ${C.ink}`,
+              borderRadius: 6,
+              background: "transparent",
+              color: C.ink,
+              cursor: exporting ? "default" : "pointer",
+              opacity: exporting ? 0.5 : 1,
+            }}
+          >
+            {exporting ? "Exporting…" : sub.isPlus ? "↓ Export PDF" : "↓ Export PDF · Plus"}
+          </button>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkFaint,
+            }}
+          >
+            The Report
+          </span>
+        </div>
       </div>
       <div style={{ height: 1, background: C.ink, marginBottom: 18 }} />
 
