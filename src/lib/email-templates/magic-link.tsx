@@ -14,23 +14,28 @@ import {
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
+  token?: string
 }
 
 export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
+  token,
 }: MagicLinkEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Your sign-in link for {siteName}</Preview>
+    <Preview>Your sign-in code for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Text style={kicker}>— Keystone</Text>
-        <Heading style={h1}>Your sign-in link.</Heading>
+        <Heading style={h1}>Your sign-in code.</Heading>
         <Text style={text}>
-          Tap the button below to open your homebuying plan. The link expires
-          shortly, so use it soon.
+          Enter this 6-digit code to sign in, or tap the button below. It
+          expires shortly, so use it soon.
         </Text>
+        <div style={codeBox}>
+          <Text style={codeText}>{token}</Text>
+        </div>
         <Button style={button} href={confirmationUrl}>
           Open my plan →
         </Button>
@@ -70,6 +75,20 @@ const text = {
   color: '#3d3d3d',
   lineHeight: '1.5',
   margin: '0 0 26px',
+}
+const codeBox = {
+  background: '#f5efe6',
+  padding: '16px',
+  borderRadius: '8px',
+  textAlign: 'center' as const,
+  marginBottom: '26px',
+}
+const codeText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '28px',
+  letterSpacing: '0.2em',
+  color: '#1a1a1a',
+  margin: 0,
 }
 const button = {
   backgroundColor: '#1a1a1a',
