@@ -1661,8 +1661,26 @@ function Slider({
         }}
       >
         <span>{format(min)}</span>
-        <span>{format(max)}</span>
+        <span>
+          {format(max)}
+          {maxNote && <span style={{ color: C.ember, marginLeft: 2 }}>*</span>}
+        </span>
       </div>
+      {maxNote && (
+        <div
+          style={{
+            marginTop: 10,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            lineHeight: 1.5,
+            letterSpacing: "0.06em",
+            color: C.inkMute,
+            textTransform: "none",
+          }}
+        >
+          <span style={{ color: C.ember }}>*</span> {maxNote}
+        </div>
+      )}
     </div>
   );
 }
