@@ -2,6 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  HOME_STYLES,
+  styleAdjustments,
+  calcMortgage,
+  calcRequiredMonthly,
+  rateFromCredit,
+  rateAddFromDownPct,
+  combinedEmploymentAdjustment,
+  getPriceByZip,
+} from "@/lib/keystone";
 
 const SITE_NAME = "Keystone";
 const SENDER_DOMAIN = "notify.keystonehomeowners.com";
