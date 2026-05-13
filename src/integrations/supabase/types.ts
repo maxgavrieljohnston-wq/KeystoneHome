@@ -131,7 +131,10 @@ export type Database = {
           completed: boolean
           created_at: string
           email: string
+          first_name: string | null
           id: string
+          last_name: string | null
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -139,7 +142,10 @@ export type Database = {
           completed?: boolean
           created_at?: string
           email: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -147,7 +153,10 @@ export type Database = {
           completed?: boolean
           created_at?: string
           email?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -157,7 +166,10 @@ export type Database = {
           answers: Json
           created_at: string
           email: string
+          first_name: string | null
           id: string
+          last_name: string | null
+          phone: string | null
           title: string | null
           user_id: string | null
         }
@@ -165,7 +177,10 @@ export type Database = {
           answers?: Json
           created_at?: string
           email: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
+          phone?: string | null
           title?: string | null
           user_id?: string | null
         }
@@ -173,7 +188,10 @@ export type Database = {
           answers?: Json
           created_at?: string
           email?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
+          phone?: string | null
           title?: string | null
           user_id?: string | null
         }
