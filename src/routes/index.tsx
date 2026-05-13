@@ -1600,38 +1600,47 @@ function Slider({
         </div>
       )}
       {!unit && <div style={{ height: 22 }} />}
-      <div style={{ position: "relative", height: 30 }}>
+      <div style={{ position: "relative", height: 36 }}>
+        {/* Track (rounded pill) */}
         <div
           style={{
             position: "absolute",
             left: 0,
             right: 0,
             top: 14,
-            height: 2,
-            background: "rgba(26,26,26,0.18)",
+            height: 8,
+            borderRadius: 999,
+            background: "rgba(26,26,26,0.10)",
           }}
         />
+        {/* Filled portion */}
         <div
           style={{
             position: "absolute",
             left: 0,
             top: 14,
-            height: 2,
+            height: 8,
             width: `${pct}%`,
+            borderRadius: 999,
             background: C.ink,
+            transition: "width 0.12s ease-out",
           }}
         />
+        {/* Circular thumb */}
         <div
           style={{
             position: "absolute",
             left: `${pct}%`,
-            top: 6,
+            top: 4,
             transform: "translateX(-50%)",
-            width: 18,
-            height: 18,
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
             background: C.ember,
             border: `2px solid ${C.ink}`,
+            boxShadow: "0 4px 10px rgba(26,26,26,0.18)",
             pointerEvents: "none",
+            transition: "transform 0.12s ease-out",
           }}
         />
         <input
@@ -1645,8 +1654,10 @@ function Slider({
             position: "absolute",
             inset: 0,
             width: "100%",
+            height: "100%",
             opacity: 0,
             cursor: "pointer",
+            margin: 0,
           }}
         />
       </div>
