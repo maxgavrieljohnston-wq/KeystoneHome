@@ -3210,7 +3210,16 @@ function EmailScreen({
     const email = d.email.trim().toLowerCase();
     if (!emailValid || !phoneValid) return;
     // Fire-and-forget draft save; never block the flow on save failure
-    saveLead({ data: { email, answers: { ...d, email } as unknown as Record<string, unknown>, completed: false } }).catch(
+    saveLead({ 
+      data: { 
+        email, 
+        firstName: d.firstName.trim() || undefined,
+        lastName: d.lastName.trim() || undefined,
+        phone: d.phone.trim() || undefined,
+        answers: { ...d, email } as unknown as Record<string, unknown>, 
+        completed: false 
+      } 
+    }).catch(
       (err) => console.error("[saveLead:email]", err),
     );
     next();
