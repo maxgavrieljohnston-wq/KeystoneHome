@@ -47,7 +47,7 @@ export function UpgradeModal({
       yearlyPriceId: "plus_yearly",
       monthly: 9,
       yearly: 86,
-      features: ["Unlimited saved plans", "Partner mode", "PDF export", "Email reminders"],
+      features: ["Unlimited saved plans", "PDF export", "Email reminders"],
     },
     {
       id: "pro" as const,
