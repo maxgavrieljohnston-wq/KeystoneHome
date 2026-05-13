@@ -1557,6 +1557,7 @@ function Slider({
   format,
   onChange,
   unit,
+  maxNote,
 }: {
   value: number;
   min: number;
@@ -1565,6 +1566,7 @@ function Slider({
   format: (v: number) => string;
   onChange: (v: number) => void;
   unit?: string;
+  maxNote?: string;
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
