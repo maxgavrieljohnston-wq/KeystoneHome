@@ -2348,12 +2348,22 @@ function Report({ d }: { d: Data }) {
     if (!email.includes("@")) return;
     // Keep the lead row updated for drop-off capture
     saveLead({
-      data: { email, answers: d as unknown as Record<string, unknown>, completed: true },
+      data: { 
+        email, 
+        firstName: d.firstName.trim() || undefined,
+        lastName: d.lastName.trim() || undefined,
+        phone: d.phone.trim() || undefined,
+        answers: d as unknown as Record<string, unknown>, 
+        completed: true 
+      },
     }).catch((err) => console.error("[saveLead:report]", err));
     // Persist as a plan (enforces 3-free limit, sends summary email)
     submit({
       data: {
         email,
+        firstName: d.firstName.trim() || undefined,
+        lastName: d.lastName.trim() || undefined,
+        phone: d.phone.trim() || undefined,
         answers: d as unknown as Record<string, unknown>,
         environment: getPaddleEnvironment(),
       },
