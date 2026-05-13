@@ -826,6 +826,7 @@ function ScreenSwitch({
           step={100}
           format={(v) => fmt(v)}
           unit={`per month toward ${fmt(target)}`}
+          maxNote={`Capped at ${fmt(sliderMax)}/mo — about half your take-home pay after expenses and debt. Pushing higher than this rarely sticks month after month.`}
           onChange={(v) => {
             const yrs = v > 0 ? Math.max(1, Math.round(remaining / v / 12)) : 99;
             set("timelineBucket", `$${v}`);
