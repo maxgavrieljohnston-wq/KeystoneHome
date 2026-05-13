@@ -826,6 +826,7 @@ function ScreenSwitch({
           step={100}
           format={(v) => fmt(v)}
           unit={`per month toward ${fmt(target)}`}
+          maxNote={`Capped at ${fmt(sliderMax)}/mo — about half your take-home pay after expenses and debt. Pushing higher than this rarely sticks month after month.`}
           onChange={(v) => {
             const yrs = v > 0 ? Math.max(1, Math.round(remaining / v / 12)) : 99;
             set("timelineBucket", `$${v}`);
@@ -1557,6 +1558,7 @@ function Slider({
   format,
   onChange,
   unit,
+  maxNote,
 }: {
   value: number;
   min: number;
@@ -1565,6 +1567,7 @@ function Slider({
   format: (v: number) => string;
   onChange: (v: number) => void;
   unit?: string;
+  maxNote?: string;
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
@@ -1659,8 +1662,26 @@ function Slider({
         }}
       >
         <span>{format(min)}</span>
-        <span>{format(max)}</span>
+        <span>
+          {format(max)}
+          {maxNote && <span style={{ color: C.ember, marginLeft: 2 }}>*</span>}
+        </span>
       </div>
+      {maxNote && (
+        <div
+          style={{
+            marginTop: 10,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            lineHeight: 1.5,
+            letterSpacing: "0.06em",
+            color: C.inkMute,
+            textTransform: "none",
+          }}
+        >
+          <span style={{ color: C.ember }}>*</span> {maxNote}
+        </div>
+      )}
     </div>
   );
 }
