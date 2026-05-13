@@ -174,7 +174,10 @@ function DashboardPage() {
         ) : plans.length === 0 ? (
           <EmptyState />
         ) : (
-          <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+          <>
+            <RemindersToggle hasPlans={plans.length > 0} />
+            <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+          </>
         )}
 
         <PremiumPanel
