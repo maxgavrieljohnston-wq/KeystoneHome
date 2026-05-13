@@ -217,7 +217,13 @@ function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setTab("signup")}
+              onClick={() => {
+                if (search.plan) {
+                  setTab("signup");
+                } else {
+                  navigate({ to: "/pricing" });
+                }
+              }}
               style={{
                 background: "transparent",
                 border: "none",
