@@ -12,6 +12,9 @@ const submitSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(320),
   answers: z.record(z.string(), z.unknown()).default({}),
   environment: z.enum(["sandbox", "live"]).default("live"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 function renderPlanEmail(opts: {
