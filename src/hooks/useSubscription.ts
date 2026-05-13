@@ -64,8 +64,19 @@ export function useSubscription(): SubscriptionState {
 
   useEffect(() => {
     if (!userId) return;
+    const name = `sub-${userId}`;
+    // Defensive: remove any stale channel with the same topic (StrictMode double-invoke
+    // or cached channel) before creating a new one. Adding `postgres_changes` listeners
+    // after subscribe() throws.
+    supabase
+      .getChannels()
+      .filter((c) => c.topic === `realtime:${name}`)
+      .forEach((c) => {
+        supabase.removeChannel(c);
+      });
+
     const channel = supabase
-      .channel(`sub-${userId}`)
+      .channel(name)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` },
