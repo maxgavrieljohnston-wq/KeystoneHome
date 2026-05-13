@@ -194,9 +194,8 @@ function PlansList({
   isPlus: boolean;
   onNewPlan: () => void;
 }) {
-  const visibleCount = isPlus ? plans.length : Math.min(plans.length, 1);
-  const visible = plans.slice(0, visibleCount);
-  const locked = isPlus ? [] : plans.slice(1);
+  const visible = plans;
+  const locked: PlanRow[] = [];
   const used = plans.length;
 
   return (

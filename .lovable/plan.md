@@ -1,23 +1,42 @@
-## Problem
+## Feature 1: Unlimited saved plans (Plus)
 
-Your signup flow calls `signInWithOtp`. Supabase sends a 6-digit verification code, but which email template is used depends on whether the user already exists:
+### Current state
+Most of this feature already exists:
 
-- **First-time signup** → uses `SignupEmail` template (already shows the code correctly).
-- **Existing user / subsequent attempts** → uses `MagicLinkEmail` template, which currently only renders the "Open my plan →" button and **does not display the token**. That's the "login" email you've been seeing with no code.
+- DB function `create_plan_with_limit` enforces a 3-plan cap for non-paid users, unlimited for Plus/Pro.
+- `getMyPlans` server fn merges owned + orphan plans by email and adopts orphans on first sign-in.
+- `dashboard.tsx` shows plans, lets free users view 1 plan + locks the rest as `LockedPlanCard` with an upgrade CTA.
+- `submitPlan` returns `{ reason: "limit_reached", used, limit }` when the cap is hit.
 
-The webhook already passes `token` to every template (`src/routes/lovable/email/auth/webhook.ts`, line 140) — the magic-link template just isn't rendering it.
+### Gaps to fix
 
-## Fix
+1. **Inconsistent limits.** DB caps creation at **3**, but dashboard only reveals **1** to free users and locks the other 2. Either the user gets 3 free plans, or they get 1 — not both. Recommendation: align on **3 free plans, all viewable**, and gate creation of the 4th. Locking already-created plans behind a paywall feels like a bait-and-switch.
 
-Update `src/lib/email-templates/magic-link.tsx` to:
+2. **`limit_reached` not surfaced to the user.** In `src/routes/index.tsx`, when `submitPlan` returns `limit_reached`, we need to verify the upgrade modal opens (`gate.openUpgrade("plus", "Unlimited saved plans")`) instead of silently failing. Need to read index.tsx to confirm.
 
-1. Add `token?: string` to `MagicLinkEmailProps`.
-2. Render the 6-digit code in a styled code box above the button (matching the existing `codeBox` / `codeText` styling already used in `signup.tsx` so it stays on-brand).
-3. Update the body copy to say something like "Enter this code to sign in, or tap the button below."
-4. Keep the magic-link button as a fallback.
+3. **Dashboard "New plan" button** correctly gates on `plans.length >= FREE_LIMIT (3)`, which matches the DB. Good.
 
-No webhook changes, no other templates touched, no backend/database work.
+### Proposed changes
 
-## Result
+```text
+src/routes/dashboard.tsx
+  - PlansList: show ALL plans for free users (remove LockedPlanCard slicing)
+  - Keep "X of 3 free plans used" counter
+  - Keep handleNewPlan gate at >= 3
 
-Whether it's a first-time signup or a returning sign-in, the email will always contain the 6-digit code prominently displayed.
+src/routes/index.tsx (verify, edit if needed)
+  - On submitPlan { reason: "limit_reached" }: open upgrade modal with
+    feature name "Unlimited saved plans"
+
+(no DB changes — limit stays at 3)
+```
+
+### Open question for you
+
+Pick the model:
+
+- **A** — 3 free plans, all viewable, paywall the 4th creation. (Recommended; matches the DB and feels honest.)
+- **B** — 1 free plan viewable, others locked-but-visible after creation. (Current dashboard UX; requires lowering the DB cap to 1 to be coherent.)
+- **C** — Different number (tell me).
+
+Once you pick, I'll implement in one pass and verify the upgrade modal triggers correctly on both the dashboard "New plan" button and the onboarding flow's submit path.
