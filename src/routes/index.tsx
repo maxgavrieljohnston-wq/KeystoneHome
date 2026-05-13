@@ -2322,7 +2322,7 @@ function FinancesForm({
         hint="Cash, savings, or investments you'd put toward the down payment and closing costs."
         value={saved}
         min={0}
-        max={300000}
+        max={100000}
         step={500}
         onChange={onSaved}
       />
