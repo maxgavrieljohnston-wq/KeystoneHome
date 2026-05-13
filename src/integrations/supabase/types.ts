@@ -301,15 +301,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_plan_with_limit: {
-        Args: {
-          p_answers: Json
-          p_email: string
-          p_environment?: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      create_plan_with_limit:
+        | {
+            Args: {
+              p_answers: Json
+              p_email: string
+              p_environment?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_email: string
+              p_environment?: string
+              p_first_name?: string
+              p_last_name?: string
+              p_phone?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -339,10 +352,22 @@ export type Database = {
           read_ct: number
         }[]
       }
-      upsert_lead: {
-        Args: { p_answers: Json; p_completed: boolean; p_email: string }
-        Returns: undefined
-      }
+      upsert_lead:
+        | {
+            Args: { p_answers: Json; p_completed: boolean; p_email: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_completed: boolean
+              p_email: string
+              p_first_name?: string
+              p_last_name?: string
+              p_phone?: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       [_ in never]: never
