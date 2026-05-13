@@ -553,24 +553,6 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "savings")
-    return (
-      <Question
-        kicker="Savings"
-        title="What have you saved already?"
-        sub="Cash, savings, investments earmarked for the home."
-      >
-        <Slider
-          value={d.saved}
-          min={0}
-          max={200000}
-          step={500}
-          format={(v) => fmt(v)}
-          onChange={(v) => set("saved", v)}
-        />
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
 
   if (screen === "name")
     return (
