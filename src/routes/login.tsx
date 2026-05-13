@@ -425,7 +425,7 @@ function LoginPage() {
                 fontSize: 10,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
-                color: C.sage || C.inkSoft, // using sage if exists
+                color: C.inkSoft,
                 marginBottom: 16,
               }}
             >
