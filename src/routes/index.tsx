@@ -65,9 +65,9 @@ const C = {
 // ── Flow ─────────────────────────────────────────────────────────────────────
 const FLOW = [
   "welcome",
+  "name",
   "email",
   "introFinances",
-  "name",
   "partner",
   "age",
   "employment",
@@ -101,9 +101,9 @@ const FLOW = [
 type Screen = (typeof FLOW)[number];
 
 const PROGRESS_SCREENS: Screen[] = [
+  "name",
   "email",
   "introFinances",
-  "name",
   "partner",
   "age", "employment", "income", "expenses", "debt", "savings", "credit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerIncome", "partnerExpenses", "partnerDebt", "partnerSavings", "partnerCredit",
@@ -2348,12 +2348,22 @@ function Report({ d }: { d: Data }) {
     if (!email.includes("@")) return;
     // Keep the lead row updated for drop-off capture
     saveLead({
-      data: { email, answers: d as unknown as Record<string, unknown>, completed: true },
+      data: { 
+        email, 
+        firstName: d.firstName.trim() || undefined,
+        lastName: d.lastName.trim() || undefined,
+        phone: d.phone.trim() || undefined,
+        answers: d as unknown as Record<string, unknown>, 
+        completed: true 
+      },
     }).catch((err) => console.error("[saveLead:report]", err));
     // Persist as a plan (enforces 3-free limit, sends summary email)
     submit({
       data: {
         email,
+        firstName: d.firstName.trim() || undefined,
+        lastName: d.lastName.trim() || undefined,
+        phone: d.phone.trim() || undefined,
         answers: d as unknown as Record<string, unknown>,
         environment: getPaddleEnvironment(),
       },
@@ -3210,7 +3220,16 @@ function EmailScreen({
     const email = d.email.trim().toLowerCase();
     if (!emailValid || !phoneValid) return;
     // Fire-and-forget draft save; never block the flow on save failure
-    saveLead({ data: { email, answers: { ...d, email } as unknown as Record<string, unknown>, completed: false } }).catch(
+    saveLead({ 
+      data: { 
+        email, 
+        firstName: d.firstName.trim() || undefined,
+        lastName: d.lastName.trim() || undefined,
+        phone: d.phone.trim() || undefined,
+        answers: { ...d, email } as unknown as Record<string, unknown>, 
+        completed: false 
+      } 
+    }).catch(
       (err) => console.error("[saveLead:email]", err),
     );
     next();

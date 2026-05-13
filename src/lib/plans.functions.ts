@@ -12,6 +12,9 @@ const submitSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(320),
   answers: z.record(z.string(), z.unknown()).default({}),
   environment: z.enum(["sandbox", "live"]).default("live"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 function renderPlanEmail(opts: {
@@ -80,6 +83,9 @@ export const submitPlan = createServerFn({ method: "POST" })
         p_user_id: (userId ?? null) as never,
         p_answers: data.answers as never,
         p_environment: data.environment,
+        p_first_name: data.firstName || null,
+        p_last_name: data.lastName || null,
+        p_phone: data.phone || null,
       },
     );
 
