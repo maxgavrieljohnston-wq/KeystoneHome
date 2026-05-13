@@ -76,6 +76,20 @@ const text = {
   lineHeight: '1.5',
   margin: '0 0 26px',
 }
+const codeBox = {
+  background: '#f5efe6',
+  padding: '16px',
+  borderRadius: '8px',
+  textAlign: 'center' as const,
+  marginBottom: '26px',
+}
+const codeText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '28px',
+  letterSpacing: '0.2em',
+  color: '#1a1a1a',
+  margin: 0,
+}
 const button = {
   backgroundColor: '#1a1a1a',
   color: '#f5efe6',
