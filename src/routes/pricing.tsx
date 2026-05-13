@@ -87,7 +87,10 @@ function PricingPage() {
 
   const handleSelect = async (plan: typeof PLANS[number]) => {
     if (!userId) {
-      navigate({ to: "/login" });
+      navigate({
+        to: "/login",
+        search: { signup: true, plan: plan.id, billing },
+      });
       return;
     }
     const priceId = billing === "monthly" ? plan.monthlyPriceId : plan.yearlyPriceId;
