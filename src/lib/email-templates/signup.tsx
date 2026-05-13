@@ -17,6 +17,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  token?: string
 }
 
 export const SignupEmail = ({
@@ -24,29 +25,26 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  token,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Preview>Verify your email for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Text style={kicker}>— Keystone</Text>
+        <Heading style={h1}>Verify your email.</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          !
+          Thanks for signing up! Your verification code is:
         </Text>
+        <div style={codeBox}>
+          <Text style={codeText}>{token}</Text>
+        </div>
         <Text style={text}>
-          Please confirm your email address (
-          <Link href={`mailto:${recipient}`} style={link}>
-            {recipient}
-          </Link>
-          ) by clicking the button below:
+          You can also tap the button below to verify your email.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Verify Email
+          Verify Email →
         </Button>
         <Text style={footer}>
           If you didn't create an account, you can safely ignore this email.
