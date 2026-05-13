@@ -1,12 +1,21 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 
-type LoginSearch = { email?: string };
+type LoginSearch = {
+  email?: string;
+  signup?: boolean;
+  plan?: string;
+  billing?: "monthly" | "yearly";
+};
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     email: typeof search.email === "string" ? search.email : undefined,
+    signup: search.signup === true || search.signup === "true" || search.signup === "1",
+    plan: typeof search.plan === "string" ? search.plan : undefined,
+    billing: search.billing === "monthly" || search.billing === "yearly" ? search.billing : undefined,
   }),
   head: () => ({
     meta: [
@@ -37,9 +46,10 @@ function LoginPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" });
   
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"signin" | "signup">(search.signup ? "signup" : "signin");
   const [email, setEmail] = useState(search.email ?? "");
   const [password, setPassword] = useState("");
+  const { openCheckout } = usePaddleCheckout();
   
   // Signup flow steps
   const [step, setStep] = useState<"email" | "otp" | "password">("email");
@@ -51,10 +61,10 @@ function LoginPage() {
   useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled && data.session) navigate({ to: "/dashboard" });
+      if (!cancelled && data.session && !search.plan) navigate({ to: "/dashboard" });
     });
     return () => { cancelled = true; };
-  }, [navigate]);
+  }, [navigate, search.plan]);
 
   const validEmail = email.trim().includes("@");
 
@@ -131,6 +141,14 @@ function LoginPage() {
 
     if (err) {
       setError(friendlyError(err.message));
+    } else if (search.plan && search.billing) {
+      const priceId = `${search.plan}_${search.billing}`;
+      const { data: u } = await supabase.auth.getUser();
+      await openCheckout({
+        priceId,
+        customerEmail: u.user?.email ?? email.trim(),
+        userId: u.user?.id,
+      });
     } else {
       navigate({ to: "/dashboard" });
     }
@@ -199,7 +217,13 @@ function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setTab("signup")}
+              onClick={() => {
+                if (search.plan) {
+                  setTab("signup");
+                } else {
+                  navigate({ to: "/pricing" });
+                }
+              }}
               style={{
                 background: "transparent",
                 border: "none",
