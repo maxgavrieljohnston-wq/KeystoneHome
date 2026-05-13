@@ -1,12 +1,21 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 
-type LoginSearch = { email?: string };
+type LoginSearch = {
+  email?: string;
+  signup?: boolean;
+  plan?: string;
+  billing?: "monthly" | "yearly";
+};
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     email: typeof search.email === "string" ? search.email : undefined,
+    signup: search.signup === true || search.signup === "true" || search.signup === "1",
+    plan: typeof search.plan === "string" ? search.plan : undefined,
+    billing: search.billing === "monthly" || search.billing === "yearly" ? search.billing : undefined,
   }),
   head: () => ({
     meta: [
