@@ -94,6 +94,20 @@ export function useSubscription(): SubscriptionState {
     else if (PLUS_PRICES.has(priceId)) tier = "plus";
   }
 
+  if (devBypass) {
+    return {
+      tier: "pro",
+      isActive: true,
+      isPro: true,
+      isPlus: true,
+      status: "active",
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: null,
+      priceId: "pro_monthly",
+      loading: false,
+    };
+  }
+
   return {
     tier,
     isActive,
