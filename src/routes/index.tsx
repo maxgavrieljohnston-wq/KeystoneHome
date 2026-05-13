@@ -2277,32 +2277,101 @@ function FinancesForm({
 }) {
   return (
     <div style={{ marginBottom: 28 }}>
-      <MoneyInput
+      <FinanceField
         label="Gross annual income"
-        unit="per year"
+        hint="What you earn before taxes — salary, wages, or 1099 income. We use this to size what lenders will offer."
         value={income}
+        min={20000}
+        max={300000}
+        step={1000}
         onChange={onIncome}
-        placeholder="75,000"
       />
-      <MoneyInput
+      <FinanceField
         label="Monthly expenses"
-        unit="per month"
+        hint="Your must-pay monthly costs: rent, utilities, groceries, transport, subscriptions. Skip the debt payments below."
         value={expenses}
+        min={0}
+        max={15000}
+        step={50}
         onChange={onExpenses}
-        placeholder="3,000"
-      />
-      <MoneyInput
-        label="Monthly debt payments"
         unit="per month"
-        value={debt}
-        onChange={onDebt}
-        placeholder="400"
       />
-      <MoneyInput
+      <FinanceField
+        label="Monthly debt payments"
+        hint="Minimums on credit cards, student loans, car payments, and any other recurring debt. Lenders weigh this heavily."
+        value={debt}
+        min={0}
+        max={5000}
+        step={25}
+        onChange={onDebt}
+        unit="per month"
+      />
+      <FinanceField
         label="Already saved for the home"
+        hint="Cash, savings, or investments you'd put toward the down payment and closing costs."
         value={saved}
+        min={0}
+        max={300000}
+        step={500}
         onChange={onSaved}
-        placeholder="15,000"
+      />
+    </div>
+  );
+}
+
+function FinanceField({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  unit,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  unit?: string;
+}) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: C.inkMute,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+        {unit && <span style={{ marginLeft: 8, opacity: 0.7 }}>· {unit}</span>}
+      </div>
+      <div
+        style={{
+          fontSize: 12,
+          lineHeight: 1.45,
+          color: C.inkMute,
+          marginBottom: 14,
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontStyle: "italic",
+        }}
+      >
+        {hint}
+      </div>
+      <Slider
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        format={(v) => fmt(v)}
+        onChange={onChange}
       />
     </div>
   );
