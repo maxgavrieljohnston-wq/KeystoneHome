@@ -46,7 +46,6 @@ const PLANS: Array<{
     tagline: "For the serious saver.",
     features: [
       "Save unlimited plans",
-      "Partner / household mode",
       "Export your plan as PDF",
       "Email reminders & milestones",
     ],
