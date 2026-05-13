@@ -2202,6 +2202,141 @@ function ZipScreen({
   );
 }
 
+// ── Money input ──────────────────────────────────────────────────────────────
+function MoneyInput({
+  label,
+  unit,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  unit?: string;
+  value: number;
+  onChange: (v: number) => void;
+  placeholder?: string;
+}) {
+  const [text, setText] = useState<string>(value ? String(value) : "");
+  useEffect(() => {
+    setText(value ? String(value) : "");
+  }, [value]);
+  const display =
+    text === "" ? "" : Number(text).toLocaleString("en-US");
+  return (
+    <label style={{ display: "block", marginBottom: 22 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: C.inkMute,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+        {unit && <span style={{ marginLeft: 8, opacity: 0.7 }}>· {unit}</span>}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          borderBottom: `1.5px solid ${C.ink}`,
+          paddingBottom: 6,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 32,
+            color: C.inkMute,
+            marginRight: 6,
+          }}
+        >
+          $
+        </span>
+        <input
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={display}
+          placeholder={placeholder ?? "0"}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9]/g, "");
+            setText(raw);
+            onChange(raw === "" ? 0 : Number(raw));
+          }}
+          style={{
+            flex: 1,
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontWeight: 400,
+            fontSize: 32,
+            letterSpacing: "-0.02em",
+            color: C.ink,
+            padding: 0,
+            minWidth: 0,
+          }}
+        />
+      </div>
+    </label>
+  );
+}
+
+// ── Finances form (income / expenses / debt / saved) ────────────────────────
+function FinancesForm({
+  income,
+  expenses,
+  debt,
+  saved,
+  onIncome,
+  onExpenses,
+  onDebt,
+  onSaved,
+}: {
+  income: number;
+  expenses: number;
+  debt: number;
+  saved: number;
+  onIncome: (v: number) => void;
+  onExpenses: (v: number) => void;
+  onDebt: (v: number) => void;
+  onSaved: (v: number) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <MoneyInput
+        label="Gross annual income"
+        unit="per year"
+        value={income}
+        onChange={onIncome}
+        placeholder="75,000"
+      />
+      <MoneyInput
+        label="Monthly expenses"
+        unit="per month"
+        value={expenses}
+        onChange={onExpenses}
+        placeholder="3,000"
+      />
+      <MoneyInput
+        label="Monthly debt payments"
+        unit="per month"
+        value={debt}
+        onChange={onDebt}
+        placeholder="400"
+      />
+      <MoneyInput
+        label="Already saved for the home"
+        value={saved}
+        onChange={onSaved}
+        placeholder="15,000"
+      />
+    </div>
+  );
+}
+
 
 function LimitReachedGate({ used, limit }: { used: number | null; limit: number | null }) {
   return (
