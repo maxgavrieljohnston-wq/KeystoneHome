@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RateAlertsRouteImport } from './routes/rate-alerts'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CoachRouteImport } from './routes/coach'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
@@ -33,6 +35,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RateAlertsRoute = RateAlertsRouteImport.update({
+  id: '/rate-alerts',
+  path: '/rate-alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
@@ -46,6 +53,11 @@ const LoginRoute = LoginRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoachRoute = CoachRouteImport.update({
@@ -95,9 +107,11 @@ const ApiPublicPaymentsWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/coach': typeof CoachRoute
+  '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
@@ -110,9 +124,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/coach': typeof CoachRoute
+  '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
@@ -126,9 +142,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/coach': typeof CoachRoute
+  '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
@@ -143,9 +161,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/coach'
+    | '/compare'
     | '/dashboard'
     | '/login'
     | '/pricing'
+    | '/rate-alerts'
     | '/reset-password'
     | '/welcome'
     | '/p/$slug'
@@ -158,9 +178,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/coach'
+    | '/compare'
     | '/dashboard'
     | '/login'
     | '/pricing'
+    | '/rate-alerts'
     | '/reset-password'
     | '/welcome'
     | '/p/$slug'
@@ -173,9 +195,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/coach'
+    | '/compare'
     | '/dashboard'
     | '/login'
     | '/pricing'
+    | '/rate-alerts'
     | '/reset-password'
     | '/welcome'
     | '/p/$slug'
@@ -189,9 +213,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CoachRoute: typeof CoachRoute
+  CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
+  RateAlertsRoute: typeof RateAlertsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   WelcomeRoute: typeof WelcomeRoute
   PSlugRoute: typeof PSlugRoute
@@ -218,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rate-alerts': {
+      id: '/rate-alerts'
+      path: '/rate-alerts'
+      fullPath: '/rate-alerts'
+      preLoaderRoute: typeof RateAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
@@ -237,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coach': {
@@ -301,9 +341,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CoachRoute: CoachRoute,
+  CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
+  RateAlertsRoute: RateAlertsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   WelcomeRoute: WelcomeRoute,
   PSlugRoute: PSlugRoute,
