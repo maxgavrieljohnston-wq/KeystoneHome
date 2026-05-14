@@ -323,6 +323,9 @@ function KeystoneApp() {
     const s = FLOW[idx];
     const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
+    // Partnered users enter household totals on the main "finances" screen,
+    // so the separate partnerFinances screen is skipped entirely.
+    if (d.hasPartner === true && s === "partnerFinances") return true;
     // Paid signed-in users already gave us name/email/phone — don't ask again.
     if (s === "email" && sub.isPlus && d.email.includes("@")) return true;
     if (s === "factDemo") {
@@ -547,21 +550,34 @@ function ScreenSwitch({
   if (screen === "finances")
     return (
       <Question
-        kicker="Your finances"
-        title="Tell us about your money."
+        kicker={d.hasPartner ? "Household finances" : "Your finances"}
+        title={d.hasPartner ? "Tell us about your household money." : "Tell us about your money."}
         sub={d.hasPartner
-          ? "Just yours for now — we'll ask about your partner separately."
+          ? "Combined totals for you and your partner — annual household income before taxes; monthly figures for the rest."
           : "Annual income before taxes; monthly figures for the rest."}
       >
         <FinancesForm
+          household={!!d.hasPartner}
           income={d.income}
           expenses={d.expenses}
           debt={d.debt}
           saved={d.saved}
-          onIncome={(v) => set("income", v)}
-          onExpenses={(v) => set("expenses", v)}
-          onDebt={(v) => set("debt", v)}
-          onSaved={(v) => set("saved", v)}
+          onIncome={(v) => {
+            set("income", v);
+            if (d.hasPartner) set("partnerIncome", 0);
+          }}
+          onExpenses={(v) => {
+            set("expenses", v);
+            if (d.hasPartner) set("partnerExpenses", 0);
+          }}
+          onDebt={(v) => {
+            set("debt", v);
+            if (d.hasPartner) set("partnerDebt", 0);
+          }}
+          onSaved={(v) => {
+            set("saved", v);
+            if (d.hasPartner) set("partnerSaved", 0);
+          }}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
@@ -2504,6 +2520,7 @@ function MoneyInput({
 
 // ── Finances form (income / expenses / debt / saved) ────────────────────────
 function FinancesForm({
+  household = false,
   income,
   expenses,
   debt,
@@ -2513,6 +2530,7 @@ function FinancesForm({
   onDebt,
   onSaved,
 }: {
+  household?: boolean;
   income: number;
   expenses: number;
   debt: number;
@@ -2525,40 +2543,48 @@ function FinancesForm({
   return (
     <div style={{ marginBottom: 28 }}>
       <FinanceField
-        label="Gross annual income"
-        hint="What you earn before taxes — salary, wages, or 1099 income. We use this to size what lenders will offer."
+        label={household ? "Total household gross annual income" : "Gross annual income"}
+        hint={household
+          ? "Combined pre-tax income for you and your partner — salary, wages, or 1099. We use this to size what lenders will offer."
+          : "What you earn before taxes — salary, wages, or 1099 income. We use this to size what lenders will offer."}
         value={income}
         min={20000}
-        max={300000}
+        max={household ? 600000 : 300000}
         step={1000}
         onChange={onIncome}
       />
       <FinanceField
-        label="Monthly expenses"
-        hint="Your must-pay monthly costs: rent, utilities, groceries, transport, subscriptions. Skip the debt payments below."
+        label={household ? "Total household monthly expenses" : "Monthly expenses"}
+        hint={household
+          ? "Combined must-pay monthly costs for the household: rent, utilities, groceries, transport, subscriptions. Skip the debt payments below."
+          : "Your must-pay monthly costs: rent, utilities, groceries, transport, subscriptions. Skip the debt payments below."}
         value={expenses}
         min={0}
-        max={15000}
+        max={household ? 25000 : 15000}
         step={50}
         onChange={onExpenses}
         unit="per month"
       />
       <FinanceField
-        label="Monthly debt payments"
-        hint="Minimums on credit cards, student loans, car payments, and any other recurring debt. Lenders weigh this heavily."
+        label={household ? "Total household monthly debt payments" : "Monthly debt payments"}
+        hint={household
+          ? "Combined minimums across both of you: credit cards, student loans, car payments, and any other recurring debt. Lenders weigh this heavily."
+          : "Minimums on credit cards, student loans, car payments, and any other recurring debt. Lenders weigh this heavily."}
         value={debt}
         min={0}
-        max={5000}
+        max={household ? 10000 : 5000}
         step={25}
         onChange={onDebt}
         unit="per month"
       />
       <FinanceField
-        label="Already saved for the home"
-        hint="Cash, savings, or investments you'd put toward the down payment and closing costs."
+        label={household ? "Total household savings for the home" : "Already saved for the home"}
+        hint={household
+          ? "Combined cash, savings, or investments either of you would put toward the down payment and closing costs."
+          : "Cash, savings, or investments you'd put toward the down payment and closing costs."}
         value={saved}
         min={0}
-        max={100000}
+        max={household ? 200000 : 100000}
         step={500}
         onChange={onSaved}
       />
