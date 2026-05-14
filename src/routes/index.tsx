@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
+import { getMyPlan } from "@/lib/account.functions";
 import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -274,6 +275,9 @@ function KeystoneApp() {
   const [d, setD] = useState<Data>(INITIAL);
   const [screenIdx, setScreenIdx] = useState(0);
   const screen: Screen = FLOW[screenIdx];
+  const sub = useSubscription();
+  const fetchMyPlan = useServerFn(getMyPlan);
+  const [contactPrefilled, setContactPrefilled] = useState(false);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -289,6 +293,29 @@ function KeystoneApp() {
     }
   }, []);
 
+  // For paid (Plus/Pro) signed-in users, pull contact info on file so the
+  // wizard doesn't ask again. Falls back gracefully if anything is missing.
+  useEffect(() => {
+    if (!sub.isPlus || contactPrefilled) return;
+    let cancelled = false;
+    fetchMyPlan()
+      .then((res) => {
+        if (cancelled || !res?.email) return;
+        setD((prev) => ({
+          ...prev,
+          email: prev.email || res.email || "",
+          firstName: prev.firstName || res.lead?.first_name || "",
+          lastName: prev.lastName || res.lead?.last_name || "",
+          phone: prev.phone || res.lead?.phone || "",
+        }));
+        setContactPrefilled(true);
+      })
+      .catch((err) => console.error("[prefillContact]", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [sub.isPlus, contactPrefilled, fetchMyPlan]);
+
   const set = <K extends keyof Data>(k: K, v: Data[K]) =>
     setD((prev) => ({ ...prev, [k]: v }));
 
@@ -296,6 +323,8 @@ function KeystoneApp() {
     const s = FLOW[idx];
     const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
+    // Paid signed-in users already gave us name/email/phone — don't ask again.
+    if (s === "email" && sub.isPlus && d.email.includes("@")) return true;
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
       const partnerOver = d.hasPartner ? d.partnerAge > 38 : true;
