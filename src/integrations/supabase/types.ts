@@ -203,6 +203,7 @@ export type Database = {
           last_name: string | null
           notes: string | null
           parent_plan_id: string | null
+          pdf_token: string | null
           phone: string | null
           share_enabled: boolean
           share_slug: string | null
@@ -224,6 +225,7 @@ export type Database = {
           last_name?: string | null
           notes?: string | null
           parent_plan_id?: string | null
+          pdf_token?: string | null
           phone?: string | null
           share_enabled?: boolean
           share_slug?: string | null
@@ -245,6 +247,7 @@ export type Database = {
           last_name?: string | null
           notes?: string | null
           parent_plan_id?: string | null
+          pdf_token?: string | null
           phone?: string | null
           share_enabled?: boolean
           share_slug?: string | null
