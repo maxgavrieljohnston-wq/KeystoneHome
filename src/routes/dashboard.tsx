@@ -17,6 +17,12 @@ import { getReminderPrefs, setReminderPrefs } from "@/lib/reminders.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
+import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
+import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
+import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
+import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
+import { computePlanMetrics } from "@/lib/plan-metrics";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -223,6 +229,16 @@ function DashboardPage() {
             <RemindersToggle hasPlans={plans.length > 0} />
             <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
           </>
+        )}
+
+        {plans.length > 0 && (
+          <InvestmentSection
+            answers={plans[0].answers}
+            assumptions={plans[0].assumptions}
+            planId={plans[0].id}
+            isPlus={sub.isPlus}
+            isPro={sub.isPro}
+          />
         )}
 
         <PremiumPanel
