@@ -52,6 +52,14 @@ type PlanRow = {
   title: string | null;
   answers: Record<string, unknown>;
   created_at: string;
+  tags: string[] | null;
+  notes: string | null;
+  share_slug: string | null;
+  share_enabled: boolean;
+  assumptions: Record<string, number> | null;
+  target_move_in: string | null;
+  current_savings: number | null;
+  theme: string | null;
 };
 
 function DashboardPage() {
