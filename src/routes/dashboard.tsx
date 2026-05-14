@@ -778,7 +778,7 @@ function PlanDetails({ answers }: { answers: Record<string, unknown> }) {
   const money = (n: unknown) =>
     typeof n === "number" ? `$${n.toLocaleString()}` : String(n);
   push("Name", [answers.firstName, answers.lastName].filter(Boolean).join(" "));
-  push("ZIP", answers.zip);
+  push("State", answers.zip);
   push("Annual income", answers.income, money);
   push("Monthly expenses", answers.expenses, money);
   push("Total debt", answers.debt, money);

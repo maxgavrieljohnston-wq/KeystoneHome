@@ -347,7 +347,7 @@ function ComparisonGrid({
     v === "Affordable" ? C.sage : v === "A stretch" ? C.gold : v === "Difficult" ? C.ember : C.inkMute;
 
   const rows: Array<{ label: string; render: (m: PlanMetrics) => React.ReactNode; mono?: boolean }> = [
-    { label: "Location", render: (m) => `${m.city}${m.zip ? ` · ${m.zip}` : ""}` },
+    { label: "Location", render: (m) => m.city || m.zip || "—" },
     { label: "Home style", render: (m) => m.homeStyleLabel },
     { label: "Target price", render: (m) => money(m.targetPrice), mono: true },
     { label: "Down payment", render: (m) => `${money(m.downPayment)} · ${m.downPct}%`, mono: true },
