@@ -6,7 +6,7 @@ import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
-import { POPULAR_METROS, metroByZip } from "@/data/metros";
+import { US_STATES, priceByState } from "@/data/states";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
