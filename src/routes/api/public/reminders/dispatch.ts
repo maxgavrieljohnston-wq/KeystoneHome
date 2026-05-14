@@ -91,7 +91,21 @@ function escapeHtml(s: string): string {
 export const Route = createFileRoute("/api/public/reminders/dispatch")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        // Require service role bearer token (cron-only endpoint)
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const authHeader = request.headers.get("Authorization");
+        if (
+          !supabaseServiceKey ||
+          !authHeader?.startsWith("Bearer ") ||
+          authHeader.slice("Bearer ".length).trim() !== supabaseServiceKey
+        ) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
         const env = getPaddleEnvironment();
         const now = new Date().toISOString();
 
