@@ -3,7 +3,15 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyPlans, renamePlan, deletePlan, exportPlanPdf } from "@/lib/plans.functions";
+import {
+  getMyPlans,
+  renamePlan,
+  deletePlan,
+  exportPlanPdf,
+  exportPlanCsv,
+  updatePlanMeta,
+  togglePlanShare,
+} from "@/lib/plans.functions";
 import { getReminderPrefs, setReminderPrefs } from "@/lib/reminders.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
