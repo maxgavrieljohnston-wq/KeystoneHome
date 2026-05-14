@@ -7,6 +7,7 @@ import {
   getMyPlans,
   renamePlan,
   deletePlan,
+  duplicatePlan,
   exportPlanPdf,
   exportPlanCsv,
   updatePlanMeta,
