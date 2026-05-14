@@ -385,6 +385,7 @@ function PlanCard({ plan }: { plan: PlanRow }) {
   const gate = useUpgradeGate();
   const renameFn = useServerFn(renamePlan);
   const deleteFn = useServerFn(deletePlan);
+  const duplicateFn = useServerFn(duplicatePlan);
   const exportPdfFn = useServerFn(exportPlanPdf);
   const exportCsvFn = useServerFn(exportPlanCsv);
   const updateMetaFn = useServerFn(updatePlanMeta);
