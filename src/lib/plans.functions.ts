@@ -255,6 +255,53 @@ export const deletePlan = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const duplicatePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => planIdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: src, error: srcErr } = await supabaseAdmin
+      .from("plans")
+      .select("id, email, title, answers, tags, notes, assumptions, target_move_in, current_savings, theme, parent_plan_id, version")
+      .eq("id", data.planId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (srcErr) throw new Error(srcErr.message);
+    if (!src) throw new Response("Not found", { status: 404 });
+
+    const rootId = src.parent_plan_id ?? src.id;
+
+    const { data: family } = await supabaseAdmin
+      .from("plans")
+      .select("version")
+      .or(`id.eq.${rootId},parent_plan_id.eq.${rootId}`)
+      .eq("user_id", context.userId);
+    const maxVersion = (family ?? []).reduce(
+      (m: number, r: { version: number | null }) => Math.max(m, r.version ?? 1),
+      1,
+    );
+
+    const { data: created, error: insErr } = await supabaseAdmin
+      .from("plans")
+      .insert({
+        email: src.email,
+        user_id: context.userId,
+        answers: src.answers,
+        title: src.title,
+        tags: src.tags ?? [],
+        notes: src.notes,
+        assumptions: src.assumptions ?? {},
+        target_move_in: src.target_move_in,
+        current_savings: src.current_savings,
+        theme: src.theme ?? "light",
+        parent_plan_id: rootId,
+        version: maxVersion + 1,
+      })
+      .select("id")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+    return { ok: true as const, planId: created.id };
+  });
+
 export const exportPlanPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
