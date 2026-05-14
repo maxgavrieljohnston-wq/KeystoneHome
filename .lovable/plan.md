@@ -1,80 +1,71 @@
-# Invest-vs-Save Tier Features
+## Plan to fix the full first-time user → paid account → dashboard flow
 
-Reinforces the core thesis (invest → reach down payment faster) inside Plus and Pro tiers, and lays groundwork for a future broker integration.
+### What’s broken
+- The app can save leads and plans, but the paid-account path is fragmented.
+- Dashboard access depends on subscription rows and saved plans being linked to the signed-in user.
+- The payment webhook currently only links subscriptions when `userId` exists in checkout custom data, so purchases that happen before a real account/password exists can fail to unlock Plus/Pro.
+- The dashboard’s paid panels only render when at least one plan is visible; if plan linking or auth attachment fails, users see no meaningful paid features.
+- The project has an auth-attacher file, but no `src/start.ts` registration file is present, so protected server functions may not reliably receive the signed-in user token.
 
----
+### User-facing behavior to implement
+1. **Home screen choice**
+   - Keep the first screen simple: `Build My Plan` and `Sign In`.
+   - `Build My Plan` starts the questionnaire.
+   - `Sign In` goes to email/password login.
 
-## Plus tier
+2. **First-time user path**
+   - During the questionnaire, save name, email, phone, and partial answers to the backend.
+   - At the final report, save the completed plan to the backend using the provided email.
+   - After the plan is built, the user can choose Plus/Pro and purchase.
+   - After purchase, route them to account setup so they can verify email and create a password.
+   - Once the password is created, send them to `/dashboard`.
 
-### 1. Invest vs. Save projection (dashboard)
-A hero panel on the dashboard, gated by `isPlus`, showing three side-by-side timelines to reach the down payment goal:
+3. **Returning user path**
+   - User clicks `Sign In`, enters email and password.
+   - On successful login, redirect immediately to `/dashboard`.
+   - Dashboard automatically claims any saved plan rows matching that email and attaches them to the signed-in user.
+   - Dashboard shows their saved plan plus the Plus/Pro features they paid for.
 
-- **Savings account** (~0.5% APY)
-- **High-yield savings** (~4% APY)
-- **Invested** (~7% blended return)
+### Technical implementation
+1. **Auth/server-function reliability**
+   - Add the missing TanStack Start `src/start.ts` file and register `attachSupabaseAuth` as global function middleware.
+   - Add root-level auth cache invalidation so route/query data refreshes after login/logout.
 
-Each card displays months to goal, total contributed, and dollars earned via growth. Headline stat: *"Investing gets you there X months sooner and saves you $Y in contributions."* Reuses the existing `calcRequiredMonthly` math from `lib/keystone.ts`.
+2. **Subscription lookup hardening**
+   - Replace direct client-side subscription reads in `useSubscription` with a server function that:
+     - uses the authenticated user id,
+     - reads the latest subscription with admin access,
+     - returns only entitlement-safe fields.
+   - This avoids RLS/session timing issues and makes Plus/Pro detection consistent.
 
-### 2. Time-to-Down-Payment Accelerator
-Interactive slider directly under the projection: "If you invested $X/mo at Y% return…" Live recompute of months-to-goal as the user drags. No persistence — purely educational.
+3. **Payment webhook linking**
+   - Update `/api/public/payments/webhook` to handle both account-first and plan-first purchases:
+     - prefer `customData.userId` when present,
+     - otherwise use customer email from the payment event,
+     - find or create/link by matching saved lead/plan email where appropriate,
+     - store enough information to activate Plus/Pro after account creation.
+   - Keep webhook signature verification intact.
 
-### 3. Monthly Investment Plan PDF
-"Download Investment Plan" button on the dashboard. Server function generates a branded one-pager via `@react-pdf/renderer` (or jsPDF — will pick whichever is already in deps, otherwise jsPDF for zero added native deps):
+4. **Plan claiming after login/account setup**
+   - Keep `getMyPlans` email-based claiming, but make it more robust:
+     - normalize email matching,
+     - claim orphan plans for the user,
+     - return a clear latest plan list.
+   - Add a similar entitlement reconciliation if a subscription was created against the same email before the account existed.
 
-- Goal, timeline, target down payment
-- Recommended monthly contribution at each return scenario
-- Allocation guidance by timeline (HYSA / conservative mix / growth)
-- Plain-English disclaimer ("educational, not advice")
+5. **Dashboard visibility**
+   - Ensure the Plus/Pro feature area is visible and explicit after login.
+   - If no plan is found, show a clear state that says the account is signed in but no saved plan is linked, with a `Build My Plan` action.
+   - If a Plus/Pro subscription exists, show unlocked feature panels rather than hiding everything behind an empty plan state.
 
-### 4. Recommended accounts section
-A "Where to put your money" panel on the dashboard. For now, a stylish placeholder card explaining: *"We're curating account recommendations — coming soon. As a Plus member you'll get our shortlist of HYSAs, brokerages, and robo-advisors matched to your timeline."* Structured so we can later swap in a `RECOMMENDED_ACCOUNTS` data file without touching layout.
+6. **Test account repair**
+   - Repair `plus@test.keystone.dev` data so it has:
+     - an active Plus subscription in the current environment,
+     - at least one linked saved plan,
+     - dashboard panels visible immediately after login.
 
----
-
-## Pro tier
-
-### 5. Risk-adjusted scenarios
-Pro-only expansion of the projection panel: Conservative (4%), Balanced (6%), Growth (8%) with downside bands (±2% on the projected end balance). Rendered as a small SVG chart (no chart lib needed) showing the three trajectories.
-
-### 6. Coach context: invest-vs-save delta
-Augment `coach.functions.ts` system prompt with the user's current invest-vs-save delta (months saved, dollars saved) so the coach can naturally reference it in answers.
-
-### 7. Broker waitlist
-- New table `broker_waitlist` (email, user_id, tier_at_signup, priority, notes, created_at) — RLS on, written via SECURITY DEFINER RPC `join_broker_waitlist`.
-- Plus users see "Join broker waitlist" button.
-- Pro users see "Priority access — you're at the front of the line" with one-click join.
-- Simple confirmation toast; no admin UI yet.
-
----
-
-## Technical notes
-
-**Files added**
-- `src/lib/invest-projection.ts` — pure math: `projectScenarios({ saved, target, years })` returning months/contributions/growth for 0.5/4/7%.
-- `src/components/dashboard/InvestVsSavePanel.tsx` — Plus-gated projection + accelerator slider.
-- `src/components/dashboard/RecommendedAccountsPanel.tsx` — Plus-gated placeholder, data-driven for future.
-- `src/components/dashboard/RiskScenariosPanel.tsx` — Pro-gated scenario chart.
-- `src/components/dashboard/BrokerWaitlistPanel.tsx` — Plus/Pro CTA, calls `joinBrokerWaitlist`.
-- `src/lib/broker-waitlist.functions.ts` — `joinBrokerWaitlist`, `getMyWaitlistStatus`.
-- `src/lib/investment-pdf.functions.ts` — `generateInvestmentPlanPdf` server fn returning a base64 PDF.
-- `src/data/recommended-accounts.ts` — empty exported `RECOMMENDED_ACCOUNTS = []` plus type, ready for future content.
-
-**Files edited**
-- `src/routes/dashboard.tsx` — mount the new panels under existing summary, ordered Plus → Pro.
-- `src/lib/coach.functions.ts` — inject invest-vs-save delta into the system prompt.
-
-**DB migration**
-- `broker_waitlist` table + `join_broker_waitlist` RPC (SECURITY DEFINER, validates auth.uid()/email).
-
-**Gating**
-- All UI uses `useSubscription()` (`isPlus` / `isPro`) and `useUpgradeGate()` to open the existing upgrade modal for free users who click a locked CTA.
-
-**Dependencies**
-- PDF: prefer `jspdf` (small, no native deps, Worker-safe) — `bun add jspdf` if not present.
-- No other new deps.
-
-**Out of scope for this pass**
-- Real broker API integration.
-- Actual curated account list (data-only swap later).
-- Admin view for waitlist (query DB directly for now).
-- Email notification when waitlist opens.
+### Validation
+- Verify the database has a linked plan and active subscription for the test Plus account.
+- Verify login redirects to `/dashboard`.
+- Verify `/dashboard` loads saved plans and reports Plus/Pro entitlements.
+- Verify the new Plus panels are visible for Plus and Pro accounts.
