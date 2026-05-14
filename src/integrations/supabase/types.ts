@@ -164,38 +164,76 @@ export type Database = {
       plans: {
         Row: {
           answers: Json
+          assumptions: Json
           created_at: string
+          current_savings: number | null
           email: string
           first_name: string | null
           id: string
           last_name: string | null
+          notes: string | null
+          parent_plan_id: string | null
           phone: string | null
+          share_enabled: boolean
+          share_slug: string | null
+          tags: string[]
+          target_move_in: string | null
+          theme: string
           title: string | null
           user_id: string | null
+          version: number
         }
         Insert: {
           answers?: Json
+          assumptions?: Json
           created_at?: string
+          current_savings?: number | null
           email: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          notes?: string | null
+          parent_plan_id?: string | null
           phone?: string | null
+          share_enabled?: boolean
+          share_slug?: string | null
+          tags?: string[]
+          target_move_in?: string | null
+          theme?: string
           title?: string | null
           user_id?: string | null
+          version?: number
         }
         Update: {
           answers?: Json
+          assumptions?: Json
           created_at?: string
+          current_savings?: number | null
           email?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
+          notes?: string | null
+          parent_plan_id?: string | null
           phone?: string | null
+          share_enabled?: boolean
+          share_slug?: string | null
+          tags?: string[]
+          target_move_in?: string | null
+          theme?: string
           title?: string | null
           user_id?: string | null
+          version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "plans_parent_plan_id_fkey"
+            columns: ["parent_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

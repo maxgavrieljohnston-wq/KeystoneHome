@@ -1,42 +1,85 @@
-## Feature 1: Unlimited saved plans (Plus)
+# Plus tier expansion — 9 new features
 
-### Current state
-Most of this feature already exists:
+Replacing the partner offer with substantial Plus value. Grouped into 3 phases so each ships as a coherent unit.
 
-- DB function `create_plan_with_limit` enforces a 3-plan cap for non-paid users, unlimited for Plus/Pro.
-- `getMyPlans` server fn merges owned + orphan plans by email and adopts orphans on first sign-in.
-- `dashboard.tsx` shows plans, lets free users view 1 plan + locks the rest as `LockedPlanCard` with an upgrade CTA.
-- `submitPlan` returns `{ reason: "limit_reached", used, limit }` when the cap is hit.
+## Phase 1 — Plan management (foundation)
 
-### Gaps to fix
+**1. Plan history & versioning**
+- Add `parent_plan_id uuid` and `version int` to `plans` table.
+- When a signed-in Plus user re-runs the wizard with the same title, save as a new version of the existing plan instead of a new row.
+- Dashboard plan card gets a "History" disclosure showing target price / deposit / monthly over time as a small inline chart + list.
 
-1. **Inconsistent limits.** DB caps creation at **3**, but dashboard only reveals **1** to free users and locks the other 2. Either the user gets 3 free plans, or they get 1 — not both. Recommendation: align on **3 free plans, all viewable**, and gate creation of the 4th. Locking already-created plans behind a paywall feels like a bait-and-switch.
+**9. Plan tags & notes**
+- Add `tags text[]` and `notes text` to `plans`.
+- Edit modal on each dashboard card: chip input for tags, textarea for notes.
+- Filter bar above plan list: filter by tag.
 
-2. **`limit_reached` not surfaced to the user.** In `src/routes/index.tsx`, when `submitPlan` returns `limit_reached`, we need to verify the upgrade modal opens (`gate.openUpgrade("plus", "Unlimited saved plans")`) instead of silently failing. Need to read index.tsx to confirm.
+## Phase 2 — Sharing & power inputs
 
-3. **Dashboard "New plan" button** correctly gates on `plans.length >= FREE_LIMIT (3)`, which matches the DB. Good.
+**2. Shareable read-only plan link**
+- Add `share_slug text unique` and `share_enabled bool default false` to `plans`.
+- Server fn `togglePlanShare(planId)` (Plus-gated) generates a 10-char nanoid slug.
+- New public route `/p/$slug` renders a read-only version of the report with no nav, no CTAs to edit, "Made with Keystone" footer link.
+- Dashboard: "Share" button on each card → modal with copyable link + toggle to revoke.
 
-### Proposed changes
+**4. Custom assumptions**
+- Add an `assumptions jsonb` column on `plans` storing user overrides for: property tax %, insurance $/yr, HOA $/mo, expected investment return %, mortgage rate %, PMI %.
+- Wizard gets a new optional "Advanced" step (skippable, Plus-gated — free users see a locked card with upgrade CTA).
+- `keystone.ts` calculation reads from `assumptions` first, falls back to defaults.
 
-```text
-src/routes/dashboard.tsx
-  - PlansList: show ALL plans for free users (remove LockedPlanCard slicing)
-  - Keep "X of 3 free plans used" counter
-  - Keep handleNewPlan gate at >= 3
+**3. CSV export**
+- Server fn `exportPlanCsv(planId)` (Plus-gated) returns CSV with headline stats, monthly cost breakdown, and the path-to-deposit month-by-month table.
+- New "↓ CSV" button next to existing PDF button on the report.
 
-src/routes/index.tsx (verify, edit if needed)
-  - On submitPlan { reason: "limit_reached" }: open upgrade modal with
-    feature name "Unlimited saved plans"
+## Phase 3 — Goal, presets, costs, polish
 
-(no DB changes — limit stays at 3)
-```
+**5. Goal tracker**
+- Add `target_move_in date` and `current_savings numeric` to `plans`.
+- New "Goal" panel on report: progress bar (current_savings / total_deposit), "save $X/mo to hit [date]" calculation, "you're ahead/behind by N months" verdict.
+- Editable inline (Plus-gated). Feeds into the existing reminder digest email.
 
-### Open question for you
+**6. City / ZIP presets**
+- Hard-coded JSON of top ~50 US metros with median home price, property tax %, insurance estimate (no external API — keep it simple, refresh manually).
+- Wizard location step: "Use city defaults?" autocomplete. Selecting one pre-fills assumptions.
+- Free users can pick a city; Plus users get the auto-populated assumptions written to their plan.
 
-Pick the model:
+**8. Closing-cost & moving-cost estimator**
+- Add to `keystone.ts`: closing costs ≈ 2-5% of price (use 3% default), moving costs $1.5k flat (override-able via assumptions).
+- New "True cash to close" line on the report: deposit + closing + moving, with breakdown tooltip.
+- Available to all users (it's a calc improvement, not a paywalled feature) — but the override knobs are Plus-only via #4.
 
-- **A** — 3 free plans, all viewable, paywall the 4th creation. (Recommended; matches the DB and feels honest.)
-- **B** — 1 free plan viewable, others locked-but-visible after creation. (Current dashboard UX; requires lowering the DB cap to 1 to be coherent.)
-- **C** — Different number (tell me).
+**10. Themed report**
+- Add `theme` column on `plans` (`light` | `dark` | `sepia`).
+- Theme switcher on the report (Plus-gated). Persists per plan. Applies to the shareable `/p/$slug` view too.
 
-Once you pick, I'll implement in one pass and verify the upgrade modal triggers correctly on both the dashboard "New plan" button and the onboarding flow's submit path.
+---
+
+## Updated pricing copy
+
+`src/routes/pricing.tsx` and `src/components/UpgradeModal.tsx` Plus features list becomes:
+
+- Save unlimited plans with version history
+- Custom assumptions (rate, taxes, insurance, return)
+- Goal tracker with savings target
+- Shareable plan link
+- PDF & CSV export
+- Themed reports
+- Email reminders & milestones
+
+## Out of scope
+
+- Real-time city data API (using static JSON; refresh manually).
+- Multi-income modeling (idea #7, deliberately skipped per user).
+- Pro features (AI coach, scenario compare, rate alerts) — untouched.
+
+## Technical notes
+
+- One migration per phase to keep changes reviewable: phase 1 adds versioning + tags/notes; phase 2 adds share + assumptions; phase 3 adds goal + theme.
+- All new write server functions go through `requireSupabaseAuth` + `userHasActiveSub` entitlement check (same pattern as `setReminderPrefs`).
+- Shareable `/p/$slug` route uses `supabaseAdmin` server-side to fetch only when `share_enabled = true`. Returns 404 otherwise.
+- City presets live in `src/data/metros.ts` as a typed const — no DB table needed.
+- `keystone.ts` refactored once to accept an `assumptions` override object so #4, #6, and #8 all flow through one calc path.
+
+## Suggested order
+
+Phase 1 → Phase 2 → Phase 3, shipping each phase end-to-end (DB → server fn → UI → pricing copy update at the end of phase 3). Confirm and I'll start with Phase 1.
