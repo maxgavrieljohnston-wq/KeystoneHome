@@ -325,7 +325,9 @@ function KeystoneApp() {
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
     // Partnered users enter household totals on the main "finances" screen,
     // so the separate partnerFinances screen is skipped entirely.
-    if (d.hasPartner === true && s === "partnerFinances") return true;
+    // Partnered users: skip per-partner detail screens. We only need the
+    // shared "with a partner" flag plus household totals on the main finances screen.
+    if (d.hasPartner === true && ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit"].includes(s)) return true;
     // Paid signed-in users already gave us name/email/phone — don't ask again.
     if (s === "email" && sub.isPlus && d.email.includes("@")) return true;
     if (s === "factDemo") {
