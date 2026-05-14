@@ -46,7 +46,10 @@ const PLANS: Array<{
     tagline: "For the serious saver.",
     features: [
       "Save unlimited plans",
-      "Export your plan as PDF",
+      "Export as PDF & CSV",
+      "Shareable plan link",
+      "Tags, notes & goal tracker",
+      "Themed reports",
       "Email reminders & milestones",
     ],
   },
