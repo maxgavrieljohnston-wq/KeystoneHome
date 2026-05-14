@@ -2178,6 +2178,50 @@ function ZipScreen({
         </>
       )}
 
+      {/* Popular metros quick-pick */}
+      {(status === "manual" || status === "located") && (
+        <div style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkFaint,
+              marginBottom: 10,
+            }}
+          >
+            — Popular metros
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {POPULAR_METROS.slice(0, 8).map((m) => (
+              <button
+                key={m.zip}
+                type="button"
+                onClick={() => {
+                  set("zip", m.zip);
+                  set("zipData", { city: m.city, avg: 0 });
+                  // Re-derive via getPriceByZip for the avg price
+                  set("zipData", getPriceByZip(m.zip));
+                }}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  border: `1px solid ${d.zip === m.zip ? C.ink : C.inkFaint}`,
+                  background: d.zip === m.zip ? C.ink : "transparent",
+                  color: d.zip === m.zip ? C.paper : C.inkSoft,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                }}
+              >
+                {m.city.split(",")[0]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Cta onClick={next} disabled={d.zip.length !== 5}>
         Continue
