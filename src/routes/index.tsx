@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
 import { getMyPlan } from "@/lib/account.functions";
@@ -278,6 +278,14 @@ function KeystoneApp() {
   const sub = useSubscription();
   const fetchMyPlan = useServerFn(getMyPlan);
   const [contactPrefilled, setContactPrefilled] = useState(false);
+  const navigate = useNavigate();
+
+  // Plus/Pro users land straight on the dashboard so they see new panels.
+  useEffect(() => {
+    if (sub.isPlus) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [sub.isPlus, navigate]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
