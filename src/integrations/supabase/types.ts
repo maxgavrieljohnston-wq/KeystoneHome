@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      broker_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notes: string | null
+          priority: boolean
+          tier_at_signup: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notes?: string | null
+          priority?: boolean
+          tier_at_signup?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          priority?: boolean
+          tier_at_signup?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coach_messages: {
         Row: {
           content: string
@@ -418,6 +448,7 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      join_broker_waitlist: { Args: { p_notes?: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string
