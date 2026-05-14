@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computePlanMetrics } from "@/lib/plan-metrics";
+import { investEdge, projectScenarios } from "@/lib/invest-projection";
 
 async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
   const { data, error } = await supabaseAdmin.rpc("has_active_subscription", {
@@ -81,8 +83,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     let investContext = "";
     if (latestPlan) {
       try {
-        const { computePlanMetrics } = await import("@/lib/plan-metrics");
-        const { investEdge, projectScenarios } = await import("@/lib/invest-projection");
         const m = computePlanMetrics(
           (latestPlan.answers as Record<string, unknown>) ?? {},
           null,
