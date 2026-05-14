@@ -1004,3 +1004,96 @@ function EmptyState() {
     </div>
   );
 }
+
+function InvestmentSection({
+  answers,
+  assumptions,
+  planId,
+  isPlus,
+  isPro,
+}: {
+  answers: Record<string, unknown>;
+  assumptions: Record<string, number> | null;
+  planId: string;
+  isPlus: boolean;
+  isPro: boolean;
+}) {
+  const gate = useUpgradeGate();
+  const generatePdf = useServerFn(generateInvestmentPlanPdf);
+  const metrics = computePlanMetrics(answers, assumptions);
+
+  const downloadPdf = async () => {
+    if (!isPlus) {
+      gate.openUpgrade("plus", "Monthly Investment Plan PDF");
+      return;
+    }
+    try {
+      const res = await generatePdf({ data: { planId } });
+      const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("[investment pdf]", e);
+      alert("Couldn't generate the PDF. Please try again.");
+    }
+  };
+
+  return (
+    <div>
+      <InvestVsSavePanel
+        answers={answers}
+        assumptions={assumptions}
+        locked={!isPlus}
+        onLockedClick={() => gate.openUpgrade("plus", "Invest vs. save projection")}
+      />
+
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={downloadPdf}
+          style={{
+            padding: "10px 18px",
+            background: isPlus ? C.ink : "transparent",
+            color: isPlus ? C.paper : C.inkMute,
+            border: `1.5px solid ${C.ink}`,
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
+        >
+          {isPlus ? "↓ Download investment plan (PDF)" : "🔒 Download investment plan"}
+        </button>
+      </div>
+
+      <RecommendedAccountsPanel
+        locked={!isPlus}
+        onLockedClick={() => gate.openUpgrade("plus", "Recommended accounts")}
+        timelineYears={metrics.timelineYears}
+      />
+
+      <RiskScenariosPanel
+        answers={answers}
+        assumptions={assumptions}
+        locked={!isPro}
+        onLockedClick={() => gate.openUpgrade("pro", "Risk-adjusted scenarios")}
+      />
+
+      <BrokerWaitlistPanel
+        isPro={isPro}
+        isPlus={isPlus}
+        locked={!isPlus}
+        onLockedClick={() => gate.openUpgrade("plus", "Broker waitlist")}
+      />
+    </div>
+  );
+}
