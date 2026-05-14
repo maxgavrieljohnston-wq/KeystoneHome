@@ -382,11 +382,26 @@ function PlanCard({ plan }: { plan: PlanRow }) {
   const gate = useUpgradeGate();
   const renameFn = useServerFn(renamePlan);
   const deleteFn = useServerFn(deletePlan);
-  const exportFn = useServerFn(exportPlanPdf);
+  const exportPdfFn = useServerFn(exportPlanPdf);
+  const exportCsvFn = useServerFn(exportPlanCsv);
+  const updateMetaFn = useServerFn(updatePlanMeta);
+  const shareFn = useServerFn(togglePlanShare);
+
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(plan.title || defaultTitle(plan));
   const [open, setOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
+  const [showShare, setShowShare] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
+  const [notesDraft, setNotesDraft] = useState(plan.notes ?? "");
+  const [goalDate, setGoalDate] = useState(plan.target_move_in ?? "");
+  const [savedAmt, setSavedAmt] = useState(
+    plan.current_savings != null ? String(plan.current_savings) : "",
+  );
+
+  const env = getPaddleEnvironment();
+  const tags = plan.tags ?? [];
 
   const renameM = useMutation({
     mutationFn: (newTitle: string) => renameFn({ data: { planId: plan.id, title: newTitle } }),
@@ -401,45 +416,94 @@ function PlanCard({ plan }: { plan: PlanRow }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
   });
 
-  const handleExport = async () => {
+  const metaM = useMutation({
+    mutationFn: (patch: Parameters<typeof updateMetaFn>[0]["data"]) =>
+      updateMetaFn({ data: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
+  });
+
+  const shareM = useMutation({
+    mutationFn: (enabled: boolean) =>
+      shareFn({ data: { planId: plan.id, enabled, environment: env } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
+  });
+
+  const requirePlus = (feature: string) => {
     if (!sub.isPlus) {
-      gate.openUpgrade("plus", "PDF export");
-      return;
+      gate.openUpgrade("plus", feature);
+      return false;
     }
-    setExporting(true);
+    return true;
+  };
+
+  const handleExportPdf = async () => {
+    if (!requirePlus("PDF export")) return;
+    setExporting("pdf");
     try {
-      const res = await exportFn({
-        data: { planId: plan.id, environment: getPaddleEnvironment() },
-      });
-      const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
+      const res = await exportPdfFn({ data: { planId: plan.id, environment: env } });
+      downloadBase64(res.base64, res.filename, "application/pdf");
+    } catch (e) {
+      console.error(e); alert("Couldn't export PDF.");
+    } finally { setExporting(null); }
+  };
+
+  const handleExportCsv = async () => {
+    if (!requirePlus("CSV export")) return;
+    setExporting("csv");
+    try {
+      const res = await exportCsvFn({ data: { planId: plan.id, environment: env } });
+      const blob = new Blob([res.csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename;
-      a.click();
+      a.href = url; a.download = res.filename; a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      console.error(e);
-      alert("Couldn't export PDF.");
-    } finally {
-      setExporting(false);
-    }
+      console.error(e); alert("Couldn't export CSV.");
+    } finally { setExporting(null); }
   };
 
-  const handleDelete = () => {
-    if (confirm("Delete this plan? This cannot be undone.")) deleteM.mutate();
+  const handleShare = () => {
+    if (!requirePlus("Shareable plan link")) return;
+    setShowShare(true);
+    if (!plan.share_enabled) shareM.mutate(true);
   };
+
+  const handleAddTag = () => {
+    const t = tagDraft.trim();
+    if (!t) return;
+    if (!requirePlus("Plan tags")) return;
+    if (tags.includes(t)) { setTagDraft(""); return; }
+    metaM.mutate({ planId: plan.id, tags: [...tags, t], environment: env });
+    setTagDraft("");
+  };
+
+  const handleRemoveTag = (t: string) => {
+    metaM.mutate({ planId: plan.id, tags: tags.filter((x) => x !== t), environment: env });
+  };
+
+  const handleSaveSettings = () => {
+    if (!requirePlus("Plan notes & goal")) return;
+    metaM.mutate({
+      planId: plan.id,
+      notes: notesDraft || null,
+      targetMoveIn: goalDate || null,
+      currentSavings: savedAmt ? Number(savedAmt) : null,
+      environment: env,
+    });
+    setShowSettings(false);
+  };
+
+  const handleTheme = (theme: "light" | "dark" | "sepia") => {
+    if (!requirePlus("Themed reports")) return;
+    metaM.mutate({ planId: plan.id, theme, environment: env });
+  };
+
+  const shareUrl = plan.share_slug
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${plan.share_slug}`
+    : "";
 
   return (
-    <div
-      style={{
-        padding: 20,
-        border: `1.5px solid ${C.ink}`,
-        borderRadius: 10,
-        background: "#fff",
-      }}
-    >
+    <div style={{ padding: 20, border: `1.5px solid ${C.ink}`, borderRadius: 10, background: "#fff" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         {editing ? (
           <input
@@ -456,58 +520,140 @@ function PlanCard({ plan }: { plan: PlanRow }) {
             }}
             autoFocus
             style={{
-              flex: 1,
-              fontSize: 20,
-              fontFamily: "inherit",
-              border: `1px solid ${C.inkFaint}`,
-              borderRadius: 6,
-              padding: "6px 8px",
-              background: C.paper,
+              flex: 1, fontSize: 20, fontFamily: "inherit",
+              border: `1px solid ${C.inkFaint}`, borderRadius: 6, padding: "6px 8px", background: C.paper,
             }}
           />
         ) : (
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 20, lineHeight: 1.2 }}>{plan.title || defaultTitle(plan)}</div>
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: C.inkMute,
-                marginTop: 4,
-              }}
-            >
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.inkMute, marginTop: 4 }}>
               {new Date(plan.created_at).toLocaleDateString()}
+              {plan.share_enabled && <span style={{ color: C.ember, marginLeft: 8 }}>· Shared</span>}
             </div>
           </div>
         )}
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          style={{
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            color: C.inkMute,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 11,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-          }}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: C.inkMute, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}
         >
           {open ? "Hide" : "View"}
         </button>
       </div>
 
+      {/* Tags row */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12, alignItems: "center" }}>
+        {tags.map((t) => (
+          <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: C.paper, border: `1px solid ${C.inkFaint}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: C.inkSoft }}>
+            {t}
+            <button type="button" onClick={() => handleRemoveTag(t)} style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer", color: C.inkMute, fontSize: 12, lineHeight: 1 }}>×</button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={tagDraft}
+          onChange={(e) => setTagDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
+          onBlur={handleAddTag}
+          placeholder={sub.isPlus ? "+ tag" : "+ tag (Plus)"}
+          style={{ flex: "0 0 auto", minWidth: 70, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", border: `1px dashed ${C.inkFaint}`, borderRadius: 999, padding: "3px 8px", background: "transparent", color: C.ink }}
+        />
+      </div>
+
       {open && <PlanDetails answers={plan.answers} />}
+
+      {/* Goal panel */}
+      {plan.target_move_in && (
+        <div style={{ marginTop: 14, padding: "10px 12px", borderLeft: `2px solid ${C.ember}`, background: C.paper }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.ember, marginBottom: 4 }}>Goal</div>
+          <div style={{ fontSize: 15 }}>
+            Target move-in: <strong>{new Date(plan.target_move_in).toLocaleDateString()}</strong>
+            {plan.current_savings != null && (
+              <> · Saved: <strong>${plan.current_savings.toLocaleString()}</strong></>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Notes display */}
+      {plan.notes && !showSettings && (
+        <div style={{ marginTop: 12, fontSize: 14, color: C.inkSoft, fontStyle: "italic", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+          “{plan.notes}”
+        </div>
+      )}
+
+      {/* Settings panel (notes + goal) */}
+      {showSettings && (
+        <div style={{ marginTop: 14, padding: 12, background: C.paper, borderRadius: 6, display: "flex", flexDirection: "column", gap: 10 }}>
+          <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute }}>
+            Target move-in date
+            <input type="date" value={goalDate} onChange={(e) => setGoalDate(e.target.value)} style={{ display: "block", marginTop: 4, padding: 6, fontFamily: "inherit", fontSize: 14, border: `1px solid ${C.inkFaint}`, borderRadius: 4, width: "100%", background: "#fff" }} />
+          </label>
+          <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute }}>
+            Current savings ($)
+            <input type="number" min="0" value={savedAmt} onChange={(e) => setSavedAmt(e.target.value)} style={{ display: "block", marginTop: 4, padding: 6, fontFamily: "inherit", fontSize: 14, border: `1px solid ${C.inkFaint}`, borderRadius: 4, width: "100%", background: "#fff" }} />
+          </label>
+          <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute }}>
+            Notes
+            <textarea value={notesDraft} onChange={(e) => setNotesDraft(e.target.value)} rows={3} style={{ display: "block", marginTop: 4, padding: 6, fontFamily: "inherit", fontSize: 14, border: `1px solid ${C.inkFaint}`, borderRadius: 4, width: "100%", background: "#fff", resize: "vertical" }} />
+          </label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="button" onClick={handleSaveSettings} style={{ padding: "6px 12px", background: C.ink, color: C.paper, border: "none", borderRadius: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Save</button>
+            <button type="button" onClick={() => setShowSettings(false)} style={{ padding: "6px 12px", background: "transparent", color: C.inkMute, border: "none", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Cancel</button>
+          </div>
+          {/* Theme picker */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.inkFaint}` }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute, marginRight: 4 }}>Theme</span>
+            {(["light", "dark", "sepia"] as const).map((t) => (
+              <button key={t} type="button" onClick={() => handleTheme(t)} style={{ padding: "4px 10px", borderRadius: 999, border: `1px solid ${(plan.theme ?? "light") === t ? C.ink : C.inkFaint}`, background: (plan.theme ?? "light") === t ? C.ink : "transparent", color: (plan.theme ?? "light") === t ? C.paper : C.inkSoft, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>{t}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Share modal */}
+      {showShare && (
+        <div onClick={() => setShowShare(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,26,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", padding: 28, borderRadius: 12, maxWidth: 460, width: "100%", border: `1.5px solid ${C.ink}` }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: C.ember, marginBottom: 10 }}>Share this plan</div>
+            <h3 style={{ fontWeight: 400, fontSize: 24, margin: "0 0 16px" }}>Read-only public link</h3>
+            {shareM.isPending ? (
+              <p style={{ color: C.inkMute }}>Generating link…</p>
+            ) : shareUrl ? (
+              <>
+                <input
+                  readOnly
+                  value={shareUrl}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  style={{ width: "100%", padding: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, border: `1px solid ${C.inkFaint}`, borderRadius: 6, background: C.paper, color: C.ink, marginBottom: 12 }}
+                />
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(shareUrl)} style={{ padding: "10px 16px", background: C.ink, color: C.paper, border: "none", borderRadius: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Copy</button>
+                  <button type="button" onClick={() => { shareM.mutate(false); setShowShare(false); }} style={{ padding: "10px 16px", background: "transparent", color: C.ember, border: `1px solid ${C.ember}`, borderRadius: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Revoke</button>
+                  <button type="button" onClick={() => setShowShare(false)} style={{ marginLeft: "auto", padding: "10px 16px", background: "transparent", color: C.inkMute, border: "none", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Close</button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 14, marginTop: 14, flexWrap: "wrap" }}>
         <ActionLink onClick={() => setEditing(true)}>Rename</ActionLink>
-        <ActionLink onClick={handleExport} disabled={exporting}>
-          {exporting ? "Exporting…" : "Export PDF"}
+        <ActionLink onClick={() => setShowSettings((s) => !s)}>
+          {showSettings ? "Close" : "Goal & notes"}
         </ActionLink>
-        <ActionLink onClick={handleDelete} danger>
+        <ActionLink onClick={handleShare}>
+          {plan.share_enabled ? "Manage share" : "Share"}
+        </ActionLink>
+        <ActionLink onClick={handleExportPdf} disabled={exporting === "pdf"}>
+          {exporting === "pdf" ? "…" : "PDF"}
+        </ActionLink>
+        <ActionLink onClick={handleExportCsv} disabled={exporting === "csv"}>
+          {exporting === "csv" ? "…" : "CSV"}
+        </ActionLink>
+        <ActionLink onClick={() => { if (confirm("Delete this plan?")) deleteM.mutate(); }} danger>
           Delete
         </ActionLink>
       </div>
@@ -515,54 +661,13 @@ function PlanCard({ plan }: { plan: PlanRow }) {
   );
 }
 
-function LockedPlanCard({ plan }: { plan: PlanRow }) {
-  const gate = useUpgradeGate();
-  return (
-    <button
-      type="button"
-      onClick={() => gate.openUpgrade("plus", "Saved plans")}
-      style={{
-        textAlign: "left",
-        padding: 16,
-        border: `1px dashed ${C.inkFaint}`,
-        borderRadius: 10,
-        background: "transparent",
-        cursor: "pointer",
-        fontFamily: "inherit",
-        color: C.inkMute,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 12,
-      }}
-    >
-      <div>
-        <div style={{ fontSize: 17 }}>🔒 {plan.title || defaultTitle(plan)}</div>
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            marginTop: 2,
-          }}
-        >
-          {new Date(plan.created_at).toLocaleDateString()} · Plus to unlock
-        </div>
-      </div>
-      <span
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: C.ember,
-        }}
-      >
-        Upgrade →
-      </span>
-    </button>
-  );
+function downloadBase64(base64: string, filename: string, mime: string) {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const blob = new Blob([bytes], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
 }
 
 function ActionLink({
