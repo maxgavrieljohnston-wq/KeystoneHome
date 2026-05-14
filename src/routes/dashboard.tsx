@@ -417,7 +417,7 @@ function PlanCard({ plan }: { plan: PlanRow }) {
   });
 
   const metaM = useMutation({
-    mutationFn: (patch: Parameters<typeof updateMetaFn>[0]["data"]) =>
+    mutationFn: (patch: Parameters<typeof updatePlanMeta>[0]["data"]) =>
       updateMetaFn({ data: patch }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
   });
