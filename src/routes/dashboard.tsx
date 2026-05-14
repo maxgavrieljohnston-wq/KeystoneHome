@@ -292,8 +292,9 @@ function PlansList({
   isPlus: boolean;
   onNewPlan: () => void;
 }) {
-  const visible = plans;
-  const locked: PlanRow[] = [];
+  const [filterTag, setFilterTag] = useState<string | null>(null);
+  const allTags = Array.from(new Set(plans.flatMap((p) => p.tags ?? []))).sort();
+  const visible = filterTag ? plans.filter((p) => (p.tags ?? []).includes(filterTag)) : plans;
   const used = plans.length;
 
   return (
@@ -313,12 +314,18 @@ function PlansList({
         </div>
       )}
 
+      {allTags.length > 0 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+          <TagChip label="All" active={!filterTag} onClick={() => setFilterTag(null)} />
+          {allTags.map((t) => (
+            <TagChip key={t} label={t} active={filterTag === t} onClick={() => setFilterTag(t)} />
+          ))}
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         {visible.map((p) => (
           <PlanCard key={p.id} plan={p} />
-        ))}
-        {locked.map((p) => (
-          <LockedPlanCard key={p.id} plan={p} />
         ))}
       </div>
 
@@ -343,6 +350,29 @@ function PlansList({
         + Build new plan
       </button>
     </>
+  );
+}
+
+function TagChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "4px 10px",
+        borderRadius: 999,
+        border: `1px solid ${active ? C.ink : C.inkFaint}`,
+        background: active ? C.ink : "transparent",
+        color: active ? C.paper : C.inkSoft,
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 10,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
