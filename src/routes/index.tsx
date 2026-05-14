@@ -7,6 +7,7 @@ import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { US_STATES, priceByState } from "@/data/states";
+import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
