@@ -678,6 +678,15 @@ function PlanCard({ plan }: { plan: PlanRow }) {
         <ActionLink onClick={handleExportCsv} disabled={exporting === "csv"}>
           {exporting === "csv" ? "…" : "CSV"}
         </ActionLink>
+        <ActionLink
+          onClick={() => {
+            if (!sub.isPlus) { gate.openUpgrade("plus", "Plan versioning"); return; }
+            duplicateM.mutate();
+          }}
+          disabled={duplicateM.isPending}
+        >
+          {duplicateM.isPending ? "…" : "Re-run as new version"}
+        </ActionLink>
         <ActionLink onClick={() => { if (confirm("Delete this plan?")) deleteM.mutate(); }} danger>
           Delete
         </ActionLink>
