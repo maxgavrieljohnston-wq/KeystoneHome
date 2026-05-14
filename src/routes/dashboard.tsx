@@ -420,6 +420,11 @@ function PlanCard({ plan }: { plan: PlanRow }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
   });
 
+  const duplicateM = useMutation({
+    mutationFn: () => duplicateFn({ data: { planId: plan.id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
+  });
+
   type MetaPatch = {
     planId: string;
     title?: string;
