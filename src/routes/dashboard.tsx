@@ -778,8 +778,11 @@ const PREMIUM_FEATURES: Array<{
   tier: "plus" | "pro";
 }> = [
   { id: "save", label: "Unlimited saved plans", tier: "plus" },
-  { id: "pdf", label: "Export plan as PDF", tier: "plus" },
-  { id: "partner", label: "Partner / household mode", tier: "plus" },
+  { id: "pdf", label: "Export as PDF & CSV", tier: "plus" },
+  { id: "share", label: "Shareable plan link", tier: "plus" },
+  { id: "tags", label: "Tags, notes & goal tracker", tier: "plus" },
+  { id: "theme", label: "Themed reports", tier: "plus" },
+  { id: "reminders", label: "Email reminders", tier: "plus" },
   { id: "coach", label: "AI homebuying coach", tier: "pro" },
   { id: "compare", label: "Side-by-side scenario compare", tier: "pro" },
   { id: "alerts", label: "Live mortgage rate alerts", tier: "pro" },
