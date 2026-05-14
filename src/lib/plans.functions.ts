@@ -12,6 +12,7 @@ import {
   combinedEmploymentAdjustment,
   getPriceByZip,
 } from "@/lib/keystone";
+import { buildPlanPdfBytes } from "@/lib/plan-pdf.server";
 
 const SITE_NAME = "Keystone";
 const SENDER_DOMAIN = "notify.keystonehomeowners.com";
