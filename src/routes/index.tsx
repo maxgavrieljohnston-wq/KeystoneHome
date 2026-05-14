@@ -787,6 +787,9 @@ function ScreenSwitch({
       </Question>
     );
 
+  if (screen === "advancedAssumptions")
+    return <AdvancedAssumptionsScreen d={d} set={set} next={next} />;
+
   if (screen === "timeline") {
     const zipData = d.zipData ?? { city: "your area", avg: 400000 };
     const styleIds = d.homeStyle ? [d.homeStyle] : [];
