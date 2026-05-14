@@ -2732,7 +2732,9 @@ function Report({ d }: { d: Data }) {
     empAdjReady.rateAdd +
     rateAddFromDownPct(effectiveDownPct);
   const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
-  const taxIns = (avgPrice * 0.018) / 12;
+  const taxRate = d.assumptions.propertyTaxRate ?? 0.012;
+  const insRate = d.assumptions.insuranceRate ?? 0.006;
+  const taxIns = (avgPrice * (taxRate + insRate)) / 12;
   const pmi =
     effectiveDownPct < 20
       ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12
