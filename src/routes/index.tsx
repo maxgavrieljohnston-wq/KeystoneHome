@@ -2943,6 +2943,103 @@ function Report({ d }: { d: Data }) {
         <LineRow label="Total" val={fmt(totalHousing)} bold />
       </Section>
 
+      {/* Section — Cash to close */}
+      {(() => {
+        const closing = Math.round(avgPrice * 0.03);
+        const moving = 1500;
+        const totalCash = downPayment + closing + moving;
+        const savedPct = Math.max(0, Math.min(100, (d.saved / Math.max(totalCash, 1)) * 100));
+        const gap = Math.max(0, totalCash - d.saved);
+        return (
+          <Section number="04" title="Cash to close">
+            <p style={SubP}>
+              The deposit isn't the whole bill. Closing costs run about 3% of the
+              price, plus a moving budget. Here's the full cash you'll hand over
+              on day one — and where you stand against it today.
+            </p>
+
+            <Subhead>The full bill</Subhead>
+            <LineRow label="Down payment"   val={fmt(downPayment)} />
+            <LineRow label="Closing costs"  val={fmt(closing)} />
+            <LineRow label="Moving budget"  val={fmt(moving)} />
+            <LineRow label="Total cash needed" val={fmt(totalCash)} bold />
+
+            <div style={{ marginTop: 28 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  marginBottom: 10,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: C.inkMute,
+                  }}
+                >
+                  Where you stand
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    color: C.ink,
+                  }}
+                >
+                  {Math.round(savedPct)}%
+                </span>
+              </div>
+              <div
+                style={{
+                  height: 8,
+                  background: C.paperDeep,
+                  borderRadius: 4,
+                  overflow: "hidden",
+                  border: `1px solid ${C.ink}`,
+                }}
+              >
+                <div
+                  style={{
+                    width: `${savedPct}%`,
+                    height: "100%",
+                    background:
+                      savedPct >= 100 ? C.sage : savedPct >= 50 ? C.gold : C.ember,
+                    transition: "width 600ms ease",
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: 10,
+                  fontSize: 12,
+                  color: C.inkMute,
+                }}
+              >
+                <span>
+                  Saved <strong style={{ color: C.ink }}>{fmt(d.saved)}</strong>
+                </span>
+                <span>
+                  {gap > 0 ? (
+                    <>
+                      <strong style={{ color: C.ink }}>{fmt(gap)}</strong> to go
+                    </>
+                  ) : (
+                    <strong style={{ color: C.sage }}>You're fully funded</strong>
+                  )}
+                </span>
+              </div>
+            </div>
+          </Section>
+        );
+      })()}
+
       <ReportPaywall />
 
       {/* Footer */}
