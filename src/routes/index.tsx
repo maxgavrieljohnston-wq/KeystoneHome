@@ -323,6 +323,9 @@ function KeystoneApp() {
     const s = FLOW[idx];
     const partnerOnly = ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit", "introPartnerSummary"];
     if (d.hasPartner === false && partnerOnly.includes(s)) return true;
+    // Partnered users enter household totals on the main "finances" screen,
+    // so the separate partnerFinances screen is skipped entirely.
+    if (d.hasPartner === true && s === "partnerFinances") return true;
     // Paid signed-in users already gave us name/email/phone — don't ask again.
     if (s === "email" && sub.isPlus && d.email.includes("@")) return true;
     if (s === "factDemo") {
