@@ -544,7 +544,14 @@ function PlanCard({ plan }: { plan: PlanRow }) {
           />
         ) : (
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 20, lineHeight: 1.2 }}>{plan.title || defaultTitle(plan)}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 20, lineHeight: 1.2 }}>{plan.title || defaultTitle(plan)}</span>
+              {(plan.version ?? 1) > 1 && (
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", padding: "2px 8px", borderRadius: 999, background: C.ember, color: C.paper }}>
+                  v{plan.version}
+                </span>
+              )}
+            </div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.inkMute, marginTop: 4 }}>
               {new Date(plan.created_at).toLocaleDateString()}
               {plan.share_enabled && <span style={{ color: C.ember, marginLeft: 8 }}>· Shared</span>}
