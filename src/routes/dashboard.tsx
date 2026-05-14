@@ -216,6 +216,8 @@ function DashboardPage() {
           {greeting}
         </h1>
 
+        <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} />
+
         {isLoading ? (
           <p style={{ color: C.inkSoft, fontSize: 18 }}>Loading your plans…</p>
         ) : error ? (
@@ -232,13 +234,15 @@ function DashboardPage() {
         )}
 
         {plans.length > 0 && (
-          <InvestmentSection
-            answers={plans[0].answers}
-            assumptions={plans[0].assumptions}
-            planId={plans[0].id}
-            isPlus={sub.isPlus}
-            isPro={sub.isPro}
-          />
+          <div id="premium-features">
+            <InvestmentSection
+              answers={plans[0].answers}
+              assumptions={plans[0].assumptions}
+              planId={plans[0].id}
+              isPlus={sub.isPlus}
+              isPro={sub.isPro}
+            />
+          </div>
         )}
 
         <PremiumPanel
@@ -247,6 +251,44 @@ function DashboardPage() {
         />
       </div>
     </div>
+  );
+}
+
+function TierBanner({ isPlus, isPro, loading }: { isPlus: boolean; isPro: boolean; loading: boolean }) {
+  if (loading) return null;
+  if (!isPlus && !isPro) return null;
+  const label = isPro ? "Pro" : "Plus";
+  return (
+    <a
+      href="#premium-features"
+      style={{
+        display: "block",
+        marginBottom: 24,
+        padding: "14px 16px",
+        background: C.ink,
+        color: C.paper,
+        borderRadius: 10,
+        textDecoration: "none",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "#f0a890",
+          marginBottom: 4,
+        }}
+      >
+        ◆ {label} unlocked
+      </div>
+      <div style={{ fontSize: 16, lineHeight: 1.4 }}>
+        Your {label} features are below — Invest vs. save, recommended accounts
+        {isPro ? ", risk scenarios, coach & rate alerts" : ", broker waitlist & more"}.{" "}
+        <span style={{ color: "#f0a890", textDecoration: "underline" }}>Jump to features →</span>
+      </div>
+    </a>
   );
 }
 

@@ -7,6 +7,7 @@ import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { US_STATES, priceByState } from "@/data/states";
+import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
@@ -280,12 +281,16 @@ function KeystoneApp() {
   const [contactPrefilled, setContactPrefilled] = useState(false);
   const navigate = useNavigate();
 
-  // Plus/Pro users land straight on the dashboard so they see new panels.
+  // Any signed-in user lands straight on the dashboard so they see their saved
+  // plan and unlocked features (rather than re-doing the welcome questionnaire).
   useEffect(() => {
-    if (sub.isPlus) {
-      navigate({ to: "/dashboard", replace: true });
-    }
-  }, [sub.isPlus, navigate]);
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      if (data.session) navigate({ to: "/dashboard", replace: true });
+    });
+    return () => { cancelled = true; };
+  }, [navigate]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
