@@ -5,6 +5,7 @@ import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
+import { POPULAR_METROS, metroByZip } from "@/data/metros";
 import { useEffect, useMemo, useState } from "react";
 import {
   CREDIT_BUCKETS,
@@ -83,6 +84,7 @@ const FLOW = [
   "homeStyle",
   "homeFeatures",
   "downGoal",
+  "advancedAssumptions",
   "timeline",
   "introRisk",
   "risk0",
@@ -101,7 +103,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "age", "employment", "finances", "credit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "factDemo",
-  "zip", "homeStyle", "homeFeatures", "downGoal", "timeline",
+  "zip", "homeStyle", "homeFeatures", "downGoal", "advancedAssumptions", "timeline",
   "introRisk",
   "risk0", "risk1", "risk2", "risk3",
 ];
@@ -143,6 +145,12 @@ type Data = {
   timelineBucket: string | null;
   downGoalPct: number | null;
   riskAnswers: Record<number, number>;
+  assumptions: {
+    propertyTaxRate?: number;
+    insuranceRate?: number;
+    closingPct?: number;
+    movingBudget?: number;
+  };
 };
 
 const INITIAL: Data = {
@@ -182,6 +190,7 @@ const INITIAL: Data = {
   timelineBucket: null,
   downGoalPct: null,
   riskAnswers: {},
+  assumptions: {},
 };
 
 // Feature-adjusted price multiplier — same math used live on "Picture the place".
@@ -777,6 +786,9 @@ function ScreenSwitch({
         </Cta>
       </Question>
     );
+
+  if (screen === "advancedAssumptions")
+    return <AdvancedAssumptionsScreen d={d} set={set} next={next} />;
 
   if (screen === "timeline") {
     const zipData = d.zipData ?? { city: "your area", avg: 400000 };
@@ -2177,6 +2189,50 @@ function ZipScreen({
         </>
       )}
 
+      {/* Popular metros quick-pick */}
+      {(status === "manual" || status === "located") && (
+        <div style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkFaint,
+              marginBottom: 10,
+            }}
+          >
+            — Popular metros
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {POPULAR_METROS.slice(0, 8).map((m) => (
+              <button
+                key={m.zip}
+                type="button"
+                onClick={() => {
+                  set("zip", m.zip);
+                  set("zipData", { city: m.city, avg: 0 });
+                  // Re-derive via getPriceByZip for the avg price
+                  set("zipData", getPriceByZip(m.zip));
+                }}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  border: `1px solid ${d.zip === m.zip ? C.ink : C.inkFaint}`,
+                  background: d.zip === m.zip ? C.ink : "transparent",
+                  color: d.zip === m.zip ? C.paper : C.inkSoft,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                }}
+              >
+                {m.city.split(",")[0]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Cta onClick={next} disabled={d.zip.length !== 5}>
         Continue
@@ -2186,6 +2242,156 @@ function ZipScreen({
 }
 
 // ── Money input ──────────────────────────────────────────────────────────────
+function AdvancedAssumptionsScreen({
+  d,
+  set,
+  next,
+}: {
+  d: Data;
+  set: <K extends keyof Data>(k: K, v: Data[K]) => void;
+  next: () => void;
+}) {
+  const sub = useSubscription();
+  const isPlus = sub.isPlus;
+  const a = d.assumptions;
+
+  const update = (patch: Partial<Data["assumptions"]>) => {
+    set("assumptions", { ...d.assumptions, ...patch });
+  };
+
+  const Field = ({
+    label,
+    suffix,
+    value,
+    placeholder,
+    onChange,
+  }: {
+    label: string;
+    suffix: string;
+    value: number | undefined;
+    placeholder: string;
+    onChange: (v: number | undefined) => void;
+  }) => (
+    <label
+      style={{
+        display: "block",
+        marginBottom: 18,
+        opacity: isPlus ? 1 : 0.55,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: C.inkMute,
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: `1px solid ${C.ink}`, paddingBottom: 6 }}>
+        <input
+          type="number"
+          step="any"
+          disabled={!isPlus}
+          value={value ?? ""}
+          placeholder={placeholder}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(v === "" ? undefined : Number(v));
+          }}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            fontSize: 22,
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            color: C.ink,
+          }}
+        />
+        <span style={{ fontSize: 13, color: C.inkMute }}>{suffix}</span>
+      </div>
+    </label>
+  );
+
+  return (
+    <Question
+      kicker="Plus · advanced"
+      title="Fine-tune the assumptions."
+      sub={
+        isPlus
+          ? "Override our defaults for property tax, insurance, and cash-to-close. Leave blank to use the model defaults."
+          : "Plus members can override the defaults below. Continue and we'll use sensible national averages."
+      }
+    >
+      {!isPlus && (
+        <div
+          style={{
+            padding: "12px 14px",
+            border: `1px dashed ${C.ember}`,
+            borderRadius: 8,
+            marginBottom: 20,
+            background: C.cream,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: C.ember,
+              marginBottom: 6,
+            }}
+          >
+            Plus feature
+          </div>
+          <div style={{ fontSize: 14, color: C.inkSoft, lineHeight: 1.5 }}>
+            <Link to="/pricing" style={{ color: C.ink, textDecoration: "underline" }}>
+              Upgrade to Plus
+            </Link>{" "}
+            to override these.
+          </div>
+        </div>
+      )}
+
+      <Field
+        label="Property tax (annual)"
+        suffix="%"
+        value={a.propertyTaxRate != null ? a.propertyTaxRate * 100 : undefined}
+        placeholder="1.2"
+        onChange={(v) => update({ propertyTaxRate: v == null ? undefined : v / 100 })}
+      />
+      <Field
+        label="Homeowners insurance (annual)"
+        suffix="%"
+        value={a.insuranceRate != null ? a.insuranceRate * 100 : undefined}
+        placeholder="0.6"
+        onChange={(v) => update({ insuranceRate: v == null ? undefined : v / 100 })}
+      />
+      <Field
+        label="Closing costs"
+        suffix="% of price"
+        value={a.closingPct != null ? a.closingPct * 100 : undefined}
+        placeholder="3.0"
+        onChange={(v) => update({ closingPct: v == null ? undefined : v / 100 })}
+      />
+      <Field
+        label="Moving budget"
+        suffix="$"
+        value={a.movingBudget}
+        placeholder="1500"
+        onChange={(v) => update({ movingBudget: v })}
+      />
+
+      <Cta onClick={next}>Continue</Cta>
+    </Question>
+  );
+}
+
 function MoneyInput({
   label,
   unit,
@@ -2526,7 +2732,9 @@ function Report({ d }: { d: Data }) {
     empAdjReady.rateAdd +
     rateAddFromDownPct(effectiveDownPct);
   const mortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
-  const taxIns = (avgPrice * 0.018) / 12;
+  const taxRate = d.assumptions.propertyTaxRate ?? 0.012;
+  const insRate = d.assumptions.insuranceRate ?? 0.006;
+  const taxIns = (avgPrice * (taxRate + insRate)) / 12;
   const pmi =
     effectiveDownPct < 20
       ? (avgPrice * (1 - effectiveDownPct / 100) * 0.005) / 12
@@ -2945,8 +3153,9 @@ function Report({ d }: { d: Data }) {
 
       {/* Section — Cash to close */}
       {(() => {
-        const closing = Math.round(avgPrice * 0.03);
-        const moving = 1500;
+        const closingPct = d.assumptions.closingPct ?? 0.03;
+        const closing = Math.round(avgPrice * closingPct);
+        const moving = d.assumptions.movingBudget ?? 1500;
         const totalCash = downPayment + closing + moving;
         const savedPct = Math.max(0, Math.min(100, (d.saved / Math.max(totalCash, 1)) * 100));
         const gap = Math.max(0, totalCash - d.saved);
