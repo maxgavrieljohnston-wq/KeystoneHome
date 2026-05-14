@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoachRouteImport } from './routes/coach'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -57,6 +58,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/welcome': typeof WelcomeRoute
+  '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/welcome'
+    | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
     | '/lovable/email/auth/preview'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/welcome'
+    | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
     | '/lovable/email/auth/preview'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/welcome'
+    | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
     | '/lovable/email/auth/preview'
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   WelcomeRoute: typeof WelcomeRoute
+  PSlugRoute: typeof PSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicRemindersDispatchRoute: typeof ApiPublicRemindersDispatchRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   WelcomeRoute: WelcomeRoute,
+  PSlugRoute: PSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicRemindersDispatchRoute: ApiPublicRemindersDispatchRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
