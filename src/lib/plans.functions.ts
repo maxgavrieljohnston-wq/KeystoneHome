@@ -570,7 +570,7 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("plans")
-      .update(patch)
+      .update(patch as never)
       .eq("id", data.planId)
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
