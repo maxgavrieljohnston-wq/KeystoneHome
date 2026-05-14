@@ -84,6 +84,7 @@ const FLOW = [
   "homeStyle",
   "homeFeatures",
   "downGoal",
+  "advancedAssumptions",
   "timeline",
   "introRisk",
   "risk0",
