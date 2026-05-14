@@ -13,7 +13,7 @@ export const getMyPlan = createServerFn({ method: "GET" })
 
     const { data, error } = await supabase
       .from("leads")
-      .select("email, completed, answers, updated_at")
+      .select("email, completed, answers, updated_at, first_name, last_name, phone")
       .eq("email", email)
       .maybeSingle();
 
