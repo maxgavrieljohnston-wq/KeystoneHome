@@ -271,6 +271,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_alerts: {
+        Row: {
+          active: boolean
+          created_at: string
+          email_notifications: boolean
+          last_notified_at: string | null
+          last_seen_rate: number | null
+          loan_amount: number
+          target_rate: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email_notifications?: boolean
+          last_notified_at?: string | null
+          last_seen_rate?: number | null
+          loan_amount: number
+          target_rate: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email_notifications?: boolean
+          last_notified_at?: string | null
+          last_seen_rate?: number | null
+          loan_amount?: number
+          target_rate?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null

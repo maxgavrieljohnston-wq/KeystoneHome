@@ -125,7 +125,7 @@ function DashboardPage() {
           >
             Keystone
           </Link>
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
             <Link
               to="/coach"
               style={{
@@ -138,6 +138,32 @@ function DashboardPage() {
               }}
             >
               Coach
+            </Link>
+            <Link
+              to="/compare"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPro ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Compare
+            </Link>
+            <Link
+              to="/rate-alerts"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPro ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Rates
             </Link>
             <button
               type="button"
