@@ -278,6 +278,14 @@ function KeystoneApp() {
   const sub = useSubscription();
   const fetchMyPlan = useServerFn(getMyPlan);
   const [contactPrefilled, setContactPrefilled] = useState(false);
+  const navigate = useNavigate();
+
+  // Plus/Pro users land straight on the dashboard so they see new panels.
+  useEffect(() => {
+    if (sub.isPlus) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [sub.isPlus, navigate]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
