@@ -136,6 +136,26 @@ export const submitPlan = createServerFn({ method: "POST" })
       };
     }
 
+    // Generate a one-click PDF download token for the welcome email
+    let pdfUrl: string | null = null;
+    if (result.plan_id) {
+      try {
+        const { nanoid } = await import("nanoid");
+        const token = nanoid(24);
+        const { error: tokErr } = await supabaseAdmin
+          .from("plans")
+          .update({ pdf_token: token } as never)
+          .eq("id", result.plan_id);
+        if (tokErr) {
+          console.error("[submitPlan] pdf_token update failed", tokErr);
+        } else {
+          pdfUrl = `${SITE_URL}/api/public/plans/pdf?token=${token}`;
+        }
+      } catch (err) {
+        console.error("[submitPlan] pdf token generation threw", err);
+      }
+    }
+
     // Enqueue plan summary email (fire-and-forget; failure shouldn't gate UX)
     try {
       const { html, text } = renderPlanEmail({
@@ -143,6 +163,7 @@ export const submitPlan = createServerFn({ method: "POST" })
         used: result.used ?? null,
         limit: result.limit ?? null,
         isPaid: Boolean(result.is_paid),
+        pdfUrl,
       });
       const messageId = crypto.randomUUID();
 
