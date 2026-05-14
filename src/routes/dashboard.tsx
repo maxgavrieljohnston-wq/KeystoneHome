@@ -416,9 +416,18 @@ function PlanCard({ plan }: { plan: PlanRow }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
   });
 
+  type MetaPatch = {
+    planId: string;
+    title?: string;
+    tags?: string[];
+    notes?: string | null;
+    theme?: "light" | "dark" | "sepia";
+    targetMoveIn?: string | null;
+    currentSavings?: number | null;
+    environment?: "sandbox" | "live";
+  };
   const metaM = useMutation({
-    mutationFn: (patch: Parameters<typeof updatePlanMeta>[0]["data"]) =>
-      updateMetaFn({ data: patch }),
+    mutationFn: (patch: MetaPatch) => updateMetaFn({ data: patch as never }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-plans"] }),
   });
 
