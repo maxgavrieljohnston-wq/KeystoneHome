@@ -180,9 +180,10 @@ export const getMyPlans = createServerFn({ method: "GET" })
     const { supabase, userId, claims } = context;
     const email = (claims.email as string | undefined)?.toLowerCase();
 
+    const PLAN_COLS = "id, email, title, answers, created_at, tags, notes, share_slug, share_enabled, assumptions, target_move_in, current_savings, theme, parent_plan_id, version";
     const { data: ownedPlans } = await supabase
       .from("plans")
-      .select("id, email, title, answers, created_at")
+      .select(PLAN_COLS)
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -191,7 +192,7 @@ export const getMyPlans = createServerFn({ method: "GET" })
     if (email) {
       const { data } = await supabaseAdmin
         .from("plans")
-        .select("id, email, title, answers, created_at")
+        .select(PLAN_COLS)
         .ilike("email", email)
         .is("user_id", null)
         .order("created_at", { ascending: false });
