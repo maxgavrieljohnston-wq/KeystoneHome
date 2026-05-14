@@ -23,6 +23,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicRemindersDispatchRouteImport } from './routes/api/public/reminders/dispatch'
+import { Route as ApiPublicPlansPdfRouteImport } from './routes/api/public/plans/pdf'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -97,6 +98,11 @@ const ApiPublicRemindersDispatchRoute =
     path: '/api/public/reminders/dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPlansPdfRoute = ApiPublicPlansPdfRouteImport.update({
+  id: '/api/public/plans/pdf',
+  path: '/api/public/plans/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/plans/pdf': typeof ApiPublicPlansPdfRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/plans/pdf': typeof ApiPublicPlansPdfRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/plans/pdf': typeof ApiPublicPlansPdfRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/p/$slug'
     | '/api/public/payments/webhook'
+    | '/api/public/plans/pdf'
     | '/api/public/reminders/dispatch'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/p/$slug'
     | '/api/public/payments/webhook'
+    | '/api/public/plans/pdf'
     | '/api/public/reminders/dispatch'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/p/$slug'
     | '/api/public/payments/webhook'
+    | '/api/public/plans/pdf'
     | '/api/public/reminders/dispatch'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   WelcomeRoute: typeof WelcomeRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicPlansPdfRoute: typeof ApiPublicPlansPdfRoute
   ApiPublicRemindersDispatchRoute: typeof ApiPublicRemindersDispatchRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -328,6 +341,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRemindersDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/plans/pdf': {
+      id: '/api/public/plans/pdf'
+      path: '/api/public/plans/pdf'
+      fullPath: '/api/public/plans/pdf'
+      preLoaderRoute: typeof ApiPublicPlansPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   WelcomeRoute: WelcomeRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicPlansPdfRoute: ApiPublicPlansPdfRoute,
   ApiPublicRemindersDispatchRoute: ApiPublicRemindersDispatchRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

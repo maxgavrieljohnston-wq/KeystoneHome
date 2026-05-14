@@ -2071,12 +2071,12 @@ function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
       >
         {email ? (
           <>
-            Sent to{" "}
+            We're emailing a PDF copy to{" "}
             <span style={{ color: C.ink, fontWeight: 600 }}>{email}</span>{" "}
-            so you can revisit anytime
+            so you can save it, share it, or bring it to a lender.
           </>
         ) : (
-          "Sent to your email so you can revisit anytime"
+          "We're emailing a PDF copy so you can save it, share it, or bring it to a lender."
         )}
       </p>
       <p
