@@ -78,11 +78,30 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true })
       .limit(40);
 
+    let investContext = "";
+    if (latestPlan) {
+      try {
+        const { computePlanMetrics } = await import("@/lib/plan-metrics");
+        const { investEdge, projectScenarios } = await import("@/lib/invest-projection");
+        const m = computePlanMetrics(
+          (latestPlan.answers as Record<string, unknown>) ?? {},
+          null,
+        );
+        const months = Math.max(1, Math.round(m.timelineYears * 12));
+        const scenarios = projectScenarios({ saved: m.saved, target: m.downPayment, months });
+        const invested = scenarios.find((s) => s.scenario.id === "invested")!;
+        const edge = investEdge({ saved: m.saved, target: m.downPayment, monthly: invested.monthly });
+        investContext = `\n\nInvest-vs-save delta (Keystone's core thesis — reference these naturally):\n- Down-payment goal: $${m.downPayment.toLocaleString()} in ${m.timelineYears} years\n- Currently saved: $${m.saved.toLocaleString()}\n- Required at 7% (invested): $${invested.monthly.toLocaleString()}/mo, growth contributes $${invested.growth.toLocaleString()}\n- Investing instead of using a basic savings account at the same monthly contribution gets the user there ${edge.monthsSooner} months sooner and saves them $${edge.dollarsSaved.toLocaleString()} in contributions.`;
+      } catch (e) {
+        console.warn("[coach] invest-context failed", e);
+      }
+    }
+
     const planContext = latestPlan
       ? `User's homebuying plan answers (use these as context):\n${JSON.stringify(latestPlan.answers, null, 2)}`
       : "The user has not yet completed their homebuying plan questionnaire.";
 
-    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan data to personalize advice. When you don't know something (e.g. exact current mortgage rates), say so and explain how to find out. Never give legal or tax advice — recommend a professional.\n\n${planContext}\n\nUser email: ${email ?? "unknown"}`;
+    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan data to personalize advice. A core message of Keystone is that investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring this up naturally when relevant. When you don't know something (e.g. exact current mortgage rates), say so and explain how to find out. Never give legal, tax, or specific investment advice — recommend a professional.\n\n${planContext}${investContext}\n\nUser email: ${email ?? "unknown"}`;
 
     // Persist the user message first
     await supabaseAdmin.from("coach_messages").insert({
