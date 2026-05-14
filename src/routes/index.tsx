@@ -2106,182 +2106,123 @@ function ZipScreen({
   set: <K extends keyof Data>(k: K, v: Data[K]) => void;
   next: () => void;
 }) {
-  const [status, setStatus] = useState<"idle" | "asking" | "denied" | "manual" | "located">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [region, setRegion] = useState<"All" | "Northeast" | "Midwest" | "South" | "West">("All");
 
-  const requestLocation = () => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setStatus("manual");
-      return;
-    }
-    setStatus("asking");
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
-          );
-          const j = await res.json();
-          const zip: string | undefined = j?.address?.postcode;
-          if (zip && /^\d{5}/.test(zip)) {
-            const z = zip.slice(0, 5);
-            set("zip", z);
-            set("zipData", getPriceByZip(z));
-            setStatus("located");
-          } else {
-            setStatus("manual");
-            setError("Couldn't pin a ZIP from that location.");
-          }
-        } catch {
-          setStatus("manual");
-          setError("Lookup failed. Enter a ZIP instead.");
-        }
-      },
-      () => {
-        setStatus("manual");
-      },
-      { timeout: 8000 },
-    );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return US_STATES.filter((s) => {
+      if (region !== "All" && s.region !== region) return false;
+      if (!q) return true;
+      return s.name.toLowerCase().includes(q) || s.code.toLowerCase().startsWith(q);
+    });
+  }, [query, region]);
+
+  const selected = d.zip ? US_STATES.find((s) => s.code === d.zip) : null;
+
+  const pick = (code: string) => {
+    set("zip", code);
+    set("zipData", priceByState(code));
   };
 
   return (
     <Question
       kicker="The home"
       title="Where you're buying, and what you're buying."
-      sub="Your location sets the local price benchmark. Share your location or enter a ZIP — next we'll cover the home style and timeline."
+      sub="Pick the state where you're house-hunting — that sets your local price benchmark. We'll cover home style and timeline next."
     >
-      {status === "idle" && (
-        <div style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+        {(["All", "Northeast", "Midwest", "South", "West"] as const).map((r) => (
           <button
-            onClick={requestLocation}
+            key={r}
+            type="button"
+            onClick={() => setRegion(r)}
             style={{
-              background: "transparent",
-              color: C.ink,
-              border: `1.5px solid ${C.ink}`,
-              padding: "16px 18px",
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: "0.04em",
+              padding: "6px 12px",
+              borderRadius: 999,
+              border: `1px solid ${region === r ? C.ink : C.inkFaint}`,
+              background: region === r ? C.ink : "transparent",
+              color: region === r ? C.paper : C.inkSoft,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.08em",
               textTransform: "uppercase",
               cursor: "pointer",
-              width: "100%",
-              marginBottom: 12,
             }}
           >
-            ◎ Use my location
+            {r}
           </button>
-          <button
-            onClick={() => setStatus("manual")}
-            style={{
-              background: "transparent",
-              color: C.inkMute,
-              border: "none",
-              padding: "8px 0",
-              fontSize: 12,
-              cursor: "pointer",
-              width: "100%",
-              textDecoration: "underline",
-              textUnderlineOffset: 4,
-            }}
-          >
-            Enter a ZIP instead
-          </button>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {status === "asking" && (
-        <div style={{ marginBottom: 28, color: C.inkMute, fontSize: 13 }}>
-          Asking your browser for permission…
-        </div>
-      )}
+      <input
+        type="text"
+        placeholder="Search a state…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        style={{
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          borderBottom: `1.5px solid ${C.ink}`,
+          padding: "10px 0",
+          fontSize: 16,
+          color: C.ink,
+          outline: "none",
+          marginBottom: 16,
+        }}
+      />
 
-      {(status === "manual" || status === "located") && (
-        <>
-          {error && (
-            <div style={{ fontSize: 12, color: C.ember, marginBottom: 10 }}>{error}</div>
-          )}
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="00000"
-            maxLength={5}
-            value={d.zip}
-            onChange={(e) => {
-              const v = e.target.value.replace(/\D/g, "").slice(0, 5);
-              set("zip", v);
-              if (v.length === 5) set("zipData", getPriceByZip(v));
-              else set("zipData", null);
-            }}
-            style={{
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              borderBottom: `1.5px solid ${C.ink}`,
-              padding: "12px 0",
-              fontSize: 32,
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.2em",
-              color: C.ink,
-              outline: "none",
-              marginBottom: 18,
-            }}
-          />
-          {d.zipData && (
-            <div style={{ fontSize: 14, color: C.inkSoft, marginBottom: 18, fontStyle: "italic" }}>
-              {d.zipData.city}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Popular metros quick-pick */}
-      {(status === "manual" || status === "located") && (
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 9,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: C.inkFaint,
-              marginBottom: 10,
-            }}
-          >
-            — Popular metros
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+          gap: 6,
+          marginBottom: 18,
+          maxHeight: 320,
+          overflowY: "auto",
+        }}
+      >
+        {filtered.map((s) => {
+          const active = d.zip === s.code;
+          return (
+            <button
+              key={s.code}
+              type="button"
+              onClick={() => pick(s.code)}
+              style={{
+                padding: "10px 8px",
+                border: `1px solid ${active ? C.ink : C.inkFaint}`,
+                background: active ? C.ink : "transparent",
+                color: active ? C.paper : C.ink,
+                fontSize: 12,
+                fontWeight: 500,
+                textAlign: "left",
+                cursor: "pointer",
+                lineHeight: 1.2,
+              }}
+            >
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, opacity: 0.7, letterSpacing: "0.1em" }}>
+                {s.code}
+              </div>
+              <div style={{ marginTop: 2 }}>{s.name}</div>
+            </button>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div style={{ gridColumn: "1 / -1", color: C.inkMute, fontSize: 13, padding: "12px 0" }}>
+            No states match.
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {POPULAR_METROS.slice(0, 8).map((m) => (
-              <button
-                key={m.zip}
-                type="button"
-                onClick={() => {
-                  set("zip", m.zip);
-                  set("zipData", { city: m.city, avg: 0 });
-                  // Re-derive via getPriceByZip for the avg price
-                  set("zipData", getPriceByZip(m.zip));
-                }}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  border: `1px solid ${d.zip === m.zip ? C.ink : C.inkFaint}`,
-                  background: d.zip === m.zip ? C.ink : "transparent",
-                  color: d.zip === m.zip ? C.paper : C.inkSoft,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.08em",
-                  cursor: "pointer",
-                }}
-              >
-                {m.city.split(",")[0]}
-              </button>
-            ))}
-          </div>
+        )}
+      </div>
+
+      {selected && (
+        <div style={{ fontSize: 13, color: C.inkSoft, marginBottom: 18, fontStyle: "italic" }}>
+          {selected.name} · typical median ~${(selected.median / 1000).toFixed(0)}k
         </div>
       )}
 
-      <Cta onClick={next} disabled={d.zip.length !== 5}>
+      <Cta onClick={next} disabled={!d.zip}>
         Continue
       </Cta>
     </Question>
