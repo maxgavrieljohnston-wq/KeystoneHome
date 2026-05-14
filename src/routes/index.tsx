@@ -550,21 +550,34 @@ function ScreenSwitch({
   if (screen === "finances")
     return (
       <Question
-        kicker="Your finances"
-        title="Tell us about your money."
+        kicker={d.hasPartner ? "Household finances" : "Your finances"}
+        title={d.hasPartner ? "Tell us about your household money." : "Tell us about your money."}
         sub={d.hasPartner
-          ? "Just yours for now — we'll ask about your partner separately."
+          ? "Combined totals for you and your partner — annual household income before taxes; monthly figures for the rest."
           : "Annual income before taxes; monthly figures for the rest."}
       >
         <FinancesForm
+          household={!!d.hasPartner}
           income={d.income}
           expenses={d.expenses}
           debt={d.debt}
           saved={d.saved}
-          onIncome={(v) => set("income", v)}
-          onExpenses={(v) => set("expenses", v)}
-          onDebt={(v) => set("debt", v)}
-          onSaved={(v) => set("saved", v)}
+          onIncome={(v) => {
+            set("income", v);
+            if (d.hasPartner) set("partnerIncome", 0);
+          }}
+          onExpenses={(v) => {
+            set("expenses", v);
+            if (d.hasPartner) set("partnerExpenses", 0);
+          }}
+          onDebt={(v) => {
+            set("debt", v);
+            if (d.hasPartner) set("partnerDebt", 0);
+          }}
+          onSaved={(v) => {
+            set("saved", v);
+            if (d.hasPartner) set("partnerSaved", 0);
+          }}
         />
         <Cta onClick={next}>Continue</Cta>
       </Question>
