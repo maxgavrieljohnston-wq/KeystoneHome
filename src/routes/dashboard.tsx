@@ -61,6 +61,8 @@ type PlanRow = {
   target_move_in: string | null;
   current_savings: number | null;
   theme: string | null;
+  parent_plan_id: string | null;
+  version: number | null;
 };
 
 function DashboardPage() {
