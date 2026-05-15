@@ -1421,8 +1421,6 @@ function ScreenSwitch({
     return <IntroPage {...i} onNext={next} />;
   }
 
-  if (screen === "handoff") return <Handoff email={d.email} onNext={next} />;
-
   if (screen === "dashboard") return <Report d={d} />;
 
   return null;
