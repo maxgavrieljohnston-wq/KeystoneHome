@@ -838,11 +838,6 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
           </div>
         </div>
       )}
-      {/* spacer to keep diff small */}
-      {false && (
-        <div />
-      
-      )}
 
       {/* Share modal */}
       {showShare && (
