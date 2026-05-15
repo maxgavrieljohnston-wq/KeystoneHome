@@ -52,7 +52,7 @@ const C = {
   rule: "#1a1a1a",
 };
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 1;
 
 type PlanRow = {
   id: string;
