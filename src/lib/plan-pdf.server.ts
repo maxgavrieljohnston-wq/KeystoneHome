@@ -1,4 +1,5 @@
 import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
+import { getPlanTheme, hexToRgb01, type PlanThemeId } from "@/lib/plan-themes";
 
 export type PlanPdfInput = {
   id: string;
@@ -6,50 +7,10 @@ export type PlanPdfInput = {
   title: string | null;
   answers: Record<string, unknown> | null;
   assumptions?: Record<string, number> | null;
-  theme?: "light" | "dark" | "sepia" | null;
+  theme?: PlanThemeId | null;
   created_at?: string | null;
   target_move_in?: string | null;
   current_savings?: number | null;
-};
-
-type Theme = {
-  bg: [number, number, number];
-  ink: [number, number, number];
-  mute: [number, number, number];
-  faint: [number, number, number];
-  ember: [number, number, number];
-  sage: [number, number, number];
-  gold: [number, number, number];
-};
-
-const THEMES: Record<"light" | "dark" | "sepia", Theme> = {
-  light: {
-    bg: [1, 1, 1],
-    ink: [0.10, 0.10, 0.10],
-    mute: [0.42, 0.42, 0.42],
-    faint: [0.85, 0.82, 0.75],
-    ember: [0.77, 0.27, 0.18],
-    sage: [0.32, 0.50, 0.36],
-    gold: [0.78, 0.60, 0.20],
-  },
-  sepia: {
-    bg: [0.98, 0.95, 0.88],
-    ink: [0.20, 0.15, 0.08],
-    mute: [0.46, 0.38, 0.26],
-    faint: [0.78, 0.70, 0.55],
-    ember: [0.72, 0.30, 0.12],
-    sage: [0.36, 0.46, 0.28],
-    gold: [0.70, 0.52, 0.10],
-  },
-  dark: {
-    bg: [0.07, 0.07, 0.08],
-    ink: [0.94, 0.94, 0.92],
-    mute: [0.65, 0.65, 0.62],
-    faint: [0.28, 0.28, 0.30],
-    ember: [0.95, 0.46, 0.32],
-    sage: [0.55, 0.78, 0.58],
-    gold: [0.95, 0.78, 0.36],
-  },
 };
 
 export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
