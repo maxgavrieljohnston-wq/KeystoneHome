@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -84,9 +84,9 @@ function DashboardPage() {
   const sub = useSubscription();
   const gate = useUpgradeGate();
 
-  if (auth.ready && !auth.user) {
-    navigate({ to: "/login" });
-  }
+  useEffect(() => {
+    if (auth.ready && !auth.user) navigate({ to: "/login" });
+  }, [auth.ready, auth.user, navigate]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
