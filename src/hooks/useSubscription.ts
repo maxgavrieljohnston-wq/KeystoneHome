@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 const PLUS_PRICES = new Set(["plus_monthly", "plus_yearly"]);
 const PRO_PRICES = new Set(["pro_monthly", "pro_yearly"]);
@@ -21,7 +22,7 @@ export interface SubscriptionState {
 }
 
 export function useSubscription(): SubscriptionState {
-  const [userId, setUserId] = useState<string | null>(null);
+  const { ready, user } = useAuthReady();
   const [devBypass, setDevBypass] = useState(false);
 
   useEffect(() => {
@@ -33,15 +34,8 @@ export function useSubscription(): SubscriptionState {
     return () => window.removeEventListener("dev_bypass_changed", checkBypass);
   }, []);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUserId(session?.user?.id ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
   const env = getPaddleEnvironment();
+  const userId = user?.id ?? null;
 
   const fetchSub = async () => {
     if (!userId) return null;
@@ -59,7 +53,7 @@ export function useSubscription(): SubscriptionState {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["subscription", userId, env],
     queryFn: fetchSub,
-    enabled: !!userId,
+    enabled: ready && !!userId,
   });
 
   useEffect(() => {
@@ -128,6 +122,6 @@ export function useSubscription(): SubscriptionState {
     cancelAtPeriodEnd,
     currentPeriodEnd: periodEnd,
     priceId,
-    loading: isLoading,
+    loading: !ready || isLoading,
   };
 }
