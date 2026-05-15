@@ -44,7 +44,6 @@ function WelcomePage() {
       ]
     : [
         "Save unlimited plans",
-        "Plan together in partner / household mode",
         "Invest vs. save projection & Monthly Investment Plan PDF",
         "Export your plan as PDF or CSV",
         "Tags, notes, goal tracker & themed reports",
