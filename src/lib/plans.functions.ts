@@ -136,65 +136,8 @@ export const submitPlan = createServerFn({ method: "POST" })
       };
     }
 
-    // Generate a one-click PDF download token for the welcome email
-    let pdfUrl: string | null = null;
-    if (result.plan_id) {
-      try {
-        const { nanoid } = await import("nanoid");
-        const token = nanoid(24);
-        const { error: tokErr } = await supabaseAdmin
-          .from("plans")
-          .update({ pdf_token: token } as never)
-          .eq("id", result.plan_id);
-        if (tokErr) {
-          console.error("[submitPlan] pdf_token update failed", tokErr);
-        } else {
-          pdfUrl = `${SITE_URL}/api/public/plans/pdf?token=${token}`;
-        }
-      } catch (err) {
-        console.error("[submitPlan] pdf token generation threw", err);
-      }
-    }
-
-    // Enqueue plan summary email (fire-and-forget; failure shouldn't gate UX)
-    try {
-      const { html, text } = renderPlanEmail({
-        email: data.email,
-        used: result.used ?? null,
-        limit: result.limit ?? null,
-        isPaid: Boolean(result.is_paid),
-        pdfUrl,
-      });
-      const messageId = crypto.randomUUID();
-
-      await supabaseAdmin.from("email_send_log").insert({
-        message_id: messageId,
-        template_name: "plan_summary",
-        recipient_email: data.email,
-        status: "pending",
-      });
-
-      const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
-        queue_name: "transactional_emails",
-        payload: {
-          message_id: messageId,
-          to: data.email,
-          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-          sender_domain: SENDER_DOMAIN,
-          subject: "Your Keystone homebuying plan",
-          html,
-          text,
-          purpose: "transactional",
-          label: "plan_summary",
-          queued_at: new Date().toISOString(),
-        } as never,
-      });
-      if (enqueueError) {
-        console.error("[submitPlan] enqueue failed", enqueueError);
-      }
-    } catch (err) {
-      console.error("[submitPlan] email render/enqueue threw", err);
-    }
+    // PDF download is a Plus/Pro feature; do not email a PDF link to free users.
+    // Plan summary email is intentionally not sent on submit anymore.
 
     return {
       ok: true as const,
