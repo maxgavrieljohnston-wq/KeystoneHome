@@ -62,6 +62,12 @@ export const PLUS_FEATURES: TierFeature[] = [
 
 export const PRO_FEATURES: TierFeature[] = [
   {
+    id: "investing",
+    short: "Auto-invest your down payment (coming soon)",
+    long: "Auto-invest your down payment — we're partnering with a brokerage to invest your savings and reach your goal faster",
+    comingSoon: true,
+  },
+  {
     id: "coach",
     short: "AI homebuying coach",
     long: "AI homebuying coach — plan-aware, with smart follow-ups",
