@@ -27,13 +27,14 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   const mono = await doc.embedFont(StandardFonts.Courier);
   const monoBold = await doc.embedFont(StandardFonts.CourierBold);
 
-  const t = THEMES[plan.theme ?? "light"];
-  const ink = rgb(...t.ink);
-  const mute = rgb(...t.mute);
-  const faint = rgb(...t.faint);
-  const ember = rgb(...t.ember);
-  const sage = rgb(...t.sage);
-  const gold = rgb(...t.gold);
+  const t = getPlanTheme(plan.theme ?? "light");
+  const bg = hexToRgb01(t.paper);
+  const ink = rgb(...hexToRgb01(t.ink));
+  const mute = rgb(...hexToRgb01(t.inkMute));
+  const faint = rgb(...hexToRgb01(t.faint));
+  const ember = rgb(...hexToRgb01(t.ember));
+  const sage = rgb(...hexToRgb01(t.sage));
+  const gold = rgb(...hexToRgb01(t.gold));
 
   const a = (plan.answers ?? {}) as Record<string, unknown>;
   const str = (k: string): string | null => {
