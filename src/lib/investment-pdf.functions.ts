@@ -111,7 +111,7 @@ export const generateInvestmentPlanPdf = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     const priceId = (latestSub?.price_id as string | undefined) ?? "";
-    const isPaid = ["plus_monthly", "plus_yearly", "pro_monthly", "pro_yearly"].includes(priceId);
+    const isPaid = ["plus_lifetime", "plus_monthly", "plus_yearly", "pro_monthly", "pro_yearly"].includes(priceId);
     if (!isPaid) throw new Response("Plus or Pro required", { status: 403 });
 
     // Profile (display name)
