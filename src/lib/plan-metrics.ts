@@ -36,7 +36,57 @@ export type PlanMetrics = {
   cashToClose: number;
   readiness: number;
   readinessLabel: string;
+  monthlySavings: number;
 };
+
+export type GoalProgress = {
+  hasGoal: boolean;
+  pctToGoal: number;        // 0..100
+  remaining: number;        // dollars still needed
+  monthsToGoal: number | null;
+  requiredMonthly: number | null; // to hit cashToClose by target_move_in
+  statedMonthly: number;    // user's answers.monthlySavings
+  paceDeltaMonthly: number | null; // statedMonthly - requiredMonthly (positive = ahead)
+};
+
+export function computeGoalProgress(
+  m: PlanMetrics,
+  currentSavings: number | null | undefined,
+  targetMoveIn: string | null | undefined,
+): GoalProgress {
+  const saved = currentSavings ?? 0;
+  const target = m.cashToClose || 0;
+  const pctToGoal = target > 0 ? Math.max(0, Math.min(100, (saved / target) * 100)) : 0;
+  const remaining = Math.max(0, target - saved);
+
+  let monthsToGoal: number | null = null;
+  let requiredMonthly: number | null = null;
+  if (targetMoveIn) {
+    const t = new Date(targetMoveIn).getTime();
+    if (isFinite(t)) {
+      const diffMs = t - Date.now();
+      const months = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.4375)));
+      monthsToGoal = months;
+      requiredMonthly = months > 0 ? Math.ceil(remaining / months) : remaining > 0 ? remaining : 0;
+    }
+  }
+
+  const statedMonthly = m.monthlySavings;
+  const paceDeltaMonthly =
+    requiredMonthly != null && statedMonthly > 0
+      ? statedMonthly - requiredMonthly
+      : null;
+
+  return {
+    hasGoal: !!targetMoveIn || (currentSavings != null && currentSavings > 0),
+    pctToGoal,
+    remaining,
+    monthsToGoal,
+    requiredMonthly,
+    statedMonthly,
+    paceDeltaMonthly,
+  };
+}
 
 export function computePlanMetrics(
   answers: Record<string, unknown>,
@@ -197,6 +247,7 @@ export function computePlanMetrics(
   return {
     zip,
     city: zipData.city,
+    monthlySavings: num("monthlySavings"),
     homeStyleLabel: styleName,
     targetPrice,
     downPct: effectiveDownPct,

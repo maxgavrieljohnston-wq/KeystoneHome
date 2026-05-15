@@ -23,7 +23,7 @@ import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAcco
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
-import { computePlanMetrics } from "@/lib/plan-metrics";
+import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -442,7 +442,7 @@ function PlansList({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         {visible.map((p) => (
-          <PlanCard key={p.id} plan={p} />
+          <PlanCard key={p.id} plan={p} suggestions={allTags} />
         ))}
       </div>
 
@@ -493,7 +493,91 @@ function TagChip({ label, active, onClick }: { label: string; active: boolean; o
   );
 }
 
-function PlanCard({ plan }: { plan: PlanRow }) {
+function GoalTracker({
+  plan,
+  isPlus,
+  onOpenSettings,
+}: {
+  plan: PlanRow;
+  isPlus: boolean;
+  onOpenSettings: () => void;
+}) {
+  const m = computePlanMetrics(plan.answers, plan.assumptions);
+  const g = computeGoalProgress(m, plan.current_savings, plan.target_move_in);
+  const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
+  // Empty state — nudge Plus users to set a goal
+  if (!g.hasGoal) {
+    if (!isPlus) return null;
+    return (
+      <div style={{ marginTop: 14, padding: "10px 12px", borderLeft: `2px dashed ${C.inkFaint}`, background: C.paper, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 13, color: C.inkSoft }}>
+          Set a target move-in date to track your savings progress.
+        </div>
+        <button type="button" onClick={onOpenSettings} style={{ background: "transparent", border: "none", color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
+          Set goal →
+        </button>
+      </div>
+    );
+  }
+
+  const pct = g.pctToGoal;
+  const barColor = pct >= 100 ? C.ink : pct >= 50 ? C.ember : C.inkFaint;
+
+  return (
+    <div style={{ marginTop: 14, padding: "12px 14px", borderLeft: `2px solid ${C.ember}`, background: C.paper }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, gap: 8, flexWrap: "wrap" }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.ember }}>Goal · cash to close</div>
+        {plan.target_move_in && (
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: C.inkMute }}>
+            Move-in {new Date(plan.target_move_in).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+            {g.monthsToGoal != null && <> · {g.monthsToGoal} mo</>}
+          </div>
+        )}
+      </div>
+      <div style={{ fontSize: 15, marginBottom: 8 }}>
+        <strong>{fmt(plan.current_savings ?? 0)}</strong>
+        <span style={{ color: C.inkMute }}> of {fmt(m.cashToClose)}</span>
+        <span style={{ color: C.inkMute, marginLeft: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
+          {pct.toFixed(0)}%
+        </span>
+      </div>
+      <div style={{ height: 8, background: "#fff", border: `1px solid ${C.inkFaint}`, borderRadius: 999, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: barColor, transition: "width 0.4s ease" }} />
+      </div>
+      {g.requiredMonthly != null && g.remaining > 0 && (
+        <div style={{ marginTop: 10, fontSize: 13, color: C.inkSoft, lineHeight: 1.5 }}>
+          {g.monthsToGoal === 0 ? (
+            <span>Goal date is here — <strong>{fmt(g.remaining)}</strong> still needed.</span>
+          ) : (
+            <>
+              You need <strong>{fmt(g.requiredMonthly)}/mo</strong> to hit this by your move-in date.
+              {g.statedMonthly > 0 && (
+                <span style={{ color: C.inkMute }}>
+                  {" "}You said you save <strong style={{ color: C.inkSoft }}>{fmt(g.statedMonthly)}/mo</strong>
+                  {g.paceDeltaMonthly != null && (
+                    g.paceDeltaMonthly >= 0 ? (
+                      <span style={{ color: "#2d7a3d" }}> · ahead by {fmt(g.paceDeltaMonthly)}/mo</span>
+                    ) : (
+                      <span style={{ color: C.ember }}> · short by {fmt(Math.abs(g.paceDeltaMonthly))}/mo</span>
+                    )
+                  )}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {g.remaining === 0 && (
+        <div style={{ marginTop: 10, fontSize: 13, color: "#2d7a3d", fontWeight: 500 }}>
+          You've hit your cash-to-close target. Time to talk to a lender.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: string[] }) {
   const qc = useQueryClient();
   const sub = useSubscription();
   const gate = useUpgradeGate();
@@ -600,11 +684,12 @@ function PlanCard({ plan }: { plan: PlanRow }) {
     if (!plan.share_enabled) shareM.mutate(true);
   };
 
-  const handleAddTag = () => {
-    const t = tagDraft.trim();
+  const handleAddTag = (raw?: string) => {
+    const t = (raw ?? tagDraft).trim();
     if (!t) return;
     if (!requirePlus("Plan tags")) return;
-    if (tags.includes(t)) { setTagDraft(""); return; }
+    const exists = tags.some((x) => x.toLowerCase() === t.toLowerCase());
+    if (exists) { setTagDraft(""); return; }
     metaM.mutate({ planId: plan.id, tags: [...tags, t], environment: env });
     setTagDraft("");
   };
@@ -612,6 +697,10 @@ function PlanCard({ plan }: { plan: PlanRow }) {
   const handleRemoveTag = (t: string) => {
     metaM.mutate({ planId: plan.id, tags: tags.filter((x) => x !== t), environment: env });
   };
+
+  const tagSuggestions = suggestions
+    .filter((s) => !tags.some((x) => x.toLowerCase() === s.toLowerCase()))
+    .slice(0, 6);
 
   const handleSaveSettings = () => {
     if (!requirePlus("Plan notes & goal")) return;
@@ -694,26 +783,24 @@ function PlanCard({ plan }: { plan: PlanRow }) {
           value={tagDraft}
           onChange={(e) => setTagDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
-          onBlur={handleAddTag}
+          onBlur={() => handleAddTag()}
           placeholder={sub.isPlus ? "+ tag" : "+ tag (Plus)"}
           style={{ flex: "0 0 auto", minWidth: 70, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", border: `1px dashed ${C.inkFaint}`, borderRadius: 999, padding: "3px 8px", background: "transparent", color: C.ink }}
         />
       </div>
+      {tagSuggestions.length > 0 && sub.isPlus && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: C.inkMute }}>Recent:</span>
+          {tagSuggestions.map((t) => (
+            <button key={t} type="button" onClick={() => handleAddTag(t)} style={{ padding: "2px 8px", borderRadius: 999, background: "transparent", border: `1px dotted ${C.inkFaint}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: C.inkMute, cursor: "pointer" }}>+ {t}</button>
+          ))}
+        </div>
+      )}
 
       {open && <PlanDetails answers={plan.answers} />}
 
-      {/* Goal panel */}
-      {plan.target_move_in && (
-        <div style={{ marginTop: 14, padding: "10px 12px", borderLeft: `2px solid ${C.ember}`, background: C.paper }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.ember, marginBottom: 4 }}>Goal</div>
-          <div style={{ fontSize: 15 }}>
-            Target move-in: <strong>{new Date(plan.target_move_in).toLocaleDateString()}</strong>
-            {plan.current_savings != null && (
-              <> · Saved: <strong>${plan.current_savings.toLocaleString()}</strong></>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Goal tracker */}
+      <GoalTracker plan={plan} isPlus={sub.isPlus} onOpenSettings={() => setShowSettings(true)} />
 
       {/* Notes display */}
       {plan.notes && !showSettings && (

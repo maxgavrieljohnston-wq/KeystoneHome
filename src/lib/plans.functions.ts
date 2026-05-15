@@ -238,7 +238,7 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabaseAdmin
       .from("plans")
-      .select("id, email, title, answers, assumptions, theme, created_at")
+      .select("id, email, title, answers, assumptions, theme, created_at, target_move_in, current_savings")
       .eq("id", data.planId)
       .eq("user_id", context.userId)
       .maybeSingle();
@@ -253,6 +253,8 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
       assumptions: (plan.assumptions ?? null) as Record<string, number> | null,
       theme: (plan.theme ?? null) as "light" | "dark" | "sepia" | null,
       created_at: plan.created_at as string | null,
+      target_move_in: (plan.target_move_in ?? null) as string | null,
+      current_savings: (plan.current_savings ?? null) as number | null,
     });
     let binary = "";
     for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
@@ -381,19 +383,22 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabaseAdmin
       .from("plans")
-      .select("id, email, title, answers, created_at, assumptions")
+      .select("id, email, title, answers, created_at, assumptions, target_move_in, current_savings")
       .eq("id", data.planId)
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!plan) throw new Response("Not found", { status: 404 });
 
-    const { computePlanMetrics } = await import("@/lib/plan-metrics");
+    const { computePlanMetrics, computeGoalProgress } = await import("@/lib/plan-metrics");
     const { projectScenarios, futureValue, SCENARIOS } = await import("@/lib/invest-projection");
 
     const answers = (plan.answers ?? {}) as Record<string, unknown>;
     const assumptions = (plan.assumptions ?? null) as Record<string, number> | null;
     const m = computePlanMetrics(answers, assumptions);
+    const targetMoveIn = (plan.target_move_in ?? null) as string | null;
+    const currentSavings = (plan.current_savings ?? null) as number | null;
+    const g = computeGoalProgress(m, currentSavings, targetMoveIn);
 
     const esc = (v: unknown) => {
       const s = String(v ?? "");
@@ -437,6 +442,17 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
     kv("Timeline (years)", m.timelineYears);
     kv("Save-only $/mo", m.monthlyToSave);
     kv(`Invested @ ${(m.expectedReturnRate * 100).toFixed(1)}% $/mo`, m.monthlyInvested);
+
+    // --- Goal tracker
+    section("GOAL");
+    kv("Target move-in", targetMoveIn ?? "");
+    kv("Current savings", currentSavings != null ? r(currentSavings) : "");
+    kv("% to cash-to-close", +g.pctToGoal.toFixed(1));
+    kv("Remaining", r(g.remaining));
+    kv("Months to goal", g.monthsToGoal ?? "");
+    kv("Required monthly to hit goal", g.requiredMonthly != null ? r(g.requiredMonthly) : "");
+    kv("Stated monthly savings", r(g.statedMonthly));
+    kv("Pace delta (stated − required)", g.paceDeltaMonthly != null ? r(g.paceDeltaMonthly) : "");
 
     // --- Raw inputs (re-importable)
     section("INPUTS");
