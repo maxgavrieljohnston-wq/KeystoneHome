@@ -279,6 +279,7 @@ const assumptionsSchema = z.object({
   expectedReturnPct: z.number().min(0).max(30).optional(),
   closingCostPct: z.number().min(0).max(10).optional(),
   movingCost: z.number().min(0).max(50000).optional(),
+  investMonthly: z.number().min(0).max(100000).optional(),
 }).strict();
 
 const updateMetaSchema = z.object({
