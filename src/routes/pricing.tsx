@@ -3,13 +3,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
-import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
+import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — Keystone" },
-      { name: "description", content: "Plus and Pro plans for serious homebuyers." },
+      { name: "description", content: "Plus (one-time) and Pro plans for serious homebuyers." },
     ],
   }),
   component: PricingPage,
@@ -26,26 +26,39 @@ const C = {
 
 type PlanId = "plus" | "pro";
 
-const PLANS: Array<{
-  id: PlanId;
+type PlusPlan = {
+  id: "plus";
+  name: string;
+  oneTimePriceId: string;
+  oneTime: number;
+  isOneTime: true;
+  tagline: string;
+  features: TierFeature[];
+  highlight?: boolean;
+};
+type ProPlan = {
+  id: "pro";
   name: string;
   monthlyPriceId: string;
   yearlyPriceId: string;
   monthly: number;
   yearly: number;
+  isOneTime: false;
   tagline: string;
-  features: string[];
+  features: TierFeature[];
   highlight?: boolean;
-}> = [
+};
+type Plan = PlusPlan | ProPlan;
+
+const PLANS: Plan[] = [
   {
     id: "plus",
     name: "Plus",
-    monthlyPriceId: "plus_monthly",
-    yearlyPriceId: "plus_yearly",
-    monthly: 9,
-    yearly: 86,
-    tagline: "For the serious saver.",
-    features: PLUS_FEATURES.map((f) => f.long),
+    oneTimePriceId: "plus_lifetime",
+    oneTime: 29,
+    isOneTime: true,
+    tagline: "One-time unlock. Yours forever.",
+    features: PLUS_FEATURES,
   },
   {
     id: "pro",
@@ -54,8 +67,12 @@ const PLANS: Array<{
     yearlyPriceId: "pro_yearly",
     monthly: 19,
     yearly: 182,
+    isOneTime: false,
     tagline: "Your personal homebuying coach.",
-    features: ["Everything in Plus", ...PRO_FEATURES.map((f) => f.long)],
+    features: [
+      { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" },
+      ...PRO_FEATURES,
+    ],
     highlight: true,
   },
 ];
@@ -75,22 +92,23 @@ function PricingPage() {
     });
   }, []);
 
-  const handleSelect = async (plan: typeof PLANS[number]) => {
+  const handleSelect = async (plan: Plan) => {
     if (!userId) {
       navigate({
         to: "/login",
-        search: { signup: true, plan: plan.id, billing },
+        search: { signup: true, plan: plan.id, billing: plan.isOneTime ? "lifetime" : billing },
       });
       return;
     }
-    const priceId = billing === "monthly" ? plan.monthlyPriceId : plan.yearlyPriceId;
+    const priceId = plan.isOneTime
+      ? plan.oneTimePriceId
+      : billing === "monthly"
+        ? plan.monthlyPriceId
+        : plan.yearlyPriceId;
     await openCheckout({ priceId, customerEmail: email, userId });
   };
 
-  const yearlyHint = useMemo(
-    () => `Save 20% — about 2 months free`,
-    [],
-  );
+  const yearlyHint = useMemo(() => `Save 20% on Pro — about 2 months free`, []);
 
   return (
     <div
@@ -150,12 +168,12 @@ function PricingPage() {
               lineHeight: 1.5,
             }}
           >
-            Use Keystone forever at no cost. Upgrade when you want to save more, plan with a partner,
-            or get personalized coaching.
+            Use Keystone forever at no cost. Buy Plus once for lifetime access, or subscribe to Pro
+            for ongoing coaching and live data.
           </p>
         </header>
 
-        {/* Billing toggle */}
+        {/* Billing toggle (Pro only) */}
         <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
           <div
             style={{
@@ -183,7 +201,7 @@ function PricingPage() {
                   color: billing === b ? C.paper : C.ink,
                 }}
               >
-                {b}
+                Pro · {b}
               </button>
             ))}
           </div>
@@ -214,9 +232,12 @@ function PricingPage() {
           }}
         >
           {PLANS.map((plan) => {
-            const price = billing === "monthly" ? plan.monthly : Math.round(plan.yearly / 12);
-            const isCurrent =
-              sub.isActive && (sub.tier === plan.id);
+            const price = plan.isOneTime
+              ? plan.oneTime
+              : billing === "monthly"
+                ? plan.monthly
+                : Math.round(plan.yearly / 12);
+            const isCurrent = sub.isActive && sub.tier === plan.id;
 
             return (
               <div
@@ -249,6 +270,22 @@ function PricingPage() {
                       Most popular
                     </span>
                   )}
+                  {plan.isOneTime && (
+                    <span
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 9,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: C.ember,
+                        border: `1px solid ${C.ember}`,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                      }}
+                    >
+                      One-time
+                    </span>
+                  )}
                 </div>
                 <p
                   style={{
@@ -272,35 +309,68 @@ function PricingPage() {
                       color: plan.highlight ? "#d6cfc1" : C.inkMute,
                     }}
                   >
-                    / month
+                    {plan.isOneTime ? "one-time" : "/ month"}
                   </span>
                 </div>
-                {billing === "yearly" && (
+                {plan.isOneTime ? (
                   <p
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
                       fontSize: 10,
                       letterSpacing: "0.14em",
-                      color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                      color: C.inkMute,
                       margin: "4px 0 0",
                     }}
                   >
-                    ${plan.yearly} billed yearly
+                    Lifetime access · pay once
                   </p>
+                ) : (
+                  billing === "yearly" && (
+                    <p
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.14em",
+                        color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                        margin: "4px 0 0",
+                      }}
+                    >
+                      ${plan.yearly} billed yearly
+                    </p>
+                  )
                 )}
 
                 <ul style={{ listStyle: "none", padding: 0, margin: "24px 0", flex: 1 }}>
                   {plan.features.map((f) => (
                     <li
-                      key={f}
+                      key={f.id}
                       style={{
                         fontSize: 16,
                         lineHeight: 1.45,
                         padding: "8px 0",
                         borderTop: `1px solid ${plan.highlight ? "#3a3a3a" : "#e4dccf"}`,
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "baseline",
                       }}
                     >
-                      {f}
+                      <span style={{ flex: 1 }}>{f.long}</span>
+                      {f.comingSoon && (
+                        <span
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 9,
+                            letterSpacing: "0.16em",
+                            padding: "3px 6px",
+                            borderRadius: 4,
+                            background: plan.highlight ? C.paper : C.ink,
+                            color: plan.highlight ? C.ink : C.paper,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          SOON
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -322,7 +392,13 @@ function PricingPage() {
                     opacity: loading || isCurrent ? 0.6 : 1,
                   }}
                 >
-                  {isCurrent ? "Current plan" : loading ? "Opening…" : `Choose ${plan.name}`}
+                  {isCurrent
+                    ? "Current plan"
+                    : loading
+                      ? "Opening…"
+                      : plan.isOneTime
+                        ? `Get ${plan.name} — $${plan.oneTime}`
+                        : `Choose ${plan.name}`}
                 </button>
               </div>
             );
@@ -337,7 +413,7 @@ function PricingPage() {
             color: C.inkMute,
           }}
         >
-          Cancel anytime. Plans renew automatically.{" "}
+          Plus is a one-time purchase. Pro renews automatically — cancel anytime.{" "}
           <Link to="/refunds" style={{ color: C.ink }}>
             Refund policy
           </Link>
