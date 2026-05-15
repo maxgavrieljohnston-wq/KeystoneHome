@@ -3212,19 +3212,10 @@ function ReportPaywall() {
   if (isPro) return null;
 
   const features = isPlus
-    ? [
-        "AI homebuying coach",
-        "Side-by-side scenario comparison",
-        "Live mortgage rate alerts",
-      ]
+    ? PRO_FEATURES.map((f) => f.long)
     : [
-        "Save unlimited scenarios (cities, timelines, down payments)",
-        "Invest vs. save projection",
-        "Savings & investing action plan (PDF)",
-        "Full plan export (PDF + CSV) + themed reports",
-        "Tags, notes, goal tracker & sharing",
-        "AI homebuying coach (Pro)",
-        "Live mortgage rate alerts (Pro)",
+        ...PLUS_FEATURES.map((f) => f.long),
+        ...PRO_FEATURES.map((f) => `${f.long} (Pro)`),
       ];
 
   return (
