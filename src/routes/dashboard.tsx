@@ -205,6 +205,32 @@ function DashboardPage() {
             >
               Accounts
             </Link>
+            <Link
+              to="/market"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPro ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Market
+            </Link>
+            <Link
+              to="/documents"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPro ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Docs
+            </Link>
             <button
               type="button"
               onClick={handleSignOut}

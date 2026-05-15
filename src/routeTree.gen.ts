@@ -17,6 +17,7 @@ import { Route as RateAlertsRouteImport } from './routes/rate-alerts'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MarketRouteImport } from './routes/market'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CoachRouteImport } from './routes/coach'
@@ -67,6 +68,11 @@ const MarketRoute = MarketRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
   '/login': typeof LoginRoute
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
   '/login': typeof LoginRoute
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
   '/login': typeof LoginRoute
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/compare'
     | '/dashboard'
+    | '/documents'
     | '/login'
     | '/market'
     | '/pricing'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/compare'
     | '/dashboard'
+    | '/documents'
     | '/login'
     | '/market'
     | '/pricing'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/compare'
     | '/dashboard'
+    | '/documents'
     | '/login'
     | '/market'
     | '/pricing'
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   CoachRoute: typeof CoachRoute
   CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
+  DocumentsRoute: typeof DocumentsRoute
   LoginRoute: typeof LoginRoute
   MarketRoute: typeof MarketRoute
   PricingRoute: typeof PricingRoute
@@ -336,6 +349,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -424,6 +444,7 @@ const rootRouteChildren: RootRouteChildren = {
   CoachRoute: CoachRoute,
   CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,
+  DocumentsRoute: DocumentsRoute,
   LoginRoute: LoginRoute,
   MarketRoute: MarketRoute,
   PricingRoute: PricingRoute,
