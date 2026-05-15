@@ -51,8 +51,6 @@ function SharedPlanPage() {
   const theme = getPlanTheme(plan.theme as string | null);
   const a = (plan.answers ?? {}) as Record<string, unknown>;
   const ov = (plan.assumptions ?? {}) as Record<string, number>;
-  const a = (plan.answers ?? {}) as Record<string, unknown>;
-  const ov = (plan.assumptions ?? {}) as Record<string, number>;
 
   const num = (k: string, fb = 0) =>
     typeof a[k] === "number" && isFinite(a[k] as number) ? (a[k] as number) : fb;
