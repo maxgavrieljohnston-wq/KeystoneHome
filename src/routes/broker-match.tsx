@@ -158,24 +158,7 @@ function RequestForm({
   error,
   success,
 }: {
-  onSubmit: (input: {
-    serviceType: ServiceType;
-    targetCity?: string;
-    targetState?: string;
-    targetZip?: string;
-    priceMin?: number | null;
-    priceMax?: number | null;
-    timeline?: "0-3m" | "3-6m" | "6-12m" | "12m+";
-    loanType?: "conventional" | "fha" | "va" | "usda" | "jumbo" | "unsure";
-    creditBand?: "740+" | "700-739" | "660-699" | "620-659" | "<620" | "unsure";
-    firstTimeBuyer?: boolean;
-    buyerOrSeller?: "buyer" | "seller" | "both";
-    propertyType?: "single-family" | "condo" | "townhome" | "multi-family" | "other";
-    preferredLanguage?: string;
-    contactMethod?: "email" | "phone" | "text";
-    contactTime?: string;
-    notes?: string;
-  }) => Promise<unknown>;
+  onSubmit: (input: SubmitInput) => Promise<unknown>;
   submitting: boolean;
   error: string | null;
   success: boolean;
