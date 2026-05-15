@@ -3217,7 +3217,7 @@ function ReportPaywall() {
         "Live mortgage rate alerts",
       ]
     : [
-        "Save unlimited plans",
+        "Save unlimited scenarios (cities, timelines, down payments)",
         "Invest vs. save projection",
         "Monthly Investment Plan PDF",
         "Export as PDF & CSV + themed reports",
