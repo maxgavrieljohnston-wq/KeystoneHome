@@ -231,6 +231,19 @@ function DashboardPage() {
             >
               Docs
             </Link>
+            <Link
+              to="/broker-match"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPlus || sub.isPro ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Match
+            </Link>
             <button
               type="button"
               onClick={handleSignOut}
