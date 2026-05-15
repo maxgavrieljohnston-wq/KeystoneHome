@@ -443,6 +443,17 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
     kv("Save-only $/mo", m.monthlyToSave);
     kv(`Invested @ ${(m.expectedReturnRate * 100).toFixed(1)}% $/mo`, m.monthlyInvested);
 
+    // --- Goal tracker
+    section("GOAL");
+    kv("Target move-in", targetMoveIn ?? "");
+    kv("Current savings", currentSavings != null ? r(currentSavings) : "");
+    kv("% to cash-to-close", +g.pctToGoal.toFixed(1));
+    kv("Remaining", r(g.remaining));
+    kv("Months to goal", g.monthsToGoal ?? "");
+    kv("Required monthly to hit goal", g.requiredMonthly != null ? r(g.requiredMonthly) : "");
+    kv("Stated monthly savings", r(g.statedMonthly));
+    kv("Pace delta (stated − required)", g.paceDeltaMonthly != null ? r(g.paceDeltaMonthly) : "");
+
     // --- Raw inputs (re-importable)
     section("INPUTS");
     hdr("Field", "Value");
