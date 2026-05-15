@@ -2531,13 +2531,13 @@ function LimitReachedGate({ used, limit }: { used: number | null; limit: number 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "60px 24px", fontFamily: "'Cormorant Garamond', Georgia, serif", color: "#1a1a1a" }}>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#c4452d", marginBottom: 16 }}>
-        — Free plan limit reached
+        — Free scenario limit reached
       </div>
       <h1 style={{ fontWeight: 400, fontSize: 38, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 18px" }}>
-        You've used {used ?? limit} of your {limit ?? 3} free plans.
+        You've used {used ?? limit} of your {limit ?? 1} free scenario{(limit ?? 1) === 1 ? "" : "s"}.
       </h1>
       <p style={{ fontSize: 17, lineHeight: 1.5, color: "#3d3d3d", margin: "0 0 28px" }}>
-        Upgrade to keep building plans and unlock saved history, partner mode, PDF export, and more.
+        Upgrade to save unlimited scenarios — try different cities, timelines, down-payment percentages, or partner vs. solo — plus PDF export, themed reports, and email reminders.
       </p>
       <Link to="/pricing" style={{ display: "inline-block", padding: "14px 22px", background: "#1a1a1a", color: "#f5efe6", textDecoration: "none", borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase" }}>
         See upgrade options →
@@ -3217,7 +3217,7 @@ function ReportPaywall() {
         "Live mortgage rate alerts",
       ]
     : [
-        "Save unlimited plans",
+        "Save unlimited scenarios (cities, timelines, down payments)",
         "Invest vs. save projection",
         "Monthly Investment Plan PDF",
         "Export as PDF & CSV + themed reports",

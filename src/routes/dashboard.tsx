@@ -52,7 +52,7 @@ const C = {
   rule: "#1a1a1a",
 };
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 1;
 
 type PlanRow = {
   id: string;
@@ -427,7 +427,7 @@ function PlansList({
             marginBottom: 12,
           }}
         >
-          {Math.min(used, FREE_LIMIT)} of {FREE_LIMIT} free plans used
+          {Math.min(used, FREE_LIMIT)} of {FREE_LIMIT} free scenario{FREE_LIMIT === 1 ? "" : "s"} used — upgrade for unlimited
         </div>
       )}
 

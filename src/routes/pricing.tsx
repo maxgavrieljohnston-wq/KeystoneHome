@@ -45,7 +45,7 @@ const PLANS: Array<{
     yearly: 86,
     tagline: "For the serious saver.",
     features: [
-      "Save unlimited plans",
+      "Save unlimited scenarios (different cities, timelines, down payments)",
       "Invest vs. save projection",
       "Monthly Investment Plan PDF",
       "Export your plan as PDF & CSV",

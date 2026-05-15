@@ -43,7 +43,7 @@ function WelcomePage() {
         "Live mortgage rate alerts",
       ]
     : [
-        "Save unlimited plans",
+        "Save unlimited scenarios (cities, timelines, down payments)",
         "Invest vs. save projection & Monthly Investment Plan PDF",
         "Export your plan as PDF or CSV",
         "Tags, notes, goal tracker & themed reports",
