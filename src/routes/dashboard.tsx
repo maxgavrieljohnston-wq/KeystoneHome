@@ -374,6 +374,12 @@ function RemindersToggle({ hasPlans }: { hasPlans: boolean }) {
         <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 16 }}>
           {enabled ? "On — we'll email you a digest each month." : "Get a monthly recap of your plans by email."}
         </div>
+        {enabled && (prefs?.lastAt || prefs?.nextAt) && (
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: enabled ? C.inkFaint : C.ember, marginTop: 6, opacity: 0.85 }}>
+            {prefs?.lastAt ? `Last sent ${new Date(prefs.lastAt).toLocaleDateString()}` : "No sends yet"}
+            {prefs?.nextAt ? ` · Next ${new Date(prefs.nextAt).toLocaleDateString()}` : ""}
+          </div>
+        )}
       </div>
       <button
         type="button"

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RateAlertsRouteImport } from './routes/rate-alerts'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -28,6 +29,11 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
+    | '/unsubscribe'
     | '/welcome'
     | '/p/$slug'
     | '/api/public/payments/webhook'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
+    | '/unsubscribe'
     | '/welcome'
     | '/p/$slug'
     | '/api/public/payments/webhook'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
+    | '/unsubscribe'
     | '/welcome'
     | '/p/$slug'
     | '/api/public/payments/webhook'
@@ -219,6 +231,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   RateAlertsRoute: typeof RateAlertsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -235,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -347,6 +367,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   RateAlertsRoute: RateAlertsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
