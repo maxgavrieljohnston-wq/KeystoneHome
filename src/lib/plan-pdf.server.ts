@@ -1,4 +1,4 @@
-import { computePlanMetrics } from "@/lib/plan-metrics";
+import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 
 export type PlanPdfInput = {
   id: string;
@@ -8,6 +8,8 @@ export type PlanPdfInput = {
   assumptions?: Record<string, number> | null;
   theme?: "light" | "dark" | "sepia" | null;
   created_at?: string | null;
+  target_move_in?: string | null;
+  current_savings?: number | null;
 };
 
 type Theme = {
