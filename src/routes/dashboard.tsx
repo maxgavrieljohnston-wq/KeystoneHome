@@ -917,7 +917,7 @@ const PREMIUM_FEATURES: Array<{
   tier: "plus" | "pro";
 }> = [
   { id: "save", label: "Unlimited saved plans", tier: "plus" },
-  { id: "pdf", label: "Export as PDF & CSV", tier: "plus" },
+  { id: "pdf", label: "Full plan export (PDF + CSV)", tier: "plus" },
   { id: "share", label: "Shareable plan link", tier: "plus" },
   { id: "tags", label: "Tags, notes & goal tracker", tier: "plus" },
   { id: "theme", label: "Themed reports", tier: "plus" },
