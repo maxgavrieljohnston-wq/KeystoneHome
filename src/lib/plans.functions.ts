@@ -251,7 +251,7 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
       title: plan.title as string | null,
       answers: (plan.answers ?? {}) as Record<string, unknown>,
       assumptions: (plan.assumptions ?? null) as Record<string, number> | null,
-      theme: (plan.theme ?? null) as "light" | "dark" | "sepia" | null,
+      theme: (plan.theme ?? null) as import("@/lib/plan-themes").PlanThemeId | null,
       created_at: plan.created_at as string | null,
       target_move_in: (plan.target_move_in ?? null) as string | null,
       current_savings: (plan.current_savings ?? null) as number | null,
