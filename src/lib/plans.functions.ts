@@ -238,7 +238,7 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabaseAdmin
       .from("plans")
-      .select("id, email, title, answers, assumptions, theme, created_at")
+      .select("id, email, title, answers, assumptions, theme, created_at, target_move_in, current_savings")
       .eq("id", data.planId)
       .eq("user_id", context.userId)
       .maybeSingle();
@@ -253,6 +253,8 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
       assumptions: (plan.assumptions ?? null) as Record<string, number> | null,
       theme: (plan.theme ?? null) as "light" | "dark" | "sepia" | null,
       created_at: plan.created_at as string | null,
+      target_move_in: (plan.target_move_in ?? null) as string | null,
+      current_savings: (plan.current_savings ?? null) as number | null,
     });
     let binary = "";
     for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
