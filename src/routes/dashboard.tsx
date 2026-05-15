@@ -103,7 +103,7 @@ function DashboardPage() {
       gate.openUpgrade("plus", "Unlimited saved plans");
       return;
     }
-    navigate({ to: "/" });
+    navigate({ to: "/", search: { new: true } });
   };
 
   return (
