@@ -8,6 +8,8 @@ export type TierFeature = {
   short: string;
   /** Marketing-grade copy for pricing & upsell cards. */
   long: string;
+  /** When true, render with a "Coming soon" badge — feature not yet shipped. */
+  comingSoon?: boolean;
 };
 
 export const PLUS_FEATURES: TierFeature[] = [
