@@ -32,7 +32,17 @@ import {
   combinedEmploymentAdjustment,
 } from "@/lib/keystone";
 
+type IndexSearch = { new?: boolean };
+
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): IndexSearch => ({
+    new:
+      search.new === true ||
+      search.new === "true" ||
+      search.new === "1"
+        ? true
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Keystone — Plan your first home" },
