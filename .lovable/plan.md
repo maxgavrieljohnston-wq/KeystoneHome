@@ -1,71 +1,46 @@
-## Plan to fix the full first-time user → paid account → dashboard flow
+I found that the Plus/Pro features do exist, but access is breaking in the published/live path.
 
-### What’s broken
-- The app can save leads and plans, but the paid-account path is fragmented.
-- Dashboard access depends on subscription rows and saved plans being linked to the signed-in user.
-- The payment webhook currently only links subscriptions when `userId` exists in checkout custom data, so purchases that happen before a real account/password exists can fail to unlock Plus/Pro.
-- The dashboard’s paid panels only render when at least one plan is visible; if plan linking or auth attachment fails, users see no meaningful paid features.
-- The project has an auth-attacher file, but no `src/start.ts` registration file is present, so protected server functions may not reliably receive the signed-in user token.
+Root causes:
+- Published app reads only `live` subscriptions; several real user purchases are only recorded as `sandbox`, so the app treats those users as Free after publish.
+- Some subscription rows use older product IDs like `plus_plan` / `pro_plan`; some code only recognizes the newer IDs/prices, so Pro checks can fail inconsistently.
+- Protected server functions rely on auth headers, but the app is missing the global TanStack server-function auth middleware registration, so dashboard/feature data can fail to load reliably after sign-in.
+- Premium panels are present, but the new investment panels only render when a linked plan is visible, making the paid features look like they were never built if plan claiming fails.
 
-### User-facing behavior to implement
-1. **Home screen choice**
-   - Keep the first screen simple: `Build My Plan` and `Sign In`.
-   - `Build My Plan` starts the questionnaire.
-   - `Sign In` goes to email/password login.
+Implementation plan:
 
-2. **First-time user path**
-   - During the questionnaire, save name, email, phone, and partial answers to the backend.
-   - At the final report, save the completed plan to the backend using the provided email.
-   - After the plan is built, the user can choose Plus/Pro and purchase.
-   - After purchase, route them to account setup so they can verify email and create a password.
-   - Once the password is created, send them to `/dashboard`.
+1. Add reliable server-function auth wiring
+- Add the missing TanStack Start startup file.
+- Register the existing auth attacher as global function middleware.
+- Add root-level auth/query invalidation after sign-in/sign-out so the dashboard refreshes entitlements immediately.
 
-3. **Returning user path**
-   - User clicks `Sign In`, enters email and password.
-   - On successful login, redirect immediately to `/dashboard`.
-   - Dashboard automatically claims any saved plan rows matching that email and attaches them to the signed-in user.
-   - Dashboard shows their saved plan plus the Plus/Pro features they paid for.
+2. Move subscription entitlement lookup to a server function
+- Replace the direct client-side subscription table read in `useSubscription` with a small authenticated server function.
+- Return only safe entitlement fields: tier, status, price, period end, and cancellation state.
+- Normalize legacy/current IDs so Plus and Pro are recognized consistently.
 
-### Technical implementation
-1. **Auth/server-function reliability**
-   - Add the missing TanStack Start `src/start.ts` file and register `attachSupabaseAuth` as global function middleware.
-   - Add root-level auth cache invalidation so route/query data refreshes after login/logout.
+3. Repair live entitlement reconciliation
+- Add logic that, after login, can reconcile a user’s subscription by email if the payment row or saved plan was created before/around account setup.
+- Ensure server-side premium checks use the same normalized tier logic, not duplicated `price_id === ...` checks.
 
-2. **Subscription lookup hardening**
-   - Replace direct client-side subscription reads in `useSubscription` with a server function that:
-     - uses the authenticated user id,
-     - reads the latest subscription with admin access,
-     - returns only entitlement-safe fields.
-   - This avoids RLS/session timing issues and makes Plus/Pro detection consistent.
+4. Fix the published payment webhook path
+- Keep signature verification intact.
+- Handle subscription events using `customData.userId` when present.
+- Also support customer-email fallback so plan-first purchases can unlock once the account exists.
+- Persist the correct payment environment and normalized product/price identifiers.
 
-3. **Payment webhook linking**
-   - Update `/api/public/payments/webhook` to handle both account-first and plan-first purchases:
-     - prefer `customData.userId` when present,
-     - otherwise use customer email from the payment event,
-     - find or create/link by matching saved lead/plan email where appropriate,
-     - store enough information to activate Plus/Pro after account creation.
-   - Keep webhook signature verification intact.
+5. Make dashboard paid features impossible to miss
+- Keep the existing Plus/Pro panels: unlimited plans, PDF/CSV export, sharing, tags/notes/goals, themed reports, reminders, investment projections, recommended accounts, broker waitlist, Pro coach, compare, and rate alerts.
+- Show a clear paid-status banner and feature list even if no plan is linked yet.
+- If no plan is linked, show a clear “build or recover your plan” state instead of hiding the paid feature area.
 
-4. **Plan claiming after login/account setup**
-   - Keep `getMyPlans` email-based claiming, but make it more robust:
-     - normalize email matching,
-     - claim orphan plans for the user,
-     - return a clear latest plan list.
-   - Add a similar entitlement reconciliation if a subscription was created against the same email before the account existed.
+6. Repair existing affected data
+- Link orphan plans to their matching signed-in users by email.
+- For the known affected published users, mirror valid paid entitlements into the live environment where appropriate so published access works.
+- Verify `plus@test.keystone.dev` and `pro@test.keystone.dev` have active live entitlements and visible plans.
 
-5. **Dashboard visibility**
-   - Ensure the Plus/Pro feature area is visible and explicit after login.
-   - If no plan is found, show a clear state that says the account is signed in but no saved plan is linked, with a `Build My Plan` action.
-   - If a Plus/Pro subscription exists, show unlocked feature panels rather than hiding everything behind an empty plan state.
-
-6. **Test account repair**
-   - Repair `plus@test.keystone.dev` data so it has:
-     - an active Plus subscription in the current environment,
-     - at least one linked saved plan,
-     - dashboard panels visible immediately after login.
-
-### Validation
-- Verify the database has a linked plan and active subscription for the test Plus account.
-- Verify login redirects to `/dashboard`.
-- Verify `/dashboard` loads saved plans and reports Plus/Pro entitlements.
-- Verify the new Plus panels are visible for Plus and Pro accounts.
+Validation:
+- Confirm the published webhook settings still point to the stable published URL.
+- Confirm live subscription rows exist for affected users.
+- Confirm login routes directly to `/dashboard`.
+- Confirm `/dashboard` shows the paid tier banner and unlocked Plus/Pro features.
+- Confirm Plus unlocks investment/account/reminder/export/share features and Pro unlocks coach/compare/rate alerts.
