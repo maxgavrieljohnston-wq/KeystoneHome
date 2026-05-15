@@ -1,20 +1,53 @@
-import {
-  HOME_STYLES,
-  styleAdjustments,
-  calcMortgage,
-  calcRequiredMonthly,
-  rateFromCredit,
-  rateAddFromDownPct,
-  combinedEmploymentAdjustment,
-  getPriceByZip,
-} from "@/lib/keystone";
+import { computePlanMetrics } from "@/lib/plan-metrics";
 
 export type PlanPdfInput = {
   id: string;
   email: string;
   title: string | null;
   answers: Record<string, unknown> | null;
+  assumptions?: Record<string, number> | null;
+  theme?: "light" | "dark" | "sepia" | null;
   created_at?: string | null;
+};
+
+type Theme = {
+  bg: [number, number, number];
+  ink: [number, number, number];
+  mute: [number, number, number];
+  faint: [number, number, number];
+  ember: [number, number, number];
+  sage: [number, number, number];
+  gold: [number, number, number];
+};
+
+const THEMES: Record<"light" | "dark" | "sepia", Theme> = {
+  light: {
+    bg: [1, 1, 1],
+    ink: [0.10, 0.10, 0.10],
+    mute: [0.42, 0.42, 0.42],
+    faint: [0.85, 0.82, 0.75],
+    ember: [0.77, 0.27, 0.18],
+    sage: [0.32, 0.50, 0.36],
+    gold: [0.78, 0.60, 0.20],
+  },
+  sepia: {
+    bg: [0.98, 0.95, 0.88],
+    ink: [0.20, 0.15, 0.08],
+    mute: [0.46, 0.38, 0.26],
+    faint: [0.78, 0.70, 0.55],
+    ember: [0.72, 0.30, 0.12],
+    sage: [0.36, 0.46, 0.28],
+    gold: [0.70, 0.52, 0.10],
+  },
+  dark: {
+    bg: [0.07, 0.07, 0.08],
+    ink: [0.94, 0.94, 0.92],
+    mute: [0.65, 0.65, 0.62],
+    faint: [0.28, 0.28, 0.30],
+    ember: [0.95, 0.46, 0.32],
+    sage: [0.55, 0.78, 0.58],
+    gold: [0.95, 0.78, 0.36],
+  },
 };
 
 export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
@@ -31,118 +64,50 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   const mono = await doc.embedFont(StandardFonts.Courier);
   const monoBold = await doc.embedFont(StandardFonts.CourierBold);
 
-  const ink = rgb(0.1, 0.1, 0.1);
-  const ember = rgb(0.77, 0.27, 0.18);
-  const sage = rgb(0.32, 0.5, 0.36);
-  const gold = rgb(0.78, 0.6, 0.2);
-  const mute = rgb(0.42, 0.42, 0.42);
-  const faint = rgb(0.85, 0.82, 0.75);
+  const t = THEMES[plan.theme ?? "light"];
+  const ink = rgb(...t.ink);
+  const mute = rgb(...t.mute);
+  const faint = rgb(...t.faint);
+  const ember = rgb(...t.ember);
+  const sage = rgb(...t.sage);
+  const gold = rgb(...t.gold);
 
   const a = (plan.answers ?? {}) as Record<string, unknown>;
-  const num = (k: string, fb = 0): number => {
-    const v = a[k];
-    return typeof v === "number" && isFinite(v) ? v : fb;
-  };
   const str = (k: string): string | null => {
     const v = a[k];
     return typeof v === "string" && v.length ? v : null;
   };
   const bool = (k: string): boolean => a[k] === true;
+  const num = (k: string, fb = 0): number => {
+    const v = a[k];
+    return typeof v === "number" && isFinite(v) ? v : fb;
+  };
+
+  const m = computePlanMetrics(a, plan.assumptions ?? null);
 
   const firstName = str("firstName") ?? "";
   const lastName = str("lastName") ?? "";
   const fullName = [firstName, lastName].filter(Boolean).join(" ") || plan.email;
-  const zip = str("zip") ?? "";
-  const zipDataRaw = a.zipData as { city?: string; avg?: number } | undefined;
-  const zipData = zipDataRaw && typeof zipDataRaw.avg === "number"
-    ? { city: zipDataRaw.city ?? "your area", avg: zipDataRaw.avg }
-    : zip
-      ? getPriceByZip(zip)
-      : { city: "your area", avg: 400000 };
-
-  const homeStyleId = str("homeStyle");
-  const styleIds = homeStyleId ? [homeStyleId] : [];
-  const styleAdj = styleAdjustments(styleIds);
-  const styleName = HOME_STYLES.find((s) => s.id === homeStyleId)?.label ?? "Home";
-
-  let mult = styleAdj.priceMult;
-  mult += Math.max(0, num("beds") - 3) * 0.05;
-  mult += Math.max(0, num("baths") - 2) * 0.03;
-  if (str("outdoorSpace") === "patio") mult += 0.02;
-  if (str("outdoorSpace") === "yard") mult += 0.05;
-  if (str("parking") === "driveway") mult += 0.02;
-  if (str("parking") === "garage") mult += 0.05;
-  const w = (v: unknown) => (v === "must" ? 0.025 : v === "nice" ? 0.01 : 0);
-  Object.values((a.lifestyle as Record<string, unknown>) ?? {}).forEach((v) => (mult += w(v)));
-  Object.values((a.neighborhood as Record<string, unknown>) ?? {}).forEach((v) => (mult += w(v)));
-
-  const targetPrice = Math.round(zipData.avg * mult);
-  const downGoalPct = num("downGoalPct", 9);
-  const effectiveDownPct = Math.max(downGoalPct, styleAdj.minDown);
-  const downPayment = Math.round((targetPrice * effectiveDownPct) / 100);
-
   const hasPartner = bool("hasPartner");
+  const combinedIncome = num("income") + (hasPartner ? num("partnerIncome") : 0);
+  const expenses = num("expenses") + (hasPartner ? num("partnerExpenses") : 0);
+  const debt = num("debt") + (hasPartner ? num("partnerDebt") : 0);
   const credit = num("credit", 700);
   const partnerCredit = num("partnerCredit", credit);
   const qCredit = hasPartner ? Math.min(credit, partnerCredit) : credit;
-  const empAdj = combinedEmploymentAdjustment(
-    str("employment"),
-    hasPartner ? str("partnerEmployment") : null,
-  );
-  const mortgageRate =
-    rateFromCredit(qCredit) + empAdj.rateAdd + rateAddFromDownPct(effectiveDownPct);
-  const mortgage = calcMortgage(targetPrice, effectiveDownPct, mortgageRate);
-  const taxIns = (targetPrice * 0.018) / 12;
-  const pmi =
-    effectiveDownPct < 20
-      ? (targetPrice * (1 - effectiveDownPct / 100) * 0.005) / 12
-      : 0;
-  const hoa = styleAdj.hoa;
-  const reserve = styleAdj.reserve;
-  const totalHousing = mortgage + taxIns + pmi + hoa + reserve;
-
-  const income = num("income");
-  const partnerIncome = num("partnerIncome");
-  const expenses = num("expenses") + (hasPartner ? num("partnerExpenses") : 0);
-  const debt = num("debt") + (hasPartner ? num("partnerDebt") : 0);
-  const saved = num("saved");
-  const combinedIncome = income + (hasPartner ? partnerIncome : 0);
-  const monthlyIncome = combinedIncome / 12;
-  const housingRatio = monthlyIncome > 0 ? totalHousing / monthlyIncome : 0;
-  const verdict =
-    housingRatio === 0
-      ? "—"
-      : housingRatio <= 0.45
-        ? "Affordable"
-        : housingRatio <= 0.55
-          ? "A stretch"
-          : "Difficult";
-  const verdictColor = verdict === "Affordable" ? sage : verdict === "A stretch" ? gold : ember;
-
-  const timelineYears = num("timelineYears", 3);
-  const months = timelineYears * 12;
-  const savedOnlyMonthly = calcRequiredMonthly(saved, downPayment, months, 0);
-  const investedMonthly = calcRequiredMonthly(saved, downPayment, months, 0.07);
-
-  const creditScoreNorm = Math.max(0, Math.min(100, ((qCredit - 580) / (820 - 580)) * 100));
-  const qMonthlyIncome = monthlyIncome * empAdj.incomeFactor || 1;
-  const dti = (debt + totalHousing) / qMonthlyIncome;
-  const dtiScore = Math.max(0, Math.min(100, (1 - (dti - 0.45) / 0.2) * 100));
-  const savingsScore = Math.max(0, Math.min(100, (saved / Math.max(downPayment, 1)) * 100));
-  const timelineScore = Math.max(0, Math.min(100, (timelineYears / 5) * 100));
-  const readiness = Math.round(
-    creditScoreNorm * 0.3 + dtiScore * 0.3 + savingsScore * 0.25 + timelineScore * 0.15,
-  );
-  const readinessLabel =
-    readiness >= 80 ? "Ready to act"
-      : readiness >= 60 ? "Almost there"
-      : readiness >= 40 ? "Building toward it"
-      : "Early days";
+  const dti = m.monthlyIncome > 0 ? (debt + m.totalHousing) / m.monthlyIncome : 0;
+  const verdictColor =
+    m.verdict === "Affordable" ? sage : m.verdict === "A stretch" ? gold : ember;
 
   const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
   const W = 612;
+  const H = 792;
   const M = 50;
+
+  // Page background (matters for dark/sepia)
+  page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: rgb(...t.bg) });
+
   let y = 752;
 
   page.drawText("KEYSTONE", { x: M, y, size: 12, font: monoBold, color: ink });
@@ -158,7 +123,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   page.drawText("YOUR PLAN, PREPARED", { x: M, y, size: 8, font: mono, color: ember });
   y -= 22;
 
-  const title = plan.title || `${styleName} in ${zipData.city}`;
+  const title = plan.title || `${m.homeStyleLabel} in ${m.city}`;
   page.drawText(title, { x: M, y, size: 26, font: serifBold, color: ink });
   y -= 18;
   page.drawText(`Prepared for ${fullName}`, { x: M, y, size: 11, font: serifItalic, color: mute });
@@ -173,9 +138,9 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   const colW = (W - M * 2) / 3;
   const statY = y - 14;
   const stats: Array<[string, string]> = [
-    ["EST. PRICE", money(targetPrice)],
-    ["DOWN", `${effectiveDownPct}%`],
-    ["= DEPOSIT", money(downPayment)],
+    ["EST. PRICE", money(m.targetPrice)],
+    ["DOWN", `${m.downPct}%`],
+    ["= DEPOSIT", money(m.downPayment)],
   ];
   stats.forEach(([label, val], i) => {
     const x = M + colW * i + 8;
@@ -203,41 +168,77 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   };
 
   sectionHeader("01", "Monthly housing cost");
-  row("Principal & interest", money(mortgage));
-  row("Taxes & insurance", money(taxIns));
-  if (pmi > 0) row("PMI", money(pmi));
-  if (hoa > 0) row("HOA", money(hoa));
-  if (reserve > 0) row("Maintenance reserve", money(reserve));
+  row("Principal & interest", money(m.monthlyMortgage));
+  row("Taxes & insurance", money(m.taxIns));
+  if (m.pmi > 0) row("PMI", money(m.pmi));
+  if (m.hoa > 0) row("HOA", money(m.hoa));
+  if (m.reserve > 0) row("Maintenance reserve", money(m.reserve));
   page.drawLine({ start: { x: M, y: y + 9 }, end: { x: W - M, y: y + 9 }, color: ink, thickness: 0.4 });
   y -= 2;
-  row("Total per month", money(totalHousing), { bold: true });
+  row("Total per month", money(m.totalHousing), { bold: true });
   row(
-    `vs household income (${money(monthlyIncome)}/mo)`,
-    `${Math.round(housingRatio * 100)}% — ${verdict}`,
+    `vs household income (${money(m.monthlyIncome)}/mo)`,
+    `${Math.round(m.housingRatio * 100)}% — ${m.verdict}`,
     { color: verdictColor },
   );
   y -= 10;
 
-  sectionHeader("02", "Path to your deposit");
-  row("Already saved", money(saved));
-  row(`Target deposit (${effectiveDownPct}% down)`, money(downPayment));
-  row(`Save-only — ${timelineYears} yr to target`, `${money(savedOnlyMonthly)}/mo`);
-  row(`Invest at moderate risk — same target`, `${money(investedMonthly)}/mo`, { color: sage });
+  sectionHeader("02", "Cash to close");
+  row("Down payment", money(m.downPayment));
+  row("Closing costs (est.)", money(m.closing));
+  row("Moving (est.)", money(m.moving));
+  page.drawLine({ start: { x: M, y: y + 9 }, end: { x: W - M, y: y + 9 }, color: ink, thickness: 0.4 });
+  y -= 2;
+  row("Total cash needed", money(m.cashToClose), { bold: true });
   y -= 10;
 
-  sectionHeader("03", "Buyer readiness");
-  row("Score", `${readiness} / 100 — ${readinessLabel}`, {
+  sectionHeader("03", "Path to your deposit");
+  row("Already saved", money(m.saved));
+  row(`Target deposit (${m.downPct}% down)`, money(m.downPayment));
+  row(`Save-only — ${m.timelineYears} yr to target`, `${money(m.monthlyToSave)}/mo`);
+  row(
+    `Invest @ ${(m.expectedReturnRate * 100).toFixed(1)}% — same target`,
+    `${money(m.monthlyInvested)}/mo`,
+    { color: sage },
+  );
+  y -= 10;
+
+  sectionHeader("04", "Buyer readiness");
+  row("Score", `${m.readiness} / 100 — ${m.readinessLabel}`, {
     bold: true,
-    color: readiness >= 60 ? sage : readiness >= 40 ? gold : ember,
+    color: m.readiness >= 60 ? sage : m.readiness >= 40 ? gold : ember,
   });
   row("Credit (qualifying)", String(qCredit));
   row("Debt-to-income (with new house)", `${Math.round(dti * 100)}%`);
-  row("Mortgage rate (est.)", `${(mortgageRate * 100).toFixed(2)}%`);
+  row("Mortgage rate (est.)", `${(m.mortgageRate * 100).toFixed(2)}%`);
   y -= 10;
 
-  sectionHeader("04", "Profile snapshot");
-  row("Location", `${zipData.city}${zip ? ` · ${zip}` : ""}`);
-  row("Home", styleName);
+  sectionHeader("05", "Next steps");
+  const nextSteps = [
+    `Open a high-yield savings account and automate ${money(m.monthlyToSave)}/mo on payday.`,
+    m.timelineYears >= 3
+      ? `Consider investing the surplus — at ~${(m.expectedReturnRate * 100).toFixed(0)}%, you'd only need ${money(m.monthlyInvested)}/mo for the same goal.`
+      : `Stay in cash — your timeline is too short for market risk.`,
+    m.readiness < 60
+      ? `Boost readiness: pay down high-interest debt and re-check your credit score in 3 months.`
+      : `Get pre-qualified with 2–3 lenders to confirm your rate before house-hunting.`,
+    `Re-open this plan in 6 months to refresh prices, rates, and your savings progress.`,
+  ];
+  for (const step of nextSteps) {
+    page.drawCircle({ x: M + 4, y: y + 4, size: 1.6, color: ember });
+    const lines = wrapPdfText(step, serif, 10.5, W - M * 2 - 14);
+    let sy = y;
+    for (const ln of lines) {
+      page.drawText(ln, { x: M + 14, y: sy, size: 10.5, font: serif, color: ink });
+      sy -= 13;
+    }
+    y = sy - 4;
+  }
+  y -= 6;
+
+  sectionHeader("06", "Profile snapshot");
+  row("Location", `${m.city}${m.zip ? ` · ${m.zip}` : ""}`);
+  row("Home", m.homeStyleLabel);
   row("Household", hasPartner ? "Two-person" : "Solo");
   row("Combined income", `${money(combinedIncome)}/yr`);
   row("Monthly expenses", `${money(expenses)}/mo`);
@@ -250,7 +251,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   page.drawText("Keystone — your path to homeownership.", {
     x: M, y, size: 9, font: serifItalic, color: mute,
   });
-  const footRight = "keystonehomeowners.com";
+  const footRight = "keystonehomeowner.lovable.app";
   page.drawText(footRight, {
     x: W - M - mono.widthOfTextAtSize(footRight, 8),
     y, size: 8, font: mono, color: mute,
@@ -259,4 +260,26 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   const bytes = await doc.save();
   const safeTitle = title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "keystone-plan";
   return { bytes, filename: `${safeTitle}.pdf`, title };
+}
+
+function wrapPdfText(
+  text: string,
+  font: { widthOfTextAtSize: (s: string, size: number) => number },
+  size: number,
+  maxWidth: number,
+): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let line = "";
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w;
+    if (font.widthOfTextAtSize(test, size) > maxWidth && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }

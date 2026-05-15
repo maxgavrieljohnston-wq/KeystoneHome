@@ -47,7 +47,7 @@ export function UpgradeModal({
       yearlyPriceId: "plus_yearly",
       monthly: 9,
       yearly: 86,
-      features: ["Unlimited scenarios", "Invest vs. save projection", "Monthly Investment Plan PDF", "PDF & CSV export", "Tags, notes & goal", "Themed reports", "Shareable link & email reminders"],
+      features: ["Unlimited scenarios", "Invest vs. save projection", "Savings & investing action plan (PDF)", "Full plan export (PDF + CSV)", "Tags, notes & goal", "Themed reports", "Shareable link & email reminders"],
     },
     {
       id: "pro" as const,

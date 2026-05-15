@@ -30,6 +30,10 @@ export type PlanMetrics = {
   timelineYears: number;
   monthlyToSave: number;
   monthlyInvested: number;
+  expectedReturnRate: number;
+  closing: number;
+  moving: number;
+  cashToClose: number;
   readiness: number;
   readinessLabel: string;
 };
@@ -92,21 +96,35 @@ export function computePlanMetrics(
     str("employment"),
     hasPartner ? str("partnerEmployment") : null,
   );
-  const mortgageRate =
+  const baseRate =
     rateFromCredit(qCredit) +
     empAdj.rateAdd +
     rateAddFromDownPct(effectiveDownPct);
+  const mortgageRate =
+    assumptions?.mortgageRatePct != null
+      ? assumptions.mortgageRatePct / 100
+      : baseRate;
   const monthlyMortgage = calcMortgage(targetPrice, effectiveDownPct, mortgageRate);
 
-  const taxRate = (assumptions?.propertyTaxRate ?? 1.2) / 100;
-  const insRate = (assumptions?.insuranceRate ?? 0.6) / 100;
-  const taxIns = (targetPrice * (taxRate + insRate)) / 12;
+  // Tax + insurance — honor saved-plan keys (annual % / annual $) first,
+  // then wizard keys (decimal rates), else defaults.
+  const taxRate =
+    assumptions?.propertyTaxPct != null
+      ? assumptions.propertyTaxPct / 100
+      : (assumptions?.propertyTaxRate ?? 0.012);
+  const insuranceMonthly =
+    assumptions?.insuranceAnnual != null
+      ? assumptions.insuranceAnnual / 12
+      : (targetPrice * (assumptions?.insuranceRate ?? 0.006)) / 12;
+  const taxIns = (targetPrice * taxRate) / 12 + insuranceMonthly;
 
+  const pmiPct =
+    assumptions?.pmiPct != null ? assumptions.pmiPct / 100 : 0.005;
   const pmi =
     effectiveDownPct < 20
-      ? (targetPrice * (1 - effectiveDownPct / 100) * 0.005) / 12
+      ? (targetPrice * (1 - effectiveDownPct / 100) * pmiPct) / 12
       : 0;
-  const hoa = styleAdj.hoa;
+  const hoa = assumptions?.hoaMonthly ?? styleAdj.hoa;
   const reserve = styleAdj.reserve;
   const totalHousing = monthlyMortgage + taxIns + pmi + hoa + reserve;
 
@@ -127,8 +145,23 @@ export function computePlanMetrics(
   const saved = num("saved");
   const timelineYears = num("timelineYears", 3);
   const months = timelineYears * 12;
+  const expectedReturnRate =
+    assumptions?.expectedReturnPct != null
+      ? assumptions.expectedReturnPct / 100
+      : 0.07;
   const monthlyToSave = calcRequiredMonthly(saved, downPayment, months, 0);
-  const monthlyInvested = calcRequiredMonthly(saved, downPayment, months, 0.07);
+  const monthlyInvested = calcRequiredMonthly(
+    saved,
+    downPayment,
+    months,
+    expectedReturnRate,
+  );
+
+  const closingPct =
+    assumptions?.closingCostPct != null ? assumptions.closingCostPct : 3;
+  const closing = Math.round((targetPrice * closingPct) / 100);
+  const moving = assumptions?.movingCost != null ? assumptions.movingCost : 1500;
+  const cashToClose = downPayment + closing + moving;
 
   const debt = num("debt") + (hasPartner ? num("partnerDebt") : 0);
   const creditScoreNorm = Math.max(
@@ -182,6 +215,10 @@ export function computePlanMetrics(
     timelineYears,
     monthlyToSave,
     monthlyInvested,
+    expectedReturnRate,
+    closing,
+    moving,
+    cashToClose,
     readiness,
     readinessLabel,
   };

@@ -3219,8 +3219,8 @@ function ReportPaywall() {
     : [
         "Save unlimited scenarios (cities, timelines, down payments)",
         "Invest vs. save projection",
-        "Monthly Investment Plan PDF",
-        "Export as PDF & CSV + themed reports",
+        "Savings & investing action plan (PDF)",
+        "Full plan export (PDF + CSV) + themed reports",
         "Tags, notes, goal tracker & sharing",
         "AI homebuying coach (Pro)",
         "Live mortgage rate alerts (Pro)",

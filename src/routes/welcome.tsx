@@ -44,8 +44,8 @@ function WelcomePage() {
       ]
     : [
         "Save unlimited scenarios (cities, timelines, down payments)",
-        "Invest vs. save projection & Monthly Investment Plan PDF",
-        "Export your plan as PDF or CSV",
+        "Invest vs. save projection & savings/investing action plan (PDF)",
+        "Full plan export (PDF + CSV)",
         "Tags, notes, goal tracker & themed reports",
         "Shareable plan link & email reminders",
       ];

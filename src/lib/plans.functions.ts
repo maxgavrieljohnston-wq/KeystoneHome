@@ -2,16 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  HOME_STYLES,
-  styleAdjustments,
-  calcMortgage,
-  calcRequiredMonthly,
-  rateFromCredit,
-  rateAddFromDownPct,
-  combinedEmploymentAdjustment,
-  getPriceByZip,
-} from "@/lib/keystone";
+
 import { buildPlanPdfBytes } from "@/lib/plan-pdf.server";
 
 
@@ -247,7 +238,7 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabaseAdmin
       .from("plans")
-      .select("id, email, title, answers, created_at")
+      .select("id, email, title, answers, assumptions, theme, created_at")
       .eq("id", data.planId)
       .eq("user_id", context.userId)
       .maybeSingle();
@@ -259,6 +250,8 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
       email: plan.email as string,
       title: plan.title as string | null,
       answers: (plan.answers ?? {}) as Record<string, unknown>,
+      assumptions: (plan.assumptions ?? null) as Record<string, number> | null,
+      theme: (plan.theme ?? null) as "light" | "dark" | "sepia" | null,
       created_at: plan.created_at as string | null,
     });
     let binary = "";
@@ -395,88 +388,98 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!plan) throw new Response("Not found", { status: 404 });
 
-    const a = (plan.answers ?? {}) as Record<string, unknown>;
-    const ov = (plan.assumptions ?? {}) as Record<string, number>;
-    const num = (k: string, fb = 0) =>
-      typeof a[k] === "number" && isFinite(a[k] as number) ? (a[k] as number) : fb;
-    const str = (k: string) => (typeof a[k] === "string" ? (a[k] as string) : null);
-    const bool = (k: string) => a[k] === true;
+    const { computePlanMetrics } = await import("@/lib/plan-metrics");
+    const { projectScenarios, futureValue, SCENARIOS } = await import("@/lib/invest-projection");
 
-    const zip = str("zip") ?? "";
-    const zipDataRaw = a.zipData as { city?: string; avg?: number } | undefined;
-    const zipData = zipDataRaw?.avg
-      ? { city: zipDataRaw.city ?? "your area", avg: zipDataRaw.avg }
-      : zip ? getPriceByZip(zip) : { city: "your area", avg: 400000 };
-
-    const styleId = str("homeStyle");
-    const styleAdj = styleAdjustments(styleId ? [styleId] : []);
-    let mult = styleAdj.priceMult;
-    mult += Math.max(0, num("beds") - 3) * 0.05;
-    mult += Math.max(0, num("baths") - 2) * 0.03;
-    const targetPrice = Math.round(zipData.avg * mult);
-    const downGoalPct = num("downGoalPct", 9);
-    const effectiveDownPct = Math.max(downGoalPct, styleAdj.minDown);
-    const downPayment = Math.round((targetPrice * effectiveDownPct) / 100);
-
-    const credit = num("credit", 700);
-    const partnerCredit = num("partnerCredit", credit);
-    const hasPartner = bool("hasPartner");
-    const qCredit = hasPartner ? Math.min(credit, partnerCredit) : credit;
-    const empAdj = combinedEmploymentAdjustment(
-      str("employment"),
-      hasPartner ? str("partnerEmployment") : null,
-    );
-    const baseRate = rateFromCredit(qCredit) + empAdj.rateAdd + rateAddFromDownPct(effectiveDownPct);
-    const mortgageRate = ov.mortgageRatePct != null ? ov.mortgageRatePct / 100 : baseRate;
-    const mortgage = calcMortgage(targetPrice, effectiveDownPct, mortgageRate);
-    const taxIns = ov.propertyTaxPct != null
-      ? (targetPrice * ov.propertyTaxPct / 100) / 12 + (ov.insuranceAnnual ?? 1500) / 12
-      : (targetPrice * 0.018) / 12;
-    const pmi = effectiveDownPct < 20
-      ? (targetPrice * (1 - effectiveDownPct / 100) * (ov.pmiPct ?? 0.5) / 100) / 12
-      : 0;
-    const hoa = ov.hoaMonthly ?? styleAdj.hoa;
-    const totalHousing = mortgage + taxIns + pmi + hoa + styleAdj.reserve;
-
-    const closingPct = ov.closingCostPct ?? 3;
-    const closing = Math.round(targetPrice * closingPct / 100);
-    const moving = ov.movingCost ?? 1500;
-    const totalCash = downPayment + closing + moving;
-
-    const saved = num("saved");
-    const timelineYears = num("timelineYears", 3);
-    const months = timelineYears * 12;
-    const returnRate = ov.expectedReturnPct != null ? ov.expectedReturnPct / 100 : 0.07;
-    const savedOnly = calcRequiredMonthly(saved, downPayment, months, 0);
-    const invested = calcRequiredMonthly(saved, downPayment, months, returnRate);
+    const answers = (plan.answers ?? {}) as Record<string, unknown>;
+    const assumptions = (plan.assumptions ?? null) as Record<string, number> | null;
+    const m = computePlanMetrics(answers, assumptions);
 
     const esc = (v: unknown) => {
       const s = String(v ?? "");
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const rows: Array<[string, string | number]> = [
-      ["Plan", plan.title || "Homebuying plan"],
-      ["Generated", new Date().toISOString()],
-      ["Location", zipData.city],
-      ["Target price", targetPrice],
-      ["Down payment %", effectiveDownPct],
-      ["Down payment $", downPayment],
-      ["Closing costs", closing],
-      ["Moving costs", moving],
-      ["TOTAL CASH TO CLOSE", totalCash],
-      ["Mortgage rate %", +(mortgageRate * 100).toFixed(3)],
-      ["Monthly P&I", Math.round(mortgage)],
-      ["Tax + insurance", Math.round(taxIns)],
-      ["PMI", Math.round(pmi)],
-      ["HOA", Math.round(hoa)],
-      ["Reserve", styleAdj.reserve],
-      ["TOTAL MONTHLY", Math.round(totalHousing)],
-      ["Saved so far", saved],
-      ["Timeline (months)", months],
-      ["Save-only $/mo", savedOnly],
-      [`Invested @ ${(returnRate * 100).toFixed(1)}% $/mo`, invested],
-    ];
-    const csv = "Field,Value\n" + rows.map(([k, v]) => `${esc(k)},${esc(v)}`).join("\n");
+    const lines: string[] = [];
+    const section = (name: string) => { lines.push("", `## ${name}`); };
+    const kv = (k: string, v: string | number) => lines.push(`${esc(k)},${esc(v)}`);
+    const hdr = (...cols: string[]) => lines.push(cols.map(esc).join(","));
+    const r = (n: number) => Math.round(n);
+
+    // --- Provenance
+    section("PLAN");
+    kv("Plan ID", plan.id as string);
+    kv("Title", (plan.title as string | null) || "Homebuying plan");
+    kv("Generated", new Date().toISOString());
+    kv("Created", (plan.created_at as string | null) || "");
+
+    // --- Summary (matches dashboard / PDF)
+    section("SUMMARY");
+    kv("Location", `${m.city}${m.zip ? ` (${m.zip})` : ""}`);
+    kv("Home style", m.homeStyleLabel);
+    kv("Target price", r(m.targetPrice));
+    kv("Down payment %", m.downPct);
+    kv("Down payment $", r(m.downPayment));
+    kv("Closing costs", r(m.closing));
+    kv("Moving costs", r(m.moving));
+    kv("TOTAL CASH TO CLOSE", r(m.cashToClose));
+    kv("Mortgage rate %", +(m.mortgageRate * 100).toFixed(3));
+    kv("Monthly P&I", r(m.monthlyMortgage));
+    kv("Tax + insurance", r(m.taxIns));
+    kv("PMI", r(m.pmi));
+    kv("HOA", r(m.hoa));
+    kv("Maintenance reserve", r(m.reserve));
+    kv("TOTAL MONTHLY", r(m.totalHousing));
+    kv("Housing-to-income %", +(m.housingRatio * 100).toFixed(1));
+    kv("Verdict", m.verdict);
+    kv("Readiness score", m.readiness);
+    kv("Readiness label", m.readinessLabel);
+    kv("Saved so far", r(m.saved));
+    kv("Timeline (years)", m.timelineYears);
+    kv("Save-only $/mo", m.monthlyToSave);
+    kv(`Invested @ ${(m.expectedReturnRate * 100).toFixed(1)}% $/mo`, m.monthlyInvested);
+
+    // --- Raw inputs (re-importable)
+    section("INPUTS");
+    hdr("Field", "Value");
+    for (const [k, v] of Object.entries(answers)) {
+      const val = typeof v === "object" ? JSON.stringify(v) : String(v ?? "");
+      kv(k, val);
+    }
+
+    // --- Assumption overrides
+    section("ASSUMPTIONS");
+    hdr("Field", "Value");
+    if (assumptions) for (const [k, v] of Object.entries(assumptions)) kv(k, String(v));
+
+    // --- Scenario comparison at chosen timeline
+    section("SCENARIOS_AT_TIMELINE");
+    hdr("Scenario", "Rate %", "Monthly $", "Total contributed", "Growth", "Months");
+    const months = Math.max(1, Math.round(m.timelineYears * 12));
+    const scenarios = projectScenarios({ saved: m.saved, target: m.downPayment, months });
+    for (const s of scenarios) {
+      lines.push([
+        esc(s.scenario.label),
+        esc(+(s.scenario.rate * 100).toFixed(2)),
+        esc(s.monthly), esc(s.totalContributed), esc(s.growth), esc(s.months),
+      ].join(","));
+    }
+
+    // --- Year-by-year projection at invested baseline
+    section("YEAR_BY_YEAR_INVESTED");
+    hdr("Year", "Contributed", "Growth", "Balance", "% of goal");
+    const monthlyChosen = scenarios.find((s) => s.scenario.id === "invested")!.monthly;
+    const investedRate = SCENARIOS.find((s) => s.id === "invested")!.rate;
+    const totalYears = Math.max(1, Math.ceil(m.timelineYears));
+    for (let yr = 1; yr <= totalYears; yr++) {
+      const mm = yr * 12;
+      const bal = futureValue(m.saved, monthlyChosen, investedRate, mm);
+      const contrib = monthlyChosen * mm;
+      const growth = Math.max(0, bal - m.saved - contrib);
+      const pct = Math.min(100, +((bal / m.downPayment) * 100).toFixed(1));
+      lines.push([yr, r(contrib), r(growth), r(bal), pct].join(","));
+    }
+
+    const csv = lines.join("\n").replace(/^\n/, "");
     const safeTitle = (plan.title || "keystone-plan").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
     return { ok: true as const, csv, filename: `${safeTitle}.csv` };
   });
