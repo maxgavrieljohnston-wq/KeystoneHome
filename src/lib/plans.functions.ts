@@ -282,7 +282,7 @@ const updateMetaSchema = z.object({
   title: z.string().trim().min(1).max(80).optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   notes: z.string().max(2000).nullable().optional(),
-  theme: z.enum(["light", "dark", "sepia"]).optional(),
+  theme: z.enum(["light", "dark", "sepia", "navy", "terracotta"]).optional(),
   targetMoveIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   currentSavings: z.number().min(0).max(1e9).nullable().optional(),
   assumptions: assumptionsSchema.optional(),
