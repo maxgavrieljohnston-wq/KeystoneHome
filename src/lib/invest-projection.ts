@@ -2,7 +2,7 @@
 // All return values are dollars unless noted.
 
 export type Scenario = {
-  id: "savings" | "hysa" | "invested";
+  id: "savings" | "hysa" | "blended" | "invested";
   label: string;
   blurb: string;
   rate: number; // annual decimal
@@ -11,6 +11,7 @@ export type Scenario = {
 export const SCENARIOS: Scenario[] = [
   { id: "savings", label: "Savings account", blurb: "~0.5% APY", rate: 0.005 },
   { id: "hysa", label: "High-yield savings", blurb: "~4% APY", rate: 0.04 },
+  { id: "blended", label: "Blended (50/50)", blurb: "Half HYSA, half invested", rate: 0.055 },
   { id: "invested", label: "Invested", blurb: "~7% blended return", rate: 0.07 },
 ];
 

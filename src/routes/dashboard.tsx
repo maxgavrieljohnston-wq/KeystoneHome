@@ -1126,6 +1126,8 @@ function InvestmentSection({
       <InvestVsSavePanel
         answers={answers}
         assumptions={assumptions}
+        planId={planId}
+        isPlus={isPlus}
         locked={!isPlus}
         onLockedClick={() => gate.openUpgrade("plus", "Invest vs. save projection")}
       />
