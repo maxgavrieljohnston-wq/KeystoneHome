@@ -763,9 +763,12 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
                 </span>
               )}
             </div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.inkMute, marginTop: 4 }}>
-              {new Date(plan.created_at).toLocaleDateString()}
-              {plan.share_enabled && <span style={{ color: C.ember, marginLeft: 8 }}>· Shared</span>}
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.inkMute, marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span>{new Date(plan.created_at).toLocaleDateString()}</span>
+              {plan.share_enabled && <span style={{ color: C.ember }}>· Shared</span>}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.inkMute }} title={`Theme: ${activeTheme.label}`}>
+                · <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 999, background: activeTheme.ember, border: `1px solid ${C.inkFaint}` }} /> {activeTheme.label}
+              </span>
             </div>
           </div>
         )}
