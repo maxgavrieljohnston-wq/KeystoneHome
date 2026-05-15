@@ -93,6 +93,51 @@ async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
   }).eq('paddle_subscription_id', data.id).eq('environment', env);
 }
 
+async function handleTransactionCompleted(data: any, env: PaddleEnv) {
+  // For one-time purchases (no subscriptionId), upsert a lifetime row.
+  // Recurring transactions also fire this event but already get rows from
+  // subscription.created — skip them here.
+  if (data.subscriptionId) return;
+
+  const userId = await resolveUserId(data);
+  if (!userId) {
+    console.error('[webhook] transaction.completed with no resolvable userId', {
+      txId: data.id,
+    });
+    return;
+  }
+  const item = data.items?.[0];
+  const priceExtId = item?.price?.importMeta?.externalId;
+  // Transaction events don't include the product object. Map known one-time
+  // price IDs to their product IDs explicitly.
+  const ONE_TIME_PRODUCTS: Record<string, string> = {
+    plus_lifetime: 'plus_plan',
+  };
+  const productExtId = priceExtId ? ONE_TIME_PRODUCTS[priceExtId] : undefined;
+  if (!priceExtId || !productExtId) {
+    console.warn('[webhook] transaction.completed: unknown one-time price', {
+      priceExtId, rawPriceId: item?.price?.id,
+    });
+    return;
+  }
+  await (getSupabase() as any).from('subscriptions').upsert(
+    {
+      user_id: userId,
+      paddle_subscription_id: `txn_${data.id}`,
+      paddle_customer_id: data.customerId,
+      product_id: productExtId,
+      price_id: priceExtId,
+      status: 'active',
+      current_period_start: new Date().toISOString(),
+      current_period_end: null, // null = never expires (lifetime)
+      cancel_at_period_end: false,
+      environment: env,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'paddle_subscription_id' },
+  );
+}
+
 async function handleWebhook(req: Request, env: PaddleEnv) {
   const event = await verifyWebhook(req, env);
   switch (event.eventType) {
@@ -104,6 +149,9 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
       break;
     case EventName.SubscriptionCanceled:
       await handleSubscriptionCanceled(event.data, env);
+      break;
+    case EventName.TransactionCompleted:
+      await handleTransactionCompleted(event.data, env);
       break;
     default:
       console.log('Unhandled event:', event.eventType);

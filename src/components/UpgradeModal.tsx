@@ -44,11 +44,10 @@ export function UpgradeModal({
     {
       id: "plus" as const,
       name: "Plus",
-      monthlyPriceId: "plus_monthly",
-      yearlyPriceId: "plus_yearly",
-      monthly: 9,
-      yearly: 86,
-      features: PLUS_FEATURES.map((f) => f.short),
+      oneTimePriceId: "plus_lifetime",
+      oneTime: 29,
+      isOneTime: true as const,
+      features: PLUS_FEATURES,
     },
     {
       id: "pro" as const,
@@ -57,16 +56,25 @@ export function UpgradeModal({
       yearlyPriceId: "pro_yearly",
       monthly: 19,
       yearly: 182,
-      features: ["Everything in Plus", ...PRO_FEATURES.map((f) => f.short)],
+      isOneTime: false as const,
+      features: [
+        { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as const,
+        ...PRO_FEATURES,
+      ],
       highlight: true,
     },
   ];
 
   // If feature requires Pro, hide Plus option
   const visible = requiredTier === "pro" ? tiers.filter((t) => t.id === "pro") : tiers;
+  const showBillingToggle = visible.some((t) => !t.isOneTime);
 
   const handlePick = async (tier: typeof tiers[number]) => {
-    const priceId = billing === "monthly" ? tier.monthlyPriceId : tier.yearlyPriceId;
+    const priceId = tier.isOneTime
+      ? tier.oneTimePriceId
+      : billing === "monthly"
+        ? tier.monthlyPriceId
+        : tier.yearlyPriceId;
     await openCheckout({ priceId, customerEmail: email, userId });
   };
 
@@ -142,38 +150,40 @@ export function UpgradeModal({
             : "Upgrade to Plus or Pro to unlock this and more."}
         </p>
 
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              padding: 4,
-              border: `1px solid ${C.ink}`,
-              borderRadius: 999,
-            }}
-          >
-            {(["monthly", "yearly"] as const).map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setBilling(b)}
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  padding: "8px 16px",
-                  borderRadius: 999,
-                  border: "none",
-                  cursor: "pointer",
-                  background: billing === b ? C.ink : "transparent",
-                  color: billing === b ? C.paper : C.ink,
-                }}
-              >
-                {b}
-              </button>
-            ))}
+        {showBillingToggle && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                padding: 4,
+                border: `1px solid ${C.ink}`,
+                borderRadius: 999,
+              }}
+            >
+              {(["monthly", "yearly"] as const).map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setBilling(b)}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    padding: "8px 16px",
+                    borderRadius: 999,
+                    border: "none",
+                    cursor: "pointer",
+                    background: billing === b ? C.ink : "transparent",
+                    color: billing === b ? C.paper : C.ink,
+                  }}
+                >
+                  {b === "yearly" ? "Yearly (Pro)" : "Monthly (Pro)"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           style={{
@@ -183,7 +193,12 @@ export function UpgradeModal({
           }}
         >
           {visible.map((tier) => {
-            const price = billing === "monthly" ? tier.monthly : Math.round(tier.yearly / 12);
+            const price = tier.isOneTime
+              ? tier.oneTime
+              : billing === "monthly"
+                ? tier.monthly
+                : Math.round(tier.yearly / 12);
+            const unit = tier.isOneTime ? "one-time" : "/mo";
             return (
               <div
                 key={tier.id}
@@ -209,13 +224,42 @@ export function UpgradeModal({
                       opacity: 0.7,
                     }}
                   >
-                    /mo
+                    {unit}
                   </span>
                 </div>
+                {tier.isOneTime && (
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 9,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: tier.highlight ? "#d6cfc1" : C.ember,
+                      marginTop: 4,
+                    }}
+                  >
+                    Lifetime access
+                  </div>
+                )}
                 <ul style={{ listStyle: "none", padding: 0, margin: "12px 0", flex: 1, fontSize: 14 }}>
                   {tier.features.map((f) => (
-                    <li key={f} style={{ padding: "4px 0", opacity: 0.9 }}>
-                      ✓ {f}
+                    <li key={f.id} style={{ padding: "4px 0", opacity: 0.9, display: "flex", gap: 6, alignItems: "baseline" }}>
+                      <span>✓ {f.short}</span>
+                      {"comingSoon" in f && f.comingSoon && (
+                        <span
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 8,
+                            letterSpacing: "0.14em",
+                            padding: "2px 5px",
+                            borderRadius: 4,
+                            background: tier.highlight ? C.paper : C.ink,
+                            color: tier.highlight ? C.ink : C.paper,
+                          }}
+                        >
+                          SOON
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
