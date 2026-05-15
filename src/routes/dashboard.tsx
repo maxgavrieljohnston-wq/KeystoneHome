@@ -225,7 +225,7 @@ function DashboardPage() {
             Couldn't load your plans. Please refresh.
           </p>
         ) : plans.length === 0 ? (
-          <EmptyState />
+          <EmptyState isPlus={sub.isPlus} />
         ) : (
           <>
             <RemindersToggle hasPlans={plans.length > 0} />
@@ -1012,7 +1012,7 @@ function PremiumPanel({ isPlus, isPro }: { isPlus: boolean; isPro: boolean }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ isPlus }: { isPlus: boolean }) {
   return (
     <div
       style={{
@@ -1022,9 +1022,13 @@ function EmptyState() {
         background: "#fff",
       }}
     >
-      <div style={{ fontSize: 24, marginBottom: 8 }}>No plans yet.</div>
+      <div style={{ fontSize: 24, marginBottom: 8 }}>
+        {isPlus ? "Your saved plan isn't linked yet." : "No plans yet."}
+      </div>
       <div style={{ color: C.inkSoft, fontSize: 17, marginBottom: 20, lineHeight: 1.45 }}>
-        Take the quick questionnaire to build your first plan.
+        {isPlus
+          ? "Build (or rebuild) your plan and we'll attach it to your account automatically — your premium features are still unlocked below."
+          : "Take the quick questionnaire to build your first plan."}
       </div>
       <Link
         to="/"
