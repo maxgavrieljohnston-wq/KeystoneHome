@@ -47,8 +47,8 @@ const PLANS: Array<{
     features: [
       "Save unlimited scenarios (different cities, timelines, down payments)",
       "Invest vs. save projection",
-      "Monthly Investment Plan PDF",
-      "Export your plan as PDF & CSV",
+      "Savings & investing action plan (PDF) — what to do each month",
+      "Full plan export (PDF + CSV) — everything in your plan, portable",
       "Tags, notes & goal tracker",
       "Themed reports (light, dark, sepia)",
       "Shareable plan link",
