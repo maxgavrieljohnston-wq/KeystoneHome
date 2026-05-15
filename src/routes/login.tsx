@@ -350,6 +350,8 @@ function LoginPage() {
             </form>
           </div>
         )}
+
+        {tab === "signup" && step === "email" && (
           <div>
             <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
               Create your account.
