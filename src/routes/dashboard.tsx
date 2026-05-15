@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -251,23 +251,30 @@ function DashboardPage() {
             />
           )}
 
-          <PremiumPanel
-            isPlus={sub.isPlus}
-            isPro={sub.isPro}
-          />
+          <PremiumPanel isPlus={sub.isPlus} isPro={sub.isPro} />
         </div>
       </div>
     </div>
   );
 }
 
-function TierBanner({ isPlus, isPro, loading }: { isPlus: boolean; isPro: boolean; loading: boolean }) {
+function TierBanner({
+  isPlus,
+  isPro,
+  loading,
+}: {
+  isPlus: boolean;
+  isPro: boolean;
+  loading: boolean;
+}) {
   if (loading) return null;
   if (!isPlus && !isPro) return null;
   const label = isPro ? "Pro" : "Plus";
-  const jumpToFeatures = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const jumpToFeatures = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    document.getElementById("premium-features")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("premium-features")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.history.replaceState(null, "", "#premium-features");
   };
   return (
