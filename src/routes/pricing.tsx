@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — Keystone" },
-      { name: "description", content: "Plus (one-time) and Pro plans for serious homebuyers." },
+      { name: "description", content: "Plus and Pro monthly plans for serious homebuyers." },
     ],
   }),
   component: PricingPage,
@@ -26,51 +26,32 @@ const C = {
 
 type PlanId = "plus" | "pro";
 
-type PlusPlan = {
-  id: "plus";
+type Plan = {
+  id: PlanId;
   name: string;
-  oneTimePriceId: string;
-  oneTime: number;
-  isOneTime: true;
-  tagline: string;
-  features: TierFeature[];
-  highlightIds: string[];
-  highlight?: boolean;
-};
-type ProPlan = {
-  id: "pro";
-  name: string;
-  monthlyPriceId: string;
-  yearlyPriceId: string;
+  priceId: string;
   monthly: number;
-  yearly: number;
-  isOneTime: false;
   tagline: string;
   features: TierFeature[];
   highlightIds: string[];
   highlight?: boolean;
 };
-type Plan = PlusPlan | ProPlan;
 
 const PLANS: Plan[] = [
   {
     id: "plus",
     name: "Plus",
-    oneTimePriceId: "plus_lifetime",
-    oneTime: 29,
-    isOneTime: true,
-    tagline: "One-time unlock. Yours forever.",
+    priceId: "plus_monthly",
+    monthly: 5,
+    tagline: "The full planner, unlocked.",
     features: PLUS_FEATURES,
     highlightIds: ["accounts", "invest", "action", "tags"],
   },
   {
     id: "pro",
     name: "Pro",
-    monthlyPriceId: "pro_monthly",
-    yearlyPriceId: "pro_yearly",
-    monthly: 19,
-    yearly: 182,
-    isOneTime: false,
+    priceId: "pro_monthly",
+    monthly: 11,
     tagline: "Your personal homebuying coach.",
     features: [
       { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" },
@@ -92,7 +73,6 @@ function splitFeatures(plan: Plan) {
 
 function PricingPage() {
   const navigate = useNavigate();
-  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [expanded, setExpanded] = useState<Record<PlanId, boolean>>({ plus: false, pro: false });
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
@@ -110,19 +90,12 @@ function PricingPage() {
     if (!userId) {
       navigate({
         to: "/login",
-        search: { signup: true, plan: plan.id, billing: plan.isOneTime ? "lifetime" : billing },
+        search: { signup: true, plan: plan.id, billing: "monthly" },
       });
       return;
     }
-    const priceId = plan.isOneTime
-      ? plan.oneTimePriceId
-      : billing === "monthly"
-        ? plan.monthlyPriceId
-        : plan.yearlyPriceId;
-    await openCheckout({ priceId, customerEmail: email, userId });
+    await openCheckout({ priceId: plan.priceId, customerEmail: email, userId });
   };
-
-  const yearlyHint = useMemo(() => `Save 20% on Pro — about 2 months free`, []);
 
   return (
     <div
@@ -182,59 +155,10 @@ function PricingPage() {
               lineHeight: 1.5,
             }}
           >
-            Use Keystone forever at no cost. Buy Plus once for lifetime access, or subscribe to Pro
-            for ongoing coaching and live data.
+            Use Keystone forever at no cost. Upgrade to Plus for the full planner, or Pro for
+            ongoing coaching and live data. Cancel anytime.
           </p>
         </header>
-
-        {/* Billing toggle (Pro only) */}
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 36 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              padding: 4,
-              border: `1px solid ${C.ink}`,
-              borderRadius: 999,
-              background: "transparent",
-            }}
-          >
-            {(["monthly", "yearly"] as const).map((b) => (
-              <button
-                key={b}
-                onClick={() => setBilling(b)}
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  padding: "10px 18px",
-                  borderRadius: 999,
-                  border: "none",
-                  cursor: "pointer",
-                  background: billing === b ? C.ink : "transparent",
-                  color: billing === b ? C.paper : C.ink,
-                }}
-              >
-                Pro · {b}
-              </button>
-            ))}
-          </div>
-        </div>
-        {billing === "yearly" && (
-          <p
-            style={{
-              textAlign: "center",
-              marginTop: 10,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 10,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: C.ember,
-            }}
-          >
-            {yearlyHint}
-          </p>
-        )}
 
         {/* Plan grid */}
         <div
@@ -246,11 +170,6 @@ function PricingPage() {
           }}
         >
           {PLANS.map((plan) => {
-            const price = plan.isOneTime
-              ? plan.oneTime
-              : billing === "monthly"
-                ? plan.monthly
-                : Math.round(plan.yearly / 12);
             const isCurrent = sub.isActive && sub.tier === plan.id;
 
             return (
@@ -284,22 +203,6 @@ function PricingPage() {
                       Most popular
                     </span>
                   )}
-                  {plan.isOneTime && (
-                    <span
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: 9,
-                        letterSpacing: "0.18em",
-                        textTransform: "uppercase",
-                        color: C.ember,
-                        border: `1px solid ${C.ember}`,
-                        padding: "4px 8px",
-                        borderRadius: 999,
-                      }}
-                    >
-                      One-time
-                    </span>
-                  )}
                 </div>
                 <p
                   style={{
@@ -312,7 +215,7 @@ function PricingPage() {
                 </p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                   <span style={{ fontSize: 48, fontWeight: 400, letterSpacing: "-0.02em" }}>
-                    ${price}
+                    ${plan.monthly}
                   </span>
                   <span
                     style={{
@@ -323,36 +226,20 @@ function PricingPage() {
                       color: plan.highlight ? "#d6cfc1" : C.inkMute,
                     }}
                   >
-                    {plan.isOneTime ? "one-time" : "/ month"}
+                    / month
                   </span>
                 </div>
-                {plan.isOneTime ? (
-                  <p
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.14em",
-                      color: C.inkMute,
-                      margin: "4px 0 0",
-                    }}
-                  >
-                    Lifetime access · pay once
-                  </p>
-                ) : (
-                  billing === "yearly" && (
-                    <p
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.14em",
-                        color: plan.highlight ? "#d6cfc1" : C.inkMute,
-                        margin: "4px 0 0",
-                      }}
-                    >
-                      ${plan.yearly} billed yearly
-                    </p>
-                  )
-                )}
+                <p
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                    margin: "4px 0 0",
+                  }}
+                >
+                  Billed monthly · cancel anytime
+                </p>
 
                 {(() => {
                   const { highlighted, rest } = splitFeatures(plan);
@@ -442,9 +329,7 @@ function PricingPage() {
                     ? "Current plan"
                     : loading
                       ? "Opening…"
-                      : plan.isOneTime
-                        ? `Get ${plan.name} — $${plan.oneTime}`
-                        : `Choose ${plan.name}`}
+                      : `Choose ${plan.name}`}
                 </button>
               </div>
             );
@@ -459,7 +344,7 @@ function PricingPage() {
             color: C.inkMute,
           }}
         >
-          Plus is a one-time purchase. Pro renews automatically — cancel anytime.{" "}
+          Both plans renew monthly — cancel anytime.{" "}
           <Link to="/refunds" style={{ color: C.ink }}>
             Refund policy
           </Link>

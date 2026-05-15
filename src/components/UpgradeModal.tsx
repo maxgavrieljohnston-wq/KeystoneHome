@@ -25,7 +25,6 @@ export function UpgradeModal({
   requiredTier: RequiredTier;
   featureName: string;
 }) {
-  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const { openCheckout, loading } = usePaddleCheckout();
@@ -44,19 +43,16 @@ export function UpgradeModal({
     {
       id: "plus" as const,
       name: "Plus",
-      oneTimePriceId: "plus_lifetime",
-      oneTime: 29,
-      isOneTime: true as const,
+      priceId: "plus_monthly",
+      monthly: 5,
       features: PLUS_FEATURES,
+      highlight: false,
     },
     {
       id: "pro" as const,
       name: "Pro",
-      monthlyPriceId: "pro_monthly",
-      yearlyPriceId: "pro_yearly",
-      monthly: 19,
-      yearly: 182,
-      isOneTime: false as const,
+      priceId: "pro_monthly",
+      monthly: 11,
       features: [
         { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as const,
         ...PRO_FEATURES,
@@ -67,15 +63,9 @@ export function UpgradeModal({
 
   // If feature requires Pro, hide Plus option
   const visible = requiredTier === "pro" ? tiers.filter((t) => t.id === "pro") : tiers;
-  const showBillingToggle = visible.some((t) => !t.isOneTime);
 
   const handlePick = async (tier: typeof tiers[number]) => {
-    const priceId = tier.isOneTime
-      ? tier.oneTimePriceId
-      : billing === "monthly"
-        ? tier.monthlyPriceId
-        : tier.yearlyPriceId;
-    await openCheckout({ priceId, customerEmail: email, userId });
+    await openCheckout({ priceId: tier.priceId, customerEmail: email, userId });
   };
 
   return (
@@ -150,41 +140,6 @@ export function UpgradeModal({
             : "Upgrade to Plus or Pro to unlock this and more."}
         </p>
 
-        {showBillingToggle && (
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                padding: 4,
-                border: `1px solid ${C.ink}`,
-                borderRadius: 999,
-              }}
-            >
-              {(["monthly", "yearly"] as const).map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => setBilling(b)}
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 10,
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    padding: "8px 16px",
-                    borderRadius: 999,
-                    border: "none",
-                    cursor: "pointer",
-                    background: billing === b ? C.ink : "transparent",
-                    color: billing === b ? C.paper : C.ink,
-                  }}
-                >
-                  {b === "yearly" ? "Yearly (Pro)" : "Monthly (Pro)"}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div
           style={{
             display: "grid",
@@ -193,12 +148,6 @@ export function UpgradeModal({
           }}
         >
           {visible.map((tier) => {
-            const price = tier.isOneTime
-              ? tier.oneTime
-              : billing === "monthly"
-                ? tier.monthly
-                : Math.round(tier.yearly / 12);
-            const unit = tier.isOneTime ? "one-time" : "/mo";
             return (
               <div
                 key={tier.id}
@@ -214,7 +163,7 @@ export function UpgradeModal({
               >
                 <div style={{ fontSize: 22, fontWeight: 400 }}>{tier.name}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 32, fontWeight: 400 }}>${price}</span>
+                  <span style={{ fontSize: 32, fontWeight: 400 }}>${tier.monthly}</span>
                   <span
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
@@ -224,23 +173,9 @@ export function UpgradeModal({
                       opacity: 0.7,
                     }}
                   >
-                    {unit}
+                    /mo
                   </span>
                 </div>
-                {tier.isOneTime && (
-                  <div
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 9,
-                      letterSpacing: "0.16em",
-                      textTransform: "uppercase",
-                      color: tier.highlight ? "#d6cfc1" : C.ember,
-                      marginTop: 4,
-                    }}
-                  >
-                    Lifetime access
-                  </div>
-                )}
                 <ul style={{ listStyle: "none", padding: 0, margin: "12px 0", flex: 1, fontSize: 14 }}>
                   {tier.features.map((f) => (
                     <li key={f.id} style={{ padding: "4px 0", opacity: 0.9, display: "flex", gap: 6, alignItems: "baseline" }}>
