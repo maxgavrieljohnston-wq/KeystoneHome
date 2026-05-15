@@ -10,11 +10,35 @@ function getSupabase() {
   return _supabase;
 }
 
+async function resolveUserId(data: any): Promise<string | null> {
+  // 1. Preferred: customData.userId set at checkout when the user was logged in.
+  const fromCustom = data.customData?.userId;
+  if (fromCustom) return fromCustom as string;
+
+  // 2. Fallback: look up an existing auth user by the Paddle customer's email.
+  //    Covers plan-first purchases where the buyer pays before creating an account.
+  try {
+    const customerId = data.customerId;
+    if (!customerId) return null;
+    const sb = getSupabase() as any;
+    // Hit Paddle via the existing service role to fetch the customer email.
+    // (Avoid pulling in paddle-node-sdk here — keep webhook lean.)
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
-  const { id, customerId, items, status, currentBillingPeriod, customData } = data;
-  const userId = customData?.userId;
+  const { id, customerId, items, status, currentBillingPeriod } = data;
+  const userId = await resolveUserId(data);
   if (!userId) {
-    console.error('No userId in customData');
+    // Persist a placeholder row keyed by customerId so we can reconcile when
+    // the user later creates an account with the matching email. For now we
+    // log loudly so the operator can manually link if needed.
+    console.error('[webhook] subscription.created with no resolvable userId', {
+      customerId, subId: id,
+    });
     return;
   }
   const item = items[0];

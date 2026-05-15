@@ -1,8 +1,9 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { UpgradeGateProvider } from "@/hooks/useUpgradeGate";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 
@@ -76,10 +77,27 @@ function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthInvalidator />
       <UpgradeGateProvider>
         <PaymentTestModeBanner />
         <Outlet />
       </UpgradeGateProvider>
     </QueryClientProvider>
   );
+}
+
+// Refetches all queries and invalidates router data when the user signs in,
+// signs out, or the access token refreshes — so the dashboard immediately
+// reflects the new entitlement instead of showing stale Free-tier UI.
+function AuthInvalidator() {
+  const router = useRouter();
+  const qc = useQueryClient();
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      router.invalidate();
+      qc.invalidateQueries();
+    });
+    return () => subscription.unsubscribe();
+  }, [router, qc]);
+  return null;
 }
