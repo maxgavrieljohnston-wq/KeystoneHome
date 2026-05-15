@@ -1,63 +1,138 @@
-## Goal
-Tighten the AI Coach (Pro feature #1) before building the remaining two Pro features. Three focused turns.
+# Plan: Plus placeholder + 4 new Pro features
+
+Five routes total. Each gated by the right tier in `tier-features.ts`. All follow existing patterns (server fns + supabaseAdmin, Pro/Plus gating, themed pages, dashboard tile).
 
 ---
 
-## Turn 1 — Coach polish
+## 0. Plus tier — `/accounts` (placeholder, back-burner)
 
-**1. Streaming responses**
-- Convert `sendCoachMessage` in `src/lib/coach.functions.ts` to an `async function*` handler that yields `{ delta }` chunks parsed from the gateway's SSE stream, then a final `{ done: true, chips, planId }`.
-- Keep the rolling-summary refresh (non-streaming) before the main call.
-- Persist `user` + `assistant` rows in `coach_messages` only after the upstream stream completes — preserves the "no orphan rows on failure" invariant.
-- Frontend `src/routes/coach.tsx`: replace the `useMutation` with an async-iterator loop that appends deltas to the last assistant bubble in local state, then invalidates the history query on completion.
+New Plus feature `accounts` ("Recommended investment accounts"). Static page listing categories with "Coming soon" cards where affiliate links will go:
+- High-yield savings (Marcus, Ally, Wealthfront Cash)
+- Roth IRA brokerages (Fidelity, Schwab, Vanguard)
+- Taxable brokerages (Fidelity, Schwab, M1)
+- Treasury / T-bill platforms (TreasuryDirect, Public)
+- HSA providers (Fidelity HSA, Lively)
 
-**2. Optimistic user message**
-- On submit, append the user's message to local state immediately and clear the input. Reconcile from the `coach-messages` query after the stream ends.
+No backend. Just typed config array in `src/lib/recommended-accounts.ts` with `{ category, name, blurb, affiliateUrl: null }`. When you have partners I swap the `null`s and add UTM tracking.
 
-**3. Plan-aware starter prompts**
-- New `getCoachStarters` server fn: takes optional `planId`, loads the plan, runs `computePlanMetrics` + `investEdge`, returns 3 plan-specific starter strings (e.g. "Is my 18-month timeline realistic at $1,200/mo?", "What if I invest the down payment instead?", "What lender questions should I ask first?").
-- Empty-state in `coach.tsx` renders these as chips — clicking sends the message.
-- Falls back to 3 generic starters when no plan exists.
-
-**4. Plan tag on user bubbles**
-- When `messages.length > 1` plans and a user message has `meta.plan_id`, show a small `mono` caption above the bubble: `About: {plan.title}`.
-
-**5. Mobile header trim (390px)**
-- Replace the "Clear" text button with an icon-only button (×) on the right.
-- Let the plan picker wrap cleanly below the title row.
-
-No DB migration. No new dependencies.
+**Files:** `src/routes/accounts.tsx`, `src/lib/recommended-accounts.ts`. Update `tier-features.ts` and dashboard tile.
 
 ---
 
-## Turn 2 — Pro #2: Side-by-side scenario compare (up to 3 plans)
+## 1. Pro — `/stress-test` (Affordability stress-test simulator)
 
-- New route `src/routes/compare.tsx` (Pro-gated like `coach.tsx`).
-- Multi-select plan picker (up to 3); URL state `?plans=id1,id2,id3` for shareable Pro-only links.
-- Server fn `getComparePlans` returns `{ plans: [{ id, title, metrics, scenarios, edge }] }` using existing `computePlanMetrics` + `projectScenarios` + `investEdge`.
-- Render a 3-column comparison table on desktop, vertically stacked cards on mobile, with rows: target home price, down payment, timeline, monthly required (saved vs invested), invest-vs-save delta (months sooner, dollars saved), savings gap.
-- Highlight the "winning" cell per row (e.g. shortest timeline, smallest monthly).
-- Link entry from dashboard "What you get" card (Pro tier).
+Plan-aware page with sliders:
+- Mortgage rate: −2% to +2% (default 0)
+- Income: −20% to +20%
+- Monthly expenses: −$500 to +$500
+- Home price: −15% to +15%
 
----
+Live recompute via existing `computePlanMetrics` + `projectScenarios`. Output:
+- New estimated move-in date
+- Required monthly savings to hit original target
+- Δ vs baseline (red/green chips)
+- "Survives a 1% rate shock?" / "Survives 10% income loss?" badges
 
-## Turn 3 — Pro #3: Live mortgage rate alerts
+All client-side math. No new server fn — reuses existing helpers.
 
-**Data source decision** — needs user input:
-- Option A: Free public source (e.g. FRED `MORTGAGE30US` weekly series, Mon-only update). No key needed, conservative SLA.
-- Option B: Paid real-time provider (Mortgage News Daily, Optimal Blue) — needs API key + budget.
-- I'll recommend FRED weekly + a simple delta-trigger; revisit if Pro users ask for intraday.
-
-**Implementation (assuming FRED)**:
-- Migration: `rate_alerts` table (`user_id`, `direction` enum `up|down|either`, `threshold_bps`, `last_notified_rate`, `active`, `created_at`); `mortgage_rates_history` table (`fetched_at`, `rate_30y_fixed`, `source`).
-- Daily cron via `/api/public/rates/refresh` (Bearer-protected, like reminders): pulls FRED, inserts row, evaluates active alerts, enqueues an email when threshold crossed.
-- New route `src/routes/rates.tsx` (Pro-gated): current rate + 90-day sparkline, "Alert me when 30-yr fixed moves ±25 bps" form.
-- Reuse `enqueue_email` RPC + the existing email queue processor.
+**Files:** `src/routes/stress-test.tsx`, `src/lib/stress-test.ts` (helper).
 
 ---
 
-## Out of scope across all three turns
-- Switching coach to a reasoning model (revisit only if quality issues).
-- Voice/file input on coach.
-- Cross-plan questions inside the coach (compare route handles that).
-- Intraday rate updates.
+## 2. Pro — `/market` (City/market intelligence)
+
+Pulls market stats for the user's target city from a free public API. Recommended source: **Census Bureau ACS API** (no key, free) for median home value + median household income → price-to-income ratio. Supplement with **FRED** (already used for rates) for state-level home price index trend.
+
+For ZIP-level granularity later: RentCast API ($0/100 calls/mo free tier) — defer until needed.
+
+Output card per plan:
+- Median home price (city)
+- Median household income (city)
+- Price-to-income ratio + verdict ("affordable / stretched / unaffordable")
+- 1-yr state HPI change (sparkline)
+- "Your target price vs city median" delta
+
+Server fn `getMarketSnapshot({ city, state })` with 24h cache in a new `market_snapshots` table (city+state composite key, JSON payload, fetched_at).
+
+**Files:** `src/routes/market.tsx`, `src/lib/market.functions.ts`. Migration: `market_snapshots` table.
+
+---
+
+## 4. Pro — `/documents` (Lender pre-qual checklist + doc vault)
+
+Guided checklist with file upload to private Supabase storage:
+- W-2s (last 2 yrs)
+- Tax returns (last 2 yrs)
+- Pay stubs (last 30 days)
+- Bank statements (last 2 months)
+- ID
+- Gift letter (optional)
+- Employment verification letter (optional)
+
+Each row: status (missing / uploaded / verified), file count, upload button. Files go to private `lender-docs` bucket scoped by `user_id/checklist_item/filename`. Server fns for upload URL signing, list, delete.
+
+Migration:
+- `lender_documents` table (user_id, checklist_item enum, file_path, file_name, file_size, mime_type, status)
+- Private storage bucket `lender-docs` with RLS scoping objects to `auth.uid()` folder prefix
+
+Pro-gated. Foundation for future broker handoff (broker can request access, you grant a signed URL).
+
+**Files:** `src/routes/documents.tsx`, `src/lib/documents.functions.ts`. Migration: table + bucket + RLS.
+
+---
+
+## 8. Pro — Promote `broker_waitlist` → `/broker-match`
+
+The `broker_waitlist` table already exists with `priority` flag for Pro. Convert the existing waitlist UX into a real matching flow:
+
+- Page: `/broker-match` (Pro-gated)
+- User fills form: target city/state, budget range, timeline, financing preference (conventional/FHA/VA), language preference
+- We store the request in a new `broker_match_requests` table
+- Status states: `pending → matched → introduced → closed`
+- Pro users see `priority: true` and "We'll match you within 48h" copy
+- Admin email fires to you when a Pro request comes in (using existing `enqueue_email`)
+- For now no actual broker DB — you manually match and update status. Can promote to a `brokers` table + automated matching later.
+
+Migration:
+- `broker_match_requests` table (user_id, plan_id nullable, target_city, target_state, budget_min, budget_max, timeline_months, loan_type, language, status, matched_broker_name nullable, matched_broker_contact nullable, notes, created_at)
+- RLS: users see own requests; service role manages
+
+**Files:** `src/routes/broker-match.tsx`, `src/lib/broker-match.functions.ts`. Migration. Replace existing waitlist CTA with the new flow.
+
+---
+
+## tier-features.ts updates
+
+```ts
+PLUS_FEATURES: add { id: "accounts", short: "Recommended accounts", long: "Curated investment & savings accounts to grow your down payment faster" }
+
+PRO_FEATURES: add
+  { id: "stress", short: "Affordability stress-test", long: "Stress-test your plan against rate shocks, income drops, and price changes" }
+  { id: "market", short: "City market intelligence", long: "Live local market data: median price, price-to-income, trend" }
+  { id: "docs", short: "Lender pre-qual doc vault", long: "Guided checklist + secure storage for your mortgage application" }
+  { id: "broker", short: "Realtor & broker matching", long: "Get matched with vetted realtors and mortgage brokers in your market (priority for Pro)" }
+```
+
+That brings Pro to 7 features (coach, compare, alerts, stress, market, docs, broker).
+
+---
+
+## Build order (3 turns)
+
+**Turn 1:** Updates to `tier-features.ts`, dashboard tiles, `/accounts` placeholder, `/stress-test` (no migrations).
+
+**Turn 2:** Migration for `market_snapshots` + `/market`. Migration for `lender_documents` + `lender-docs` bucket + `/documents`.
+
+**Turn 3:** Migration for `broker_match_requests` + `/broker-match`. Hook in admin email notification.
+
+---
+
+## Out of scope (call out now)
+
+- Actual affiliate links for `/accounts` — placeholders only until you provide partners
+- Real broker database / automated matching — manual matching for now
+- Document OCR / verification automation — future
+- ZIP-level market data — Census city-level only for now
+- File preview in doc vault — just upload/download
+
+OK to proceed?
