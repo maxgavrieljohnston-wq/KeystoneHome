@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -44,16 +45,7 @@ const PLANS: Array<{
     monthly: 9,
     yearly: 86,
     tagline: "For the serious saver.",
-    features: [
-      "Save unlimited scenarios (different cities, timelines, down payments)",
-      "Invest vs. save projection",
-      "Savings & investing action plan (PDF) — what to do each month",
-      "Full plan export (PDF + CSV) — everything in your plan, portable",
-      "Tags, notes & goal tracker",
-      "Themed reports (light, dark, sepia)",
-      "Shareable plan link",
-      "Email reminders & milestones",
-    ],
+    features: PLUS_FEATURES.map((f) => f.long),
   },
   {
     id: "pro",
@@ -63,12 +55,7 @@ const PLANS: Array<{
     monthly: 19,
     yearly: 182,
     tagline: "Your personal homebuying coach.",
-    features: [
-      "Everything in Plus",
-      "AI homebuying coach",
-      "Side-by-side scenario comparison (up to 3 plans)",
-      "Live mortgage rate alerts",
-    ],
+    features: ["Everything in Plus", ...PRO_FEATURES.map((f) => f.long)],
     highlight: true,
   },
 ];

@@ -4,6 +4,7 @@ import { upsertLead } from "@/lib/leads.functions";
 import { getMyPlan } from "@/lib/account.functions";
 import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { US_STATES, priceByState } from "@/data/states";
@@ -3211,19 +3212,10 @@ function ReportPaywall() {
   if (isPro) return null;
 
   const features = isPlus
-    ? [
-        "AI homebuying coach",
-        "Side-by-side scenario comparison",
-        "Live mortgage rate alerts",
-      ]
+    ? PRO_FEATURES.map((f) => f.long)
     : [
-        "Save unlimited scenarios (cities, timelines, down payments)",
-        "Invest vs. save projection",
-        "Savings & investing action plan (PDF)",
-        "Full plan export (PDF + CSV) + themed reports",
-        "Tags, notes, goal tracker & sharing",
-        "AI homebuying coach (Pro)",
-        "Live mortgage rate alerts (Pro)",
+        ...PLUS_FEATURES.map((f) => f.long),
+        ...PRO_FEATURES.map((f) => `${f.long} (Pro)`),
       ];
 
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
 
 const C = {
   paper: "#f5efe6",
@@ -47,7 +48,7 @@ export function UpgradeModal({
       yearlyPriceId: "plus_yearly",
       monthly: 9,
       yearly: 86,
-      features: ["Unlimited scenarios", "Invest vs. save projection", "Savings & investing action plan (PDF)", "Full plan export (PDF + CSV)", "Tags, notes & goal", "Themed reports", "Shareable link & email reminders"],
+      features: PLUS_FEATURES.map((f) => f.short),
     },
     {
       id: "pro" as const,
@@ -56,7 +57,7 @@ export function UpgradeModal({
       yearlyPriceId: "pro_yearly",
       monthly: 19,
       yearly: 182,
-      features: ["Everything in Plus", "AI homebuying coach", "Side-by-side scenario compare", "Live mortgage rate alerts"],
+      features: ["Everything in Plus", ...PRO_FEATURES.map((f) => f.short)],
       highlight: true,
     },
   ];
