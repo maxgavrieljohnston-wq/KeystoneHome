@@ -600,11 +600,12 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     if (!plan.share_enabled) shareM.mutate(true);
   };
 
-  const handleAddTag = () => {
-    const t = tagDraft.trim();
+  const handleAddTag = (raw?: string) => {
+    const t = (raw ?? tagDraft).trim();
     if (!t) return;
     if (!requirePlus("Plan tags")) return;
-    if (tags.includes(t)) { setTagDraft(""); return; }
+    const exists = tags.some((x) => x.toLowerCase() === t.toLowerCase());
+    if (exists) { setTagDraft(""); return; }
     metaM.mutate({ planId: plan.id, tags: [...tags, t], environment: env });
     setTagDraft("");
   };
@@ -612,6 +613,10 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
   const handleRemoveTag = (t: string) => {
     metaM.mutate({ planId: plan.id, tags: tags.filter((x) => x !== t), environment: env });
   };
+
+  const tagSuggestions = suggestions
+    .filter((s) => !tags.some((x) => x.toLowerCase() === s.toLowerCase()))
+    .slice(0, 6);
 
   const handleSaveSettings = () => {
     if (!requirePlus("Plan notes & goal")) return;
