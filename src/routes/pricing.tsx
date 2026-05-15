@@ -61,7 +61,7 @@ const PLANS: Plan[] = [
     isOneTime: true,
     tagline: "One-time unlock. Yours forever.",
     features: PLUS_FEATURES,
-    highlightIds: ["save", "invest", "pdf", "share"],
+    highlightIds: ["accounts", "invest", "action", "tags"],
   },
   {
     id: "pro",
@@ -76,7 +76,7 @@ const PLANS: Plan[] = [
       { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" },
       ...PRO_FEATURES,
     ],
-    highlightIds: ["_plus", "coach", "stress", "alerts", "broker"],
+    highlightIds: ["_plus", "investing", "stress", "market", "broker"],
     highlight: true,
   },
 ];
