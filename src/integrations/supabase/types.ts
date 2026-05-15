@@ -194,6 +194,75 @@ export type Database = {
         }
         Relationships: []
       }
+      lender_documents: {
+        Row: {
+          checklist_item: Database["public"]["Enums"]["lender_doc_item"]
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checklist_item: Database["public"]["Enums"]["lender_doc_item"]
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checklist_item?: Database["public"]["Enums"]["lender_doc_item"]
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      market_snapshots: {
+        Row: {
+          city: string
+          created_at: string
+          fetched_at: string
+          id: string
+          payload: Json
+          state: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          payload?: Json
+          state: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          payload?: Json
+          state?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           answers: Json
@@ -493,7 +562,15 @@ export type Database = {
           }
     }
     Enums: {
-      [_ in never]: never
+      lender_doc_item:
+        | "w2"
+        | "tax_return"
+        | "pay_stub"
+        | "bank_statement"
+        | "id"
+        | "gift_letter"
+        | "employment_letter"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -620,6 +697,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      lender_doc_item: [
+        "w2",
+        "tax_return",
+        "pay_stub",
+        "bank_statement",
+        "id",
+        "gift_letter",
+        "employment_letter",
+        "other",
+      ],
+    },
   },
 } as const

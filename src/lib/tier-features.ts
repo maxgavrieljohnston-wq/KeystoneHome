@@ -51,6 +51,11 @@ export const PLUS_FEATURES: TierFeature[] = [
     short: "Email reminders",
     long: "Email reminders & milestones",
   },
+  {
+    id: "accounts",
+    short: "Recommended accounts",
+    long: "Curated investment & savings accounts to grow your down payment faster",
+  },
 ];
 
 export const PRO_FEATURES: TierFeature[] = [
@@ -68,6 +73,26 @@ export const PRO_FEATURES: TierFeature[] = [
     id: "alerts",
     short: "Live mortgage rate alerts",
     long: "Live mortgage rate alerts",
+  },
+  {
+    id: "stress",
+    short: "Affordability stress-test",
+    long: "Stress-test your plan against rate shocks, income drops, and price changes",
+  },
+  {
+    id: "market",
+    short: "City market intelligence",
+    long: "Live local market data: median price, price-to-income, trend",
+  },
+  {
+    id: "docs",
+    short: "Lender pre-qual doc vault",
+    long: "Guided checklist + secure storage for your mortgage application",
+  },
+  {
+    id: "broker",
+    short: "Realtor & broker matching",
+    long: "Get matched with vetted realtors and mortgage brokers in your market (priority for Pro)",
   },
 ];
 
