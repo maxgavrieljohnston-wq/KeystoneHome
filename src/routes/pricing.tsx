@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
