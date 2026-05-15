@@ -836,14 +836,12 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
             <button type="button" onClick={handleSaveSettings} style={{ padding: "6px 12px", background: C.ink, color: C.paper, border: "none", borderRadius: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Save</button>
             <button type="button" onClick={() => setShowSettings(false)} style={{ padding: "6px 12px", background: "transparent", color: C.inkMute, border: "none", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Cancel</button>
           </div>
-          {/* Theme picker */}
-          <div style={{ display: "flex", gap: 6, alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.inkFaint}` }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute, marginRight: 4 }}>Theme</span>
-            {(["light", "dark", "sepia"] as const).map((t) => (
-              <button key={t} type="button" onClick={() => handleTheme(t)} style={{ padding: "4px 10px", borderRadius: 999, border: `1px solid ${(plan.theme ?? "light") === t ? C.ink : C.inkFaint}`, background: (plan.theme ?? "light") === t ? C.ink : "transparent", color: (plan.theme ?? "light") === t ? C.paper : C.inkSoft, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>{t}</button>
-            ))}
-          </div>
         </div>
+      )}
+      {/* spacer to keep diff small */}
+      {false && (
+        <div />
+      
       )}
 
       {/* Share modal */}
