@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
 
 const C = {
   paper: "#f5efe6",
