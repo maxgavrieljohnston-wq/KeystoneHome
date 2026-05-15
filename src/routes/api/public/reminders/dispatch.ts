@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 
 const SITE_NAME = "Keystone";
 const SENDER_DOMAIN = "notify.keystonehomeowners.com";
@@ -14,11 +15,9 @@ interface PlanRow {
   title: string | null;
   created_at: string;
   answers: Record<string, unknown>;
-}
-
-interface AuthUser {
-  id: string;
-  email?: string | null;
+  assumptions: Record<string, number> | null;
+  current_savings: number | null;
+  target_move_in: string | null;
 }
 
 function planTitle(p: PlanRow): string {
@@ -28,33 +27,57 @@ function planTitle(p: PlanRow): string {
   return zip ? `Plan in ${zip}` : "Your homebuying plan";
 }
 
-function timelineNote(p: PlanRow): string {
-  const a = p.answers ?? {};
-  const years = typeof a.timelineYears === "number" ? a.timelineYears : null;
-  if (!years) return "";
-  const created = new Date(p.created_at).getTime();
-  const elapsedMonths = Math.max(
-    0,
-    Math.round((Date.now() - created) / (1000 * 60 * 60 * 24 * 30.4)),
-  );
-  const totalMonths = years * 12;
-  const remaining = Math.max(0, totalMonths - elapsedMonths);
-  return `${elapsedMonths} mo elapsed · ${remaining} mo to your ${years}-yr target`;
+function fmtUsd(n: number): string {
+  return `$${Math.round(n).toLocaleString()}`;
+}
+
+interface PlanDigest {
+  title: string;
+  goalLine: string | null;
+  paceLine: string | null;
+  metaLine: string;
+}
+
+function buildPlanDigest(p: PlanRow): PlanDigest {
+  const metrics = computePlanMetrics(p.answers ?? {}, p.assumptions ?? null);
+  const goal = computeGoalProgress(metrics, p.current_savings, p.target_move_in);
+
+  let goalLine: string | null = null;
+  let paceLine: string | null = null;
+
+  if (goal.hasGoal && metrics.cashToClose > 0) {
+    goalLine = `${Math.round(goal.pctToGoal)}% to cash-to-close · ${fmtUsd(goal.remaining)} to go`;
+    if (goal.monthsToGoal != null && goal.requiredMonthly != null) {
+      if (goal.paceDeltaMonthly != null) {
+        const ahead = goal.paceDeltaMonthly >= 0;
+        paceLine = `${goal.monthsToGoal} mo to move-in · need ${fmtUsd(goal.requiredMonthly)}/mo · ${ahead ? `ahead by ${fmtUsd(goal.paceDeltaMonthly)}/mo` : `behind by ${fmtUsd(-goal.paceDeltaMonthly)}/mo`}`;
+      } else {
+        paceLine = `${goal.monthsToGoal} mo to move-in · need ${fmtUsd(goal.requiredMonthly)}/mo`;
+      }
+    }
+  }
+
+  const metaLine = `${metrics.verdict} · ${fmtUsd(metrics.totalHousing)}/mo housing · ${(metrics.mortgageRate * 100).toFixed(2)}% rate`;
+
+  return { title: planTitle(p), goalLine, paceLine, metaLine };
 }
 
 function renderDigest(opts: {
   firstName: string | null;
   email: string;
   plans: PlanRow[];
+  unsubscribeUrl: string;
 }) {
   const greeting = opts.firstName ? `Hi ${opts.firstName},` : "Hi,";
-  const planBlocks = opts.plans
-    .map((p) => {
-      const title = planTitle(p);
-      const note = timelineNote(p);
+  const digests = opts.plans.map(buildPlanDigest);
+
+  const planBlocks = digests
+    .map((d) => {
       return `<tr><td style="padding:14px 16px;border-top:1px solid #e8e1d2">
-  <div style="font-family:Georgia,serif;font-size:18px;color:#1a1a1a;margin-bottom:4px">${escapeHtml(title)}</div>
-  ${note ? `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b6b6b;letter-spacing:0.04em">${escapeHtml(note)}</div>` : ""}
+  <div style="font-family:Georgia,serif;font-size:18px;color:#1a1a1a;margin-bottom:4px">${escapeHtml(d.title)}</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b6b6b;letter-spacing:0.04em;margin-bottom:4px">${escapeHtml(d.metaLine)}</div>
+  ${d.goalLine ? `<div style="font-family:Georgia,serif;font-size:14px;color:#1a1a1a;margin-top:6px">${escapeHtml(d.goalLine)}</div>` : ""}
+  ${d.paceLine ? `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#c4452d;letter-spacing:0.04em;margin-top:2px">${escapeHtml(d.paceLine)}</div>` : ""}
 </td></tr>`;
     })
     .join("");
@@ -70,12 +93,19 @@ function renderDigest(opts: {
       <a href="${SITE_URL}/dashboard" style="display:inline-block;background:#1a1a1a;color:#f5efe6;padding:14px 22px;border-radius:8px;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.12em;text-transform:uppercase">Update your plans</a>
     </p>
     <p style="margin:32px 0 0;color:#a39888;font-size:12px;line-height:1.5">Keystone — your path to homeownership.</p>
+    <p style="margin:18px 0 0;color:#a39888;font-size:11px;line-height:1.5">
+      Don't want monthly check-ins? <a href="${opts.unsubscribeUrl}" style="color:#a39888;text-decoration:underline">Unsubscribe</a>.
+    </p>
   </div></body></html>`;
 
-  const planLines = opts.plans
-    .map((p) => `• ${planTitle(p)}${timelineNote(p) ? ` — ${timelineNote(p)}` : ""}`)
-    .join("\n");
-  const text = `${greeting}\n\nA month closer to home. Your ${opts.plans.length === 1 ? "plan" : "plans"} this month:\n\n${planLines}\n\nUpdate your plans: ${SITE_URL}/dashboard`;
+  const planLines = digests
+    .map((d) =>
+      [`• ${d.title}`, `  ${d.metaLine}`, d.goalLine ? `  ${d.goalLine}` : null, d.paceLine ? `  ${d.paceLine}` : null]
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .join("\n\n");
+  const text = `${greeting}\n\nA month closer to home. Your ${opts.plans.length === 1 ? "plan" : "plans"} this month:\n\n${planLines}\n\nUpdate your plans: ${SITE_URL}/dashboard\n\nUnsubscribe: ${opts.unsubscribeUrl}`;
 
   return { html, text };
 }
@@ -86,6 +116,49 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+async function getOrMintUnsubscribeToken(email: string): Promise<string> {
+  const lower = email.toLowerCase();
+  const { data: existing } = await supabaseAdmin
+    .from("email_unsubscribe_tokens")
+    .select("token")
+    .eq("email", lower)
+    .is("used_at", null)
+    .maybeSingle();
+  if (existing?.token) return existing.token as string;
+
+  // Mint new token
+  const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  const { error } = await supabaseAdmin
+    .from("email_unsubscribe_tokens")
+    .insert({ email: lower, token });
+  if (error) {
+    // Race or constraint — re-query
+    const { data: retry } = await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .select("token")
+      .eq("email", lower)
+      .is("used_at", null)
+      .maybeSingle();
+    if (retry?.token) return retry.token as string;
+    throw new Error(error.message);
+  }
+  return token;
+}
+
+async function lookupUserEmail(userId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (error) {
+      console.warn("[reminders/dispatch] auth.getUserById failed", error.message);
+      return null;
+    }
+    return data.user?.email ?? null;
+  } catch (err) {
+    console.warn("[reminders/dispatch] auth lookup threw", err);
+    return null;
+  }
 }
 
 export const Route = createFileRoute("/api/public/reminders/dispatch")({
@@ -137,7 +210,6 @@ export const Route = createFileRoute("/api/public/reminders/dispatch")({
             check_env: env,
           });
           if (!stillPaid) {
-            // Pause reminders if they downgraded
             await supabaseAdmin
               .from("profiles")
               .update({ reminders_enabled: false, next_reminder_at: null })
@@ -146,19 +218,7 @@ export const Route = createFileRoute("/api/public/reminders/dispatch")({
             continue;
           }
 
-          // Look up user email
-          let userEmail: string | null = null;
-          try {
-            const { data: u } = await supabaseAdmin
-              .schema("auth" as never)
-              .from("users" as never)
-              .select("email")
-              .eq("id", row.user_id)
-              .maybeSingle();
-            userEmail = ((u as AuthUser | null)?.email as string | null) ?? null;
-          } catch (err) {
-            console.warn("[reminders/dispatch] auth lookup failed", err);
-          }
+          const userEmail = await lookupUserEmail(row.user_id);
           if (!userEmail) {
             skipped++;
             continue;
@@ -179,15 +239,14 @@ export const Route = createFileRoute("/api/public/reminders/dispatch")({
             continue;
           }
 
-          // Pull this user's plans
+          // Pull this user's plans (with goal data + assumptions)
           const { data: plans } = await supabaseAdmin
             .from("plans")
-            .select("id, title, created_at, answers")
+            .select("id, title, created_at, answers, assumptions, current_savings, target_move_in")
             .eq("user_id", row.user_id)
             .order("created_at", { ascending: false })
             .limit(10);
           if (!plans || plans.length === 0) {
-            // Reschedule, no plans yet
             await supabaseAdmin
               .from("profiles")
               .update({
@@ -200,11 +259,23 @@ export const Route = createFileRoute("/api/public/reminders/dispatch")({
             continue;
           }
 
+          // Mint or reuse unsubscribe token
+          let unsubscribeToken: string;
+          try {
+            unsubscribeToken = await getOrMintUnsubscribeToken(userEmail);
+          } catch (err) {
+            console.error("[reminders/dispatch] unsubscribe token failed", err);
+            skipped++;
+            continue;
+          }
+          const unsubscribeUrl = `${SITE_URL}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
+
           const firstName = (row.display_name ?? "").split(" ")[0] || null;
           const { html, text } = renderDigest({
             firstName,
             email: userEmail,
             plans: plans as PlanRow[],
+            unsubscribeUrl,
           });
 
           const messageId = `reminder-${row.user_id}-${new Date().toISOString().slice(0, 10)}`;
@@ -228,6 +299,7 @@ export const Route = createFileRoute("/api/public/reminders/dispatch")({
               text,
               purpose: "transactional",
               label: "plan_reminder",
+              unsubscribe_token: unsubscribeToken,
               queued_at: new Date().toISOString(),
             } as never,
           });
