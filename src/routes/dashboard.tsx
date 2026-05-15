@@ -1100,7 +1100,7 @@ function InvestmentSection({
 
   const downloadPdf = async () => {
     if (!isPlus) {
-      gate.openUpgrade("plus", "Monthly Investment Plan PDF");
+      gate.openUpgrade("plus", "Savings & investing action plan (PDF)");
       return;
     }
     try {
