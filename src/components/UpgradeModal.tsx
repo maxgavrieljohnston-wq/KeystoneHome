@@ -44,11 +44,10 @@ export function UpgradeModal({
     {
       id: "plus" as const,
       name: "Plus",
-      monthlyPriceId: "plus_monthly",
-      yearlyPriceId: "plus_yearly",
-      monthly: 9,
-      yearly: 86,
-      features: PLUS_FEATURES.map((f) => f.short),
+      oneTimePriceId: "plus_lifetime",
+      oneTime: 29,
+      isOneTime: true as const,
+      features: PLUS_FEATURES,
     },
     {
       id: "pro" as const,
@@ -57,16 +56,25 @@ export function UpgradeModal({
       yearlyPriceId: "pro_yearly",
       monthly: 19,
       yearly: 182,
-      features: ["Everything in Plus", ...PRO_FEATURES.map((f) => f.short)],
+      isOneTime: false as const,
+      features: [
+        { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as const,
+        ...PRO_FEATURES,
+      ],
       highlight: true,
     },
   ];
 
   // If feature requires Pro, hide Plus option
   const visible = requiredTier === "pro" ? tiers.filter((t) => t.id === "pro") : tiers;
+  const showBillingToggle = visible.some((t) => !t.isOneTime);
 
   const handlePick = async (tier: typeof tiers[number]) => {
-    const priceId = billing === "monthly" ? tier.monthlyPriceId : tier.yearlyPriceId;
+    const priceId = tier.isOneTime
+      ? tier.oneTimePriceId
+      : billing === "monthly"
+        ? tier.monthlyPriceId
+        : tier.yearlyPriceId;
     await openCheckout({ priceId, customerEmail: email, userId });
   };
 
