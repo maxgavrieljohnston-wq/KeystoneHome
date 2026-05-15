@@ -247,7 +247,7 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabaseAdmin
       .from("plans")
-      .select("id, email, title, answers, created_at")
+      .select("id, email, title, answers, assumptions, theme, created_at")
       .eq("id", data.planId)
       .eq("user_id", context.userId)
       .maybeSingle();
@@ -259,6 +259,8 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
       email: plan.email as string,
       title: plan.title as string | null,
       answers: (plan.answers ?? {}) as Record<string, unknown>,
+      assumptions: (plan.assumptions ?? null) as Record<string, number> | null,
+      theme: (plan.theme ?? null) as "light" | "dark" | "sepia" | null,
       created_at: plan.created_at as string | null,
     });
     let binary = "";
