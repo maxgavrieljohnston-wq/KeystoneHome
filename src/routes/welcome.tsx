@@ -45,8 +45,8 @@ function WelcomePage() {
     : [
         "Save unlimited plans",
         "Plan together in partner / household mode",
-        "Export your plan as PDF",
-        "Tags, notes & goal tracker",
+        "Export your plan as PDF or CSV",
+        "Tags, notes, goal tracker & themed reports",
         "Shareable plan link & email reminders",
       ];
 
