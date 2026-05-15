@@ -57,6 +57,26 @@ function LoginPage() {
   
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setResetSent(false);
+    if (!validEmail) {
+      setError("Enter your email above first, then tap Forgot password.");
+      return;
+    }
+    setBusy(true);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      setResetSent(true);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -298,6 +318,35 @@ function LoginPage() {
                   {error}
                 </div>
               )}
+
+              {resetSent && (
+                <div style={{ marginTop: 16, color: C.inkSoft, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                  Password reset link sent. Check your inbox.
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={busy}
+                style={{
+                  marginTop: 20,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: C.inkMute,
+                  cursor: busy ? "default" : "pointer",
+                  width: "100%",
+                  textAlign: "center",
+                  textDecoration: "underline",
+                }}
+              >
+                Forgot password?
+              </button>
             </form>
           </div>
         )}
