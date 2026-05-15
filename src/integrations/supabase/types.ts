@@ -49,6 +49,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          meta: Json | null
           role: string
           user_id: string
         }
@@ -56,6 +57,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          meta?: Json | null
           role: string
           user_id: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          meta?: Json | null
           role?: string
           user_id?: string
         }
@@ -271,6 +274,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          coach_summary: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -282,6 +286,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          coach_summary?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -293,6 +298,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          coach_summary?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
