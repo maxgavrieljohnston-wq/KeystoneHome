@@ -318,11 +318,38 @@ function LoginPage() {
                   {error}
                 </div>
               )}
+
+              {resetSent && (
+                <div style={{ marginTop: 16, color: C.inkSoft, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                  Password reset link sent. Check your inbox.
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={busy}
+                style={{
+                  marginTop: 20,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: C.inkMute,
+                  cursor: busy ? "default" : "pointer",
+                  width: "100%",
+                  textAlign: "center",
+                  textDecoration: "underline",
+                }}
+              >
+                Forgot password?
+              </button>
             </form>
           </div>
         )}
-
-        {tab === "signup" && step === "email" && (
           <div>
             <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
               Create your account.
