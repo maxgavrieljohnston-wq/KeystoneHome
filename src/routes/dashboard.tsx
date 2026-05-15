@@ -84,6 +84,10 @@ function DashboardPage() {
   const sub = useSubscription();
   const gate = useUpgradeGate();
 
+  if (auth.ready && !auth.user) {
+    navigate({ to: "/login" });
+  }
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/" });
@@ -221,7 +225,7 @@ function DashboardPage() {
 
         <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} />
 
-        {!auth.ready || isLoading ? (
+        {!auth.ready || (auth.ready && !auth.user) || isLoading ? (
           <p style={{ color: C.inkSoft, fontSize: 18 }}>Loading your plans…</p>
         ) : error ? (
           <p style={{ color: C.ember, fontSize: 16 }}>
