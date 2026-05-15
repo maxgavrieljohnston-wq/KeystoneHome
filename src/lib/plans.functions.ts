@@ -28,50 +28,6 @@ const submitSchema = z.object({
   phone: z.string().optional(),
 });
 
-function renderPlanEmail(opts: {
-  email: string;
-  used: number | null;
-  limit: number | null;
-  isPaid: boolean;
-  pdfUrl: string | null;
-}) {
-  const remaining =
-    !opts.isPaid && opts.limit != null && opts.used != null
-      ? Math.max(opts.limit - opts.used, 0)
-      : null;
-  const remainingLine =
-    remaining != null
-      ? `<p style="margin:0 0 14px;color:#3d3d3d;font-size:14px;line-height:1.5">You have <strong>${remaining}</strong> free plan${remaining === 1 ? "" : "s"} remaining.</p>`
-      : `<p style="margin:0 0 14px;color:#3d3d3d;font-size:14px;line-height:1.5">Thanks for being a paid member — create as many plans as you like.</p>`;
-
-  const pdfButton = opts.pdfUrl
-    ? `<p style="margin:0 0 18px"><a href="${opts.pdfUrl}" style="display:inline-block;background:#c4452d;color:#ffffff;padding:14px 22px;border-radius:8px;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.12em;text-transform:uppercase">↓ Download your plan (PDF)</a></p>`
-    : "";
-
-  const html = `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Georgia,serif;color:#1a1a1a">
-  <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c4452d;margin-bottom:18px">— Your plan is ready</div>
-    <h1 style="font-weight:400;font-size:32px;line-height:1.1;letter-spacing:-0.02em;margin:0 0 16px">Your Keystone homebuying plan</h1>
-    <p style="margin:0 0 18px;color:#3d3d3d;font-size:16px;line-height:1.5">Here's your personalised plan — a one-page PDF you can save, share, or bring to a lender.</p>
-    ${pdfButton}
-    <p style="margin:0 0 14px;color:#3d3d3d;font-size:14px;line-height:1.5">We've also saved it to <strong>${opts.email}</strong> so you can sign in and revisit any time.</p>
-    ${remainingLine}
-    <p style="margin:24px 0 0">
-      <a href="${SITE_URL}/dashboard" style="display:inline-block;background:#1a1a1a;color:#f5efe6;padding:14px 22px;border-radius:8px;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.12em;text-transform:uppercase">View your plan</a>
-    </p>
-    <p style="margin:32px 0 0;color:#a39888;font-size:12px;line-height:1.5">Keystone — your path to homeownership.</p>
-  </div></body></html>`;
-
-  const text = `Your Keystone homebuying plan\n\nWe've saved your plan to ${opts.email}. View it any time at ${SITE_URL}/dashboard${
-    opts.pdfUrl ? `\n\nDownload your PDF: ${opts.pdfUrl}` : ""
-  }\n\n${
-    remaining != null
-      ? `You have ${remaining} free plan${remaining === 1 ? "" : "s"} remaining.`
-      : "Thanks for being a paid member — create as many plans as you like."
-  }`;
-  return { html, text };
-}
-
 async function lookupUserIdByEmail(email: string): Promise<string | null> {
   try {
     const { data, error } = await supabaseAdmin
