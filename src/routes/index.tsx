@@ -3219,9 +3219,8 @@ function ReportPaywall() {
     : [
         "Save unlimited plans",
         "Partner / household mode",
-        "Export your plan as PDF",
-        "Tags, notes & goal tracker",
-        "Shareable plan link & email reminders",
+        "Export as PDF & CSV + themed reports",
+        "Tags, notes, goal tracker & sharing",
         "AI homebuying coach (Pro)",
         "Live mortgage rate alerts (Pro)",
       ];
