@@ -3219,6 +3219,8 @@ function ReportPaywall() {
     : [
         "Save unlimited plans",
         "Partner / household mode",
+        "Invest vs. save projection",
+        "Monthly Investment Plan PDF",
         "Export as PDF & CSV + themed reports",
         "Tags, notes, goal tracker & sharing",
         "AI homebuying coach (Pro)",
