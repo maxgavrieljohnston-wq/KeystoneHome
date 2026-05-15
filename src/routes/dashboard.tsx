@@ -179,6 +179,32 @@ function DashboardPage() {
             >
               Rates
             </Link>
+            <Link
+              to="/stress-test"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPro ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Stress
+            </Link>
+            <Link
+              to="/accounts"
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: sub.isPlus ? C.ember : C.inkMute,
+                textDecoration: "none",
+              }}
+            >
+              Accounts
+            </Link>
             <button
               type="button"
               onClick={handleSignOut}

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as StressTestRouteImport } from './routes/stress-test'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RateAlertsRouteImport } from './routes/rate-alerts'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -18,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CoachRouteImport } from './routes/coach'
+import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -34,6 +36,11 @@ const WelcomeRoute = WelcomeRouteImport.update({
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StressTestRoute = StressTestRouteImport.update({
+  id: '/stress-test',
+  path: '/stress-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -69,6 +76,11 @@ const CompareRoute = CompareRouteImport.update({
 const CoachRoute = CoachRouteImport.update({
   id: '/coach',
   path: '/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -112,6 +124,7 @@ const ApiPublicPaymentsWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
@@ -119,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
@@ -130,6 +144,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
@@ -137,6 +152,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
@@ -149,6 +165,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
@@ -156,6 +173,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/p/$slug': typeof PSlugRoute
@@ -169,6 +187,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accounts'
     | '/coach'
     | '/compare'
     | '/dashboard'
@@ -176,6 +195,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
+    | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
     | '/p/$slug'
@@ -187,6 +207,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounts'
     | '/coach'
     | '/compare'
     | '/dashboard'
@@ -194,6 +215,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
+    | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
     | '/p/$slug'
@@ -205,6 +227,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accounts'
     | '/coach'
     | '/compare'
     | '/dashboard'
@@ -212,6 +235,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
+    | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
     | '/p/$slug'
@@ -224,6 +248,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRoute
   CoachRoute: typeof CoachRoute
   CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
@@ -231,6 +256,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   RateAlertsRoute: typeof RateAlertsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  StressTestRoute: typeof StressTestRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   PSlugRoute: typeof PSlugRoute
@@ -255,6 +281,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stress-test': {
+      id: '/stress-test'
+      path: '/stress-test'
+      fullPath: '/stress-test'
+      preLoaderRoute: typeof StressTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -304,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/coach'
       fullPath: '/coach'
       preLoaderRoute: typeof CoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -360,6 +400,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountsRoute: AccountsRoute,
   CoachRoute: CoachRoute,
   CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,
@@ -367,6 +408,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   RateAlertsRoute: RateAlertsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  StressTestRoute: StressTestRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   PSlugRoute: PSlugRoute,
