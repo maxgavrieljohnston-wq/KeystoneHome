@@ -37,16 +37,17 @@ function WelcomePage() {
 
   const features = sub.tier === "pro"
     ? [
-        "Compare scenarios side-by-side",
+        "Everything in Plus",
         "Chat with the AI homebuying coach",
-        "Get alerts when rates move",
-        "Save unlimited plans + export PDF",
+        "Compare up to 3 plans side-by-side",
+        "Live mortgage rate alerts",
       ]
     : [
         "Save unlimited plans",
-        "Plan together in partner mode",
-        "Export your plan as PDF",
-        "Email reminders & milestones",
+        "Plan together in partner / household mode",
+        "Export your plan as PDF or CSV",
+        "Tags, notes, goal tracker & themed reports",
+        "Shareable plan link & email reminders",
       ];
 
   return (

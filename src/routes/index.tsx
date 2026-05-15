@@ -3215,12 +3215,12 @@ function ReportPaywall() {
         "AI homebuying coach",
         "Side-by-side scenario comparison",
         "Live mortgage rate alerts",
-        "Priority support",
       ]
     : [
         "Save unlimited plans",
         "Partner / household mode",
-        "Export your plan as PDF",
+        "Export as PDF & CSV + themed reports",
+        "Tags, notes, goal tracker & sharing",
         "AI homebuying coach (Pro)",
         "Live mortgage rate alerts (Pro)",
       ];

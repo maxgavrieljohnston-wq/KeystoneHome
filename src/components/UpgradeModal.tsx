@@ -47,7 +47,7 @@ export function UpgradeModal({
       yearlyPriceId: "plus_yearly",
       monthly: 9,
       yearly: 86,
-      features: ["Unlimited saved plans", "PDF & CSV export", "Shareable link", "Tags, notes & goal", "Themed reports", "Email reminders"],
+      features: ["Save unlimited plans", "Partner / household mode", "PDF & CSV export", "Tags, notes & goal", "Themed reports", "Shareable link & email reminders"],
     },
     {
       id: "pro" as const,
@@ -56,7 +56,7 @@ export function UpgradeModal({
       yearlyPriceId: "pro_yearly",
       monthly: 19,
       yearly: 182,
-      features: ["Everything in Plus", "AI homebuying coach", "Scenario compare", "Rate alerts"],
+      features: ["Everything in Plus", "AI homebuying coach", "Side-by-side scenario compare", "Live mortgage rate alerts"],
       highlight: true,
     },
   ];
