@@ -308,14 +308,14 @@ export const generateInvestmentPlanPdf = createServerFn({ method: "POST" })
       ensure(20);
       const isSugg = s.scenario.id === suggestedId;
       const color = isSugg ? EMBER : INK;
-      page.drawText(s.scenario.label + (isSugg ? "  ★" : ""), { x: MARGIN, y, font: helvBold, size: 10, color });
+      page.drawText(s.scenario.label + (isSugg ? "  *" : ""), { x: MARGIN, y, font: helvBold, size: 10, color });
       page.drawText(s.scenario.blurb, { x: MARGIN, y: y - 12, font: helv, size: 8.5, color: MUTE });
       page.drawText(`${fmt(s.monthly)}`, { x: MARGIN + 230, y, font: helv, size: 10, color: INK });
       page.drawText(`${fmt(s.totalContributed)}`, { x: MARGIN + 320, y, font: helv, size: 10, color: INK });
       page.drawText(`${fmt(s.growth)}`, { x: MARGIN + 410, y, font: helv, size: 10, color: INK });
       y -= 26;
     }
-    page.drawText("★ Suggested for your timeline", { x: MARGIN, y, font: helv, size: 8.5, color: MUTE });
+    page.drawText("* Suggested for your timeline", { x: MARGIN, y, font: helv, size: 8.5, color: MUTE });
     y -= 24;
 
     // ===== Milestone table (chosen plan, year-by-year) =====
@@ -343,7 +343,7 @@ export const generateInvestmentPlanPdf = createServerFn({ method: "POST" })
       const pct = Math.min(100, Math.round((balance / metrics.downPayment) * 100));
       const reached = balance >= metrics.downPayment;
       const color = reached ? SAGE : INK;
-      page.drawText(`Year ${yr}${reached ? " ✓" : ""}`, { x: MARGIN, y, font: helvBold, size: 10, color });
+      page.drawText(`Year ${yr}${reached ? " (done)" : ""}`, { x: MARGIN, y, font: helvBold, size: 10, color });
       page.drawText(fmtCompact(contributed), { x: MARGIN + 90, y, font: helv, size: 10, color: INK });
       page.drawText(fmtCompact(growth), { x: MARGIN + 220, y, font: helv, size: 10, color: INK });
       page.drawText(fmtCompact(Math.round(balance)), { x: MARGIN + 320, y, font: helv, size: 10, color: INK });
