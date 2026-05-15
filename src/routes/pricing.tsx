@@ -354,8 +354,11 @@ function PricingPage() {
                   )
                 )}
 
-                <ul style={{ listStyle: "none", padding: 0, margin: "24px 0", flex: 1 }}>
-                  {plan.features.map((f) => (
+                {(() => {
+                  const { highlighted, rest } = splitFeatures(plan);
+                  const isExpanded = expanded[plan.id];
+                  const visible = isExpanded ? [...highlighted, ...rest] : highlighted;
+                  const renderRow = (f: TierFeature) => (
                     <li
                       key={f.id}
                       style={{
@@ -386,8 +389,37 @@ function PricingPage() {
                         </span>
                       )}
                     </li>
-                  ))}
-                </ul>
+                  );
+                  return (
+                    <div style={{ margin: "24px 0", flex: 1 }}>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {visible.map(renderRow)}
+                      </ul>
+                      {rest.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpanded((s) => ({ ...s, [plan.id]: !s[plan.id] }))
+                          }
+                          style={{
+                            marginTop: 12,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            textTransform: "uppercase",
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                          }}
+                        >
+                          {isExpanded ? "Show fewer" : `+ ${rest.length} more features`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <button
                   onClick={() => handleSelect(plan)}
