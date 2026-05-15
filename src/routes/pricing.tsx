@@ -34,6 +34,7 @@ type PlusPlan = {
   isOneTime: true;
   tagline: string;
   features: TierFeature[];
+  highlightIds: string[];
   highlight?: boolean;
 };
 type ProPlan = {
@@ -46,6 +47,7 @@ type ProPlan = {
   isOneTime: false;
   tagline: string;
   features: TierFeature[];
+  highlightIds: string[];
   highlight?: boolean;
 };
 type Plan = PlusPlan | ProPlan;
@@ -59,6 +61,7 @@ const PLANS: Plan[] = [
     isOneTime: true,
     tagline: "One-time unlock. Yours forever.",
     features: PLUS_FEATURES,
+    highlightIds: ["save", "invest", "pdf", "share"],
   },
   {
     id: "pro",
@@ -73,13 +76,24 @@ const PLANS: Plan[] = [
       { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" },
       ...PRO_FEATURES,
     ],
+    highlightIds: ["_plus", "coach", "stress", "alerts", "broker"],
     highlight: true,
   },
 ];
 
+function splitFeatures(plan: Plan) {
+  const order = new Map(plan.highlightIds.map((id, i) => [id, i]));
+  const highlighted = plan.features
+    .filter((f) => order.has(f.id))
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const rest = plan.features.filter((f) => !order.has(f.id));
+  return { highlighted, rest };
+}
+
 function PricingPage() {
   const navigate = useNavigate();
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
+  const [expanded, setExpanded] = useState<Record<PlanId, boolean>>({ plus: false, pro: false });
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const { openCheckout, loading } = usePaddleCheckout();
@@ -340,8 +354,11 @@ function PricingPage() {
                   )
                 )}
 
-                <ul style={{ listStyle: "none", padding: 0, margin: "24px 0", flex: 1 }}>
-                  {plan.features.map((f) => (
+                {(() => {
+                  const { highlighted, rest } = splitFeatures(plan);
+                  const isExpanded = expanded[plan.id];
+                  const visible = isExpanded ? [...highlighted, ...rest] : highlighted;
+                  const renderRow = (f: TierFeature) => (
                     <li
                       key={f.id}
                       style={{
@@ -372,8 +389,37 @@ function PricingPage() {
                         </span>
                       )}
                     </li>
-                  ))}
-                </ul>
+                  );
+                  return (
+                    <div style={{ margin: "24px 0", flex: 1 }}>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                        {visible.map(renderRow)}
+                      </ul>
+                      {rest.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpanded((s) => ({ ...s, [plan.id]: !s[plan.id] }))
+                          }
+                          style={{
+                            marginTop: 12,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            textTransform: "uppercase",
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                          }}
+                        >
+                          {isExpanded ? "Show fewer" : `+ ${rest.length} more features`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <button
                   onClick={() => handleSelect(plan)}

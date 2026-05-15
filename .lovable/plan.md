@@ -1,74 +1,34 @@
-## Goals
+## Goal
+On `/pricing`, show a curated set of 4 highlights per plan instead of the full feature list. All features remain delivered — we're only changing what the card displays. Pro continues to show "Everything in Plus" as the first line.
 
-1. Plus becomes a **$29 one-time purchase** (lifetime access). No more monthly/yearly Plus.
-2. Pro pricing/UI gains a **"Coming soon" investing teaser** — eventual brokerage partnership to auto-invest funds toward the user's down payment goal.
-3. Existing Plus monthly/yearly subscribers are **canceled in Paddle and converted to lifetime Plus**.
+## Highlight picks (and why)
 
----
+**Plus — 4 highlights:**
+1. **Unlimited saved plans** — the headline upgrade vs. free; the clearest "what do I get" answer.
+2. **Invest-vs-save projection** — Keystone's signature "aha" feature; nothing else on the page tells this story.
+3. **Full plan export (PDF + CSV)** — a tangible deliverable people can hand to a partner / advisor; concrete value.
+4. **Shareable plan link** — drives viral reach and is the one feature couples ask for first.
 
-## 1. Paddle catalog changes
+Skipped from the card (still included): action-plan PDF, tags/notes, themed reports, email reminders, recommended accounts. These are great but overlap with the four above or read as "nice-to-have" in a scan.
 
-- Create new price `plus_lifetime` on the existing `plus_plan` product: $29 USD, **no recurring interval** (one-time), quantity 1–1.
-- Archive (PATCH) old prices `plus_monthly` and `plus_yearly` so they cannot be checked out.
-- Pro prices unchanged.
+**Pro — "Everything in Plus" + 4 highlights:**
+1. **AI homebuying coach** — the flagship Pro reason-to-buy; most-requested.
+2. **Affordability stress-test** — analytical depth that justifies a recurring price.
+3. **Live mortgage rate alerts** — time-sensitive, actionable, recurring value (matches the subscription model).
+4. **Realtor & broker matching** — closes the loop from planning to action; concrete outcome.
 
-## 2. Subscription model — handle one-time purchase
+Skipped from the card (still included): scenario compare, city market intelligence, lender doc vault, auto-invest (coming soon). Compare and market intel are powerful but harder to grasp at a glance; doc vault and auto-invest read as supporting features.
 
-The current `subscriptions` table is built around recurring (status, current_period_end, cancel_at_period_end). For a one-time Plus:
+## UI changes (single file: `src/routes/pricing.tsx`)
 
-- Webhook handler: when `transaction.completed` fires for `plus_lifetime` (no subscription event will fire for one-time), insert a `subscriptions` row with:
-  - `price_id = 'plus_lifetime'`, `product_id = 'plus_plan'`
-  - `status = 'active'`
-  - `current_period_end = NULL` (treated as "never expires" by existing `periodActive` logic)
-  - `paddle_subscription_id` = transaction ID (since there's no sub ID) — needs unique handling
-- Add `PLUS_PRICES` entry: `plus_lifetime` (alongside `plus_monthly`/`plus_yearly` for grandfathered legacy rows).
-- `useSubscription` already treats null `current_period_end` as active — verify and keep that.
-- `has_active_subscription` SQL helper: confirm it accepts NULL period_end as active for the lifetime case (likely needs a small migration).
+1. Add a `highlightIds` array on each `Plan` entry in the `PLANS` constant listing the 4 IDs above. For Pro, keep the synthetic `_plus` ("Everything in Plus") item pinned to the top.
+2. In the card render, split `plan.features` into `highlighted` (matches `highlightIds` in the order specified, with `_plus` first for Pro) and `rest` (everything else, preserving original order).
+3. Render `highlighted` as today. Below the list, render a `"+ N more features"` toggle button (mono, uppercase, same type system as existing chrome). Local `useState<Record<PlanId, boolean>>` tracks expanded state per card.
+4. When expanded, render `rest` underneath with the same row styling and switch the button label to `"Show fewer"`. Coming-soon badges continue to render where applicable.
+5. No copy or pricing changes. No business-logic, entitlement, or backend changes — `PLUS_FEATURES` / `PRO_FEATURES` in `src/lib/tier-features.ts` stay the source of truth and other consumers (UpgradeModal, dashboard "Premium features" panel) keep showing the full list.
 
-## 3. UI: pricing page, upgrade modal, dashboard
-
-**`src/lib/tier-features.ts`**
-- Add a new entry at the top of `PRO_FEATURES`:
-  ```
-  { id: "investing", short: "Auto-invest your down payment (coming soon)",
-    long: "We'll partner with a brokerage to invest your savings and reach your down payment goal faster — coming soon to Pro" }
-  ```
-- Add a `comingSoon?: boolean` flag on `TierFeature`; set true for `investing`.
-
-**`src/components/UpgradeModal.tsx`**
-- Plus tier card: remove monthly/yearly toggle for Plus. Show `$29` with `one-time` label instead of `/mo`.
-- If `requiredTier === 'plus'`, hide the billing toggle entirely (Pro is the only tier with monthly/yearly).
-- If both tiers are visible, render Plus as one-time and keep Pro toggle.
-- Render features with `comingSoon` badge (small "SOON" chip in ember color).
-- Use new price ID `plus_lifetime` for the Plus checkout call.
-
-**`src/routes/pricing.tsx`**
-- Same one-time framing for Plus, "SOON" badge on the investing line for Pro.
-- Replace any "$9/mo" / "$86/yr" Plus copy with "$29 one-time · lifetime access".
-
-**Dashboard / index / welcome** — sweep all hardcoded "$9", "/mo" near Plus; replace with the new framing. (Search hits above will guide it.)
-
-## 4. Existing Plus subscribers — cancel & convert
-
-One-shot migration script (run via `code--exec` against Paddle + DB):
-
-1. Query `subscriptions` where `price_id IN ('plus_monthly','plus_yearly')` AND `status IN ('active','trialing','past_due')`.
-2. For each: call Paddle `POST /subscriptions/{id}/cancel` with `effective_from: 'immediately'`.
-3. Insert a new lifetime row: `price_id='plus_lifetime'`, `status='active'`, `current_period_end=NULL`, same `user_id`/`paddle_customer_id`, `paddle_subscription_id` = `legacy_convert_<old_sub_id>`.
-4. Send an email (via existing `enqueue_email`) explaining: "Plus is now a one-time purchase. Your subscription was canceled and you have lifetime Plus access — no further charges."
-
-Run separately for sandbox and live after publish.
-
-## 5. Out of scope
-
-- No new features for the investing flow itself — just marketing copy.
-- No refunds for prepaid yearly Plus subscribers (they get lifetime Plus instead, which is net positive).
-- Pro pricing untouched.
-
----
-
-## Technical details
-
-- Files touched: `src/lib/tier-features.ts`, `src/components/UpgradeModal.tsx`, `src/routes/pricing.tsx`, `src/routes/dashboard.tsx`, `src/routes/welcome.tsx`, `src/routes/index.tsx`, `src/hooks/useSubscription.ts` (PLUS_PRICES set), `src/routes/api/public/payments/webhook.ts` (handle `transaction.completed` for one-time), possibly small SQL migration for `has_active_subscription`.
-- Paddle: `create_price plus_lifetime` (one-time), archive old Plus prices.
-- Migration script: separate sandbox + live runs after deploy.
+## Out of scope
+- `tier-features.ts` data model
+- UpgradeModal / dashboard panels
+- Entitlement logic (`useSubscription`, `useUpgradeGate`)
+- A separate full comparison page (can come later if you want one)
