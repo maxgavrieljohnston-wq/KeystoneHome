@@ -7,6 +7,7 @@ import { getMyPlans } from "@/lib/plans.functions";
 import { getComparePlans } from "@/lib/compare.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { computePlanMetrics, type PlanMetrics } from "@/lib/plan-metrics";
 
@@ -19,8 +20,8 @@ export const Route = createFileRoute("/compare")({
   }),
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/login" });
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/login" });
   },
   component: ComparePage,
 });
@@ -40,6 +41,7 @@ const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 const pct = (n: number, d = 2) => `${(n * 100).toFixed(d)}%`;
 
 function ComparePage() {
+  const auth = useAuthReady();
   const sub = useSubscription();
   const gate = useUpgradeGate();
   const navigate = useNavigate();
@@ -50,15 +52,15 @@ function ComparePage() {
   const proLocked = !sub.loading && !sub.isPro;
 
   const plansQ = useQuery({
-    queryKey: ["my-plans"],
+    queryKey: ["my-plans", auth.user?.id],
     queryFn: () => fetchPlans(),
-    enabled: !proLocked,
+    enabled: auth.ready && !!auth.user && !proLocked,
   });
 
   const compareQ = useQuery({
-    queryKey: ["compare", selected],
+    queryKey: ["compare", auth.user?.id, selected],
     queryFn: () => fetchCompare({ data: { planIds: selected, environment: getPaddleEnvironment() } }),
-    enabled: !proLocked && selected.length >= 2,
+    enabled: auth.ready && !!auth.user && !proLocked && selected.length >= 2,
   });
 
   const toggle = (id: string) => {

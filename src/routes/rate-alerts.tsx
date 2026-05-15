@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import {
   getRateAlert,
@@ -22,8 +23,8 @@ export const Route = createFileRoute("/rate-alerts")({
   }),
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/login" });
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/login" });
   },
   component: RateAlertsPage,
 });
@@ -42,6 +43,7 @@ const C = {
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
 function RateAlertsPage() {
+  const auth = useAuthReady();
   const sub = useSubscription();
   const gate = useUpgradeGate();
   const qc = useQueryClient();
@@ -52,9 +54,9 @@ function RateAlertsPage() {
   const proLocked = !sub.loading && !sub.isPro;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["rate-alert"],
+    queryKey: ["rate-alert", auth.user?.id],
     queryFn: () => fetchAlert(),
-    enabled: !proLocked,
+    enabled: auth.ready && !!auth.user && !proLocked,
   });
 
   const [target, setTarget] = useState("6.00");

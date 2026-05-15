@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import {
   getCoachMessages,
@@ -22,8 +23,8 @@ export const Route = createFileRoute("/coach")({
   }),
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/login" });
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/login" });
   },
   component: CoachPage,
 });
@@ -38,6 +39,7 @@ const C = {
 };
 
 function CoachPage() {
+  const auth = useAuthReady();
   const sub = useSubscription();
   const navigate = useNavigate();
   const gate = useUpgradeGate();
@@ -52,9 +54,9 @@ function CoachPage() {
   const proLocked = !sub.loading && !sub.isPro;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["coach-messages"],
+    queryKey: ["coach-messages", auth.user?.id],
     queryFn: () => fetchMsgs(),
-    enabled: !proLocked,
+    enabled: auth.ready && !!auth.user && !proLocked,
   });
 
   const send = useMutation({
