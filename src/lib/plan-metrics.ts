@@ -197,6 +197,7 @@ export function computePlanMetrics(
   return {
     zip,
     city: zipData.city,
+    monthlySavings: num("monthlySavings"),
     homeStyleLabel: styleName,
     targetPrice,
     downPct: effectiveDownPct,
