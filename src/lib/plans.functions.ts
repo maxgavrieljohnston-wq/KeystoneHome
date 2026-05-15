@@ -383,19 +383,22 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
 
     const { data: plan, error } = await supabaseAdmin
       .from("plans")
-      .select("id, email, title, answers, created_at, assumptions")
+      .select("id, email, title, answers, created_at, assumptions, target_move_in, current_savings")
       .eq("id", data.planId)
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!plan) throw new Response("Not found", { status: 404 });
 
-    const { computePlanMetrics } = await import("@/lib/plan-metrics");
+    const { computePlanMetrics, computeGoalProgress } = await import("@/lib/plan-metrics");
     const { projectScenarios, futureValue, SCENARIOS } = await import("@/lib/invest-projection");
 
     const answers = (plan.answers ?? {}) as Record<string, unknown>;
     const assumptions = (plan.assumptions ?? null) as Record<string, number> | null;
     const m = computePlanMetrics(answers, assumptions);
+    const targetMoveIn = (plan.target_move_in ?? null) as string | null;
+    const currentSavings = (plan.current_savings ?? null) as number | null;
+    const g = computeGoalProgress(m, currentSavings, targetMoveIn);
 
     const esc = (v: unknown) => {
       const s = String(v ?? "");
