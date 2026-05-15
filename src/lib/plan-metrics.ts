@@ -30,6 +30,10 @@ export type PlanMetrics = {
   timelineYears: number;
   monthlyToSave: number;
   monthlyInvested: number;
+  expectedReturnRate: number;
+  closing: number;
+  moving: number;
+  cashToClose: number;
   readiness: number;
   readinessLabel: string;
 };
