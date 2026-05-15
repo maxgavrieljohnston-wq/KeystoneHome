@@ -699,26 +699,24 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
           value={tagDraft}
           onChange={(e) => setTagDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
-          onBlur={handleAddTag}
+          onBlur={() => handleAddTag()}
           placeholder={sub.isPlus ? "+ tag" : "+ tag (Plus)"}
           style={{ flex: "0 0 auto", minWidth: 70, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", border: `1px dashed ${C.inkFaint}`, borderRadius: 999, padding: "3px 8px", background: "transparent", color: C.ink }}
         />
       </div>
+      {tagSuggestions.length > 0 && sub.isPlus && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, alignItems: "center" }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: C.inkMute }}>Recent:</span>
+          {tagSuggestions.map((t) => (
+            <button key={t} type="button" onClick={() => handleAddTag(t)} style={{ padding: "2px 8px", borderRadius: 999, background: "transparent", border: `1px dotted ${C.inkFaint}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: C.inkMute, cursor: "pointer" }}>+ {t}</button>
+          ))}
+        </div>
+      )}
 
       {open && <PlanDetails answers={plan.answers} />}
 
-      {/* Goal panel */}
-      {plan.target_move_in && (
-        <div style={{ marginTop: 14, padding: "10px 12px", borderLeft: `2px solid ${C.ember}`, background: C.paper }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.ember, marginBottom: 4 }}>Goal</div>
-          <div style={{ fontSize: 15 }}>
-            Target move-in: <strong>{new Date(plan.target_move_in).toLocaleDateString()}</strong>
-            {plan.current_savings != null && (
-              <> · Saved: <strong>${plan.current_savings.toLocaleString()}</strong></>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Goal tracker */}
+      <GoalTracker plan={plan} isPlus={sub.isPlus} onOpenSettings={() => setShowSettings(true)} />
 
       {/* Notes display */}
       {plan.notes && !showSettings && (
