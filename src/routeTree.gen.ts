@@ -15,6 +15,7 @@ import { Route as StressTestRouteImport } from './routes/stress-test'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RateAlertsRouteImport } from './routes/rate-alerts'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as MarketRouteImport } from './routes/market'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CompareRouteImport } from './routes/compare'
@@ -56,6 +57,11 @@ const RateAlertsRoute = RateAlertsRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketRoute = MarketRouteImport.update({
+  id: '/market',
+  path: '/market',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
   '/rate-alerts': typeof RateAlertsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/dashboard'
     | '/login'
+    | '/market'
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/dashboard'
     | '/login'
+    | '/market'
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/dashboard'
     | '/login'
+    | '/market'
     | '/pricing'
     | '/rate-alerts'
     | '/reset-password'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  MarketRoute: typeof MarketRoute
   PricingRoute: typeof PricingRoute
   RateAlertsRoute: typeof RateAlertsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -309,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market': {
+      id: '/market'
+      path: '/market'
+      fullPath: '/market'
+      preLoaderRoute: typeof MarketRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  MarketRoute: MarketRoute,
   PricingRoute: PricingRoute,
   RateAlertsRoute: RateAlertsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
