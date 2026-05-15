@@ -17,6 +17,7 @@ import { getReminderPrefs, setReminderPrefs } from "@/lib/reminders.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { getPaddleEnvironment } from "@/lib/paddle";
+import { useAuthReady } from "@/hooks/useAuthReady";
 import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
@@ -33,8 +34,8 @@ export const Route = createFileRoute("/dashboard")({
   }),
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
       throw redirect({ to: "/login" });
     }
   },
@@ -73,10 +74,12 @@ type PlanRow = {
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const auth = useAuthReady();
   const fetchPlans = useServerFn(getMyPlans);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["my-plans"],
+    queryKey: ["my-plans", auth.user?.id],
     queryFn: () => fetchPlans(),
+    enabled: auth.ready && !!auth.user,
   });
   const sub = useSubscription();
   const gate = useUpgradeGate();
@@ -218,7 +221,7 @@ function DashboardPage() {
 
         <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} />
 
-        {isLoading ? (
+        {!auth.ready || isLoading ? (
           <p style={{ color: C.inkSoft, fontSize: 18 }}>Loading your plans…</p>
         ) : error ? (
           <p style={{ color: C.ember, fontSize: 16 }}>
