@@ -192,6 +192,26 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   page.drawLine({ start: { x: M, y: y + 9 }, end: { x: W - M, y: y + 9 }, color: ink, thickness: 0.4 });
   y -= 2;
   row("Total cash needed", money(m.cashToClose), { bold: true });
+
+  // Goal tracker (only when user has set one)
+  const g = computeGoalProgress(m, plan.current_savings ?? null, plan.target_move_in ?? null);
+  if (g.hasGoal) {
+    y -= 2;
+    if (plan.current_savings != null) {
+      row("Saved so far", `${money(plan.current_savings)} (${g.pctToGoal.toFixed(0)}% of goal)`, {
+        color: g.pctToGoal >= 100 ? sage : g.pctToGoal >= 50 ? gold : ink,
+      });
+    }
+    if (plan.target_move_in) {
+      row(
+        `Target move-in${g.monthsToGoal != null ? ` (${g.monthsToGoal} mo)` : ""}`,
+        new Date(plan.target_move_in).toLocaleDateString(),
+      );
+    }
+    if (g.requiredMonthly != null && g.remaining > 0) {
+      row("Required savings to hit goal", `${money(g.requiredMonthly)}/mo`, { bold: true });
+    }
+  }
   y -= 10;
 
   sectionHeader("03", "Path to your deposit");
