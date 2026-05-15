@@ -47,6 +47,8 @@ const PLANS: Array<{
     features: [
       "Save unlimited plans",
       "Partner / household mode",
+      "Invest vs. save projection",
+      "Monthly Investment Plan PDF",
       "Export your plan as PDF & CSV",
       "Tags, notes & goal tracker",
       "Themed reports (light, dark, sepia)",
