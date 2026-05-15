@@ -493,7 +493,7 @@ function TagChip({ label, active, onClick }: { label: string; active: boolean; o
   );
 }
 
-function PlanCard({ plan }: { plan: PlanRow }) {
+function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: string[] }) {
   const qc = useQueryClient();
   const sub = useSubscription();
   const gate = useUpgradeGate();
