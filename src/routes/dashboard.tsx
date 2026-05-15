@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -240,8 +240,8 @@ function DashboardPage() {
           </>
         )}
 
-        {plans.length > 0 && (
-          <div id="premium-features">
+        <div id="premium-features">
+          {plans.length > 0 && (
             <InvestmentSection
               answers={plans[0].answers}
               assumptions={plans[0].assumptions}
@@ -249,25 +249,38 @@ function DashboardPage() {
               isPlus={sub.isPlus}
               isPro={sub.isPro}
             />
-          </div>
-        )}
+          )}
 
-        <PremiumPanel
-          isPlus={sub.isPlus}
-          isPro={sub.isPro}
-        />
+          <PremiumPanel isPlus={sub.isPlus} isPro={sub.isPro} />
+        </div>
       </div>
     </div>
   );
 }
 
-function TierBanner({ isPlus, isPro, loading }: { isPlus: boolean; isPro: boolean; loading: boolean }) {
+function TierBanner({
+  isPlus,
+  isPro,
+  loading,
+}: {
+  isPlus: boolean;
+  isPro: boolean;
+  loading: boolean;
+}) {
   if (loading) return null;
   if (!isPlus && !isPro) return null;
   const label = isPro ? "Pro" : "Plus";
+  const jumpToFeatures = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    document
+      .getElementById("premium-features")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", "#premium-features");
+  };
   return (
     <a
       href="#premium-features"
+      onClick={jumpToFeatures}
       style={{
         display: "block",
         marginBottom: 24,
