@@ -58,7 +58,8 @@ function BrokerMatchPage() {
   });
 
   const submitMut = useMutation({
-    mutationFn: (input: Parameters<typeof submitFn>[0]["data"]) => submitFn({ data: input }),
+    mutationFn: (input: Parameters<typeof submitBrokerMatchRequest>[0]["data"]) =>
+      submitFn({ data: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["broker-match-requests"] }),
   });
 
