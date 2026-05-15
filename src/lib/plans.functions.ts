@@ -14,10 +14,6 @@ import {
 } from "@/lib/keystone";
 import { buildPlanPdfBytes } from "@/lib/plan-pdf.server";
 
-const SITE_NAME = "Keystone";
-const SENDER_DOMAIN = "notify.keystonehomeowners.com";
-const FROM_DOMAIN = "keystonehomeowners.com";
-const SITE_URL = "https://keystonehomeowners.com";
 
 const submitSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(320),
