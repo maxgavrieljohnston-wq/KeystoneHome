@@ -23,7 +23,7 @@ import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAcco
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
-import { computePlanMetrics } from "@/lib/plan-metrics";
+import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
