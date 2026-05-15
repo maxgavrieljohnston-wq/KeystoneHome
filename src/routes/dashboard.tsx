@@ -896,6 +896,37 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
           Delete
         </ActionLink>
       </div>
+
+      {/* Theme picker — surfaced next to exports so it's actually findable */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute }}>
+          Report theme {sub.isPlus ? "" : "(Plus)"}
+        </span>
+        {THEME_IDS.map((id) => {
+          const th = PLAN_THEMES[id];
+          const isActive = (plan.theme ?? "light") === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleTheme(id)}
+              title={th.label}
+              aria-label={`Use ${th.label} theme`}
+              style={{
+                width: 22, height: 22, borderRadius: 999, padding: 0, cursor: "pointer",
+                background: th.paper,
+                border: `2px solid ${isActive ? C.ink : C.inkFaint}`,
+                outline: isActive ? `1px solid ${C.ink}` : "none",
+                outlineOffset: 1,
+                position: "relative",
+                opacity: sub.isPlus ? 1 : 0.55,
+              }}
+            >
+              <span style={{ position: "absolute", inset: 4, borderRadius: 999, background: th.ember }} />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
