@@ -442,7 +442,7 @@ function PlansList({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
         {visible.map((p) => (
-          <PlanCard key={p.id} plan={p} />
+          <PlanCard key={p.id} plan={p} suggestions={allTags} />
         ))}
       </div>
 
