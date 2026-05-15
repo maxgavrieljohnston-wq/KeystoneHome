@@ -223,7 +223,7 @@ function DashboardPage() {
           {greeting}
         </h1>
 
-        <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} />
+        <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} hasPlan={plans.length > 0} />
 
         {!auth.ready || (auth.ready && !auth.user) || isLoading ? (
           <p style={{ color: C.inkSoft, fontSize: 18 }}>Loading your plans…</p>
@@ -262,10 +262,12 @@ function TierBanner({
   isPlus,
   isPro,
   loading,
+  hasPlan,
 }: {
   isPlus: boolean;
   isPro: boolean;
   loading: boolean;
+  hasPlan: boolean;
 }) {
   if (loading) return null;
   if (!isPlus && !isPro) return null;
@@ -277,10 +279,17 @@ function TierBanner({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.history.replaceState(null, "", "#premium-features");
   };
+  const tagline = hasPlan
+    ? `Your ${label} features are below — Invest vs. save, recommended accounts${
+        isPro ? ", risk scenarios, coach & rate alerts" : ", broker waitlist & more"
+      }.`
+    : `Build your first plan to unlock your ${label} features — Invest vs. save, recommended accounts${
+        isPro ? ", risk scenarios, coach & rate alerts" : ", broker waitlist & more"
+      }.`;
   return (
     <a
-      href="#premium-features"
-      onClick={jumpToFeatures}
+      href={hasPlan ? "#premium-features" : "/quiz"}
+      onClick={hasPlan ? jumpToFeatures : undefined}
       style={{
         display: "block",
         marginBottom: 24,
@@ -304,9 +313,10 @@ function TierBanner({
         ◆ {label} unlocked
       </div>
       <div style={{ fontSize: 16, lineHeight: 1.4 }}>
-        Your {label} features are below — Invest vs. save, recommended accounts
-        {isPro ? ", risk scenarios, coach & rate alerts" : ", broker waitlist & more"}.{" "}
-        <span style={{ color: "#f0a890", textDecoration: "underline" }}>Jump to features →</span>
+        {tagline}{" "}
+        <span style={{ color: "#f0a890", textDecoration: "underline" }}>
+          {hasPlan ? "Jump to features →" : "Build my plan →"}
+        </span>
       </div>
     </a>
   );
