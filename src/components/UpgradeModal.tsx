@@ -25,7 +25,6 @@ export function UpgradeModal({
   requiredTier: RequiredTier;
   featureName: string;
 }) {
-  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const { openCheckout, loading } = usePaddleCheckout();
@@ -44,19 +43,16 @@ export function UpgradeModal({
     {
       id: "plus" as const,
       name: "Plus",
-      oneTimePriceId: "plus_lifetime",
-      oneTime: 29,
-      isOneTime: true as const,
+      priceId: "plus_monthly",
+      monthly: 5,
       features: PLUS_FEATURES,
+      highlight: false,
     },
     {
       id: "pro" as const,
       name: "Pro",
-      monthlyPriceId: "pro_monthly",
-      yearlyPriceId: "pro_yearly",
-      monthly: 19,
-      yearly: 182,
-      isOneTime: false as const,
+      priceId: "pro_monthly",
+      monthly: 11,
       features: [
         { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as const,
         ...PRO_FEATURES,
@@ -67,15 +63,9 @@ export function UpgradeModal({
 
   // If feature requires Pro, hide Plus option
   const visible = requiredTier === "pro" ? tiers.filter((t) => t.id === "pro") : tiers;
-  const showBillingToggle = visible.some((t) => !t.isOneTime);
 
   const handlePick = async (tier: typeof tiers[number]) => {
-    const priceId = tier.isOneTime
-      ? tier.oneTimePriceId
-      : billing === "monthly"
-        ? tier.monthlyPriceId
-        : tier.yearlyPriceId;
-    await openCheckout({ priceId, customerEmail: email, userId });
+    await openCheckout({ priceId: tier.priceId, customerEmail: email, userId });
   };
 
   return (
