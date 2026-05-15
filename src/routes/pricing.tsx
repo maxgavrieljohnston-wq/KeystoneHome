@@ -34,6 +34,7 @@ type PlusPlan = {
   isOneTime: true;
   tagline: string;
   features: TierFeature[];
+  highlightIds: string[];
   highlight?: boolean;
 };
 type ProPlan = {
@@ -46,6 +47,7 @@ type ProPlan = {
   isOneTime: false;
   tagline: string;
   features: TierFeature[];
+  highlightIds: string[];
   highlight?: boolean;
 };
 type Plan = PlusPlan | ProPlan;
@@ -59,6 +61,7 @@ const PLANS: Plan[] = [
     isOneTime: true,
     tagline: "One-time unlock. Yours forever.",
     features: PLUS_FEATURES,
+    highlightIds: ["save", "invest", "pdf", "share"],
   },
   {
     id: "pro",
@@ -73,9 +76,19 @@ const PLANS: Plan[] = [
       { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" },
       ...PRO_FEATURES,
     ],
+    highlightIds: ["_plus", "coach", "stress", "alerts", "broker"],
     highlight: true,
   },
 ];
+
+function splitFeatures(plan: Plan) {
+  const order = new Map(plan.highlightIds.map((id, i) => [id, i]));
+  const highlighted = plan.features
+    .filter((f) => order.has(f.id))
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const rest = plan.features.filter((f) => !order.has(f.id));
+  return { highlighted, rest };
+}
 
 function PricingPage() {
   const navigate = useNavigate();
