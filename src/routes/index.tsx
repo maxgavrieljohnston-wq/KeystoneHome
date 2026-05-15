@@ -363,7 +363,7 @@ function KeystoneApp() {
 
   return (
     <Shell>
-      {screen !== "welcome" && screen !== "dashboard" && screen !== "handoff" && (
+      {screen !== "welcome" && screen !== "dashboard" && (
         <TopBar
           screen={screen}
           onBack={screenIdx > 0 ? back : undefined}
