@@ -635,7 +635,7 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     title?: string;
     tags?: string[];
     notes?: string | null;
-    theme?: "light" | "dark" | "sepia";
+    theme?: PlanThemeId;
     targetMoveIn?: string | null;
     currentSavings?: number | null;
     environment?: "sandbox" | "live";
