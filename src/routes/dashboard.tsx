@@ -1033,21 +1033,13 @@ function PlanDetails({ answers }: { answers: Record<string, unknown> }) {
   );
 }
 
-const PREMIUM_FEATURES: Array<{
-  id: string;
-  label: string;
-  tier: "plus" | "pro";
-}> = [
-  { id: "save", label: "Unlimited saved plans", tier: "plus" },
-  { id: "pdf", label: "Full plan export (PDF + CSV)", tier: "plus" },
-  { id: "share", label: "Shareable plan link", tier: "plus" },
-  { id: "tags", label: "Tags, notes & goal tracker", tier: "plus" },
-  { id: "theme", label: "Themed reports", tier: "plus" },
-  { id: "reminders", label: "Email reminders", tier: "plus" },
-  { id: "coach", label: "AI homebuying coach", tier: "pro" },
-  { id: "compare", label: "Side-by-side scenario compare", tier: "pro" },
-  { id: "alerts", label: "Live mortgage rate alerts", tier: "pro" },
-];
+import { PREMIUM_FEATURES as TIER_FEATURES } from "@/lib/tier-features";
+
+const PREMIUM_FEATURES = TIER_FEATURES.map((f) => ({
+  id: f.id,
+  label: f.short,
+  tier: f.tier,
+}));
 
 function PremiumPanel({ isPlus, isPro }: { isPlus: boolean; isPro: boolean }) {
   const tierLabel = isPro ? "Pro" : isPlus ? "Plus" : "Free";
