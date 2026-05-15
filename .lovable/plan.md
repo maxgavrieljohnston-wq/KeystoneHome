@@ -1,53 +1,53 @@
-## Feature #6 — Email reminders
+## Feature #7 — Themed reports
 
 ### Current state (honest read)
 
-**Toggle UI** — `RemindersToggle` on the dashboard. Plus-gated. On enable, `setReminderPrefs` writes `profiles.reminders_enabled = true` and `next_reminder_at = now + 30d`. Disable nulls them. That's it for user controls.
+**What exists.** Three themes (`light`, `dark`, `sepia`) defined in `src/lib/plan-pdf.server.ts` (`THEMES` with bg/ink/mute/faint/ember/sage/gold). Persisted as `plans.theme`. Plus-gated via `requirePlus("Themed reports")` in `handleTheme`. Re-rendered in:
+- PDF (`buildPlanPdfBytes`) — full theme honoured.
+- Public share page (`src/routes/p.$slug.tsx`) — has its **own duplicate** `THEMES` map with a different shape (`paper/ink/soft/mute/ember`).
 
-**Dispatch endpoint** — `POST /api/public/reminders/dispatch` (service-role-bearer-protected) selects up to 100 due profiles, re-checks subscription, looks up auth email, checks suppression, pulls last 10 plans, renders an HTML+text "monthly check-in" digest, enqueues to `transactional_emails` queue, advances the schedule.
-
-**What's actually missing**:
-
-1. **Nothing calls the dispatcher.** No `pg_cron` schedule, no external scheduler. The endpoint exists but never fires. The toggle works, the email never arrives. This is a shipped-but-broken feature.
-2. **No cadence choice.** Hard-coded 30 days. Not exposed in UI, not stored per-user.
-3. **No "reminder due soon" preview** for the user — they enable it and have no idea what they'll get or when.
-4. **No unsubscribe link in the email.** Infrastructure exists (`email_unsubscribe_tokens` table, suppression flow) but the digest template doesn't include a token URL or a List-Unsubscribe header.
-5. **No re-engagement variants.** Same template every month regardless of stale plan, missed savings, big rate move, hit-the-deposit-goal, etc. The new goal-progress data is sitting right there and not used.
-6. **`last_reminder_at` is set but never displayed.** User has no proof the system is working.
-7. **Email lookup uses `auth.users` directly** via the schema-cast hack — fragile and has happened to silently skip users when the lookup fails.
+**What's weak.**
+1. **Only 3 themes**, and they're generic. The marketing copy says "themed reports" but you get light, dark, or sepia — same tonal family the rest of the internet ships. No brand‑forward option (navy/trust, emerald/prestige, terracotta/sage) — exactly the kind of palettes the design system already curates.
+2. **Picker is buried.** Theme buttons live at the bottom of the per‑plan "Settings" panel (`dashboard.tsx` line ~837), under target date / current savings / notes. Users open Settings to edit a goal, never to pick a theme. Most Plus users will never find it.
+3. **No live preview.** The picker mutates `plan.theme` and… nothing on the dashboard changes. To see the theme you have to export the PDF or open the share link. Picking blind kills the upsell.
+4. **Two sources of truth for themes.** PDF defines `bg/ink/mute/faint/ember/sage/gold`. Share page defines `paper/ink/soft/mute/ember`. Different keys, different hex values, no shared module. Add a fourth theme and you'll do it twice and they'll drift.
+5. **No swatch indicator on the card.** Once theme is set, nothing on the `PlanCard` tells you which one. Users will toggle, forget, re‑download to verify.
 
 ### Verdict
 
-The hardest part (queue, suppression, sub re-check, template) is built. The product is broken because the cron isn't wired and the email is generic.
+Themed reports is shipped but unfindable, undifferentiated, and duplicated across two renderers. Cheap to fix.
 
 ### Proposed improvements (ranked)
 
-1. **Wire `pg_cron` to call the dispatcher daily.** Without this, none of the other improvements matter. Use the documented stable URL `project--{project-id}.lovable.app/api/public/reminders/dispatch` with `Authorization: Bearer {SUPABASE_SERVICE_ROLE_KEY}`. Once a day at a sane hour (e.g. 14:00 UTC = 9am ET / 6am PT). Migration only.
-2. **Pull goal-progress + rate-delta into the digest body.** For each plan, show: % to cash-to-close, months to move-in, ahead/behind pace, and (if `mortgageRate` from the latest scrape differs from the plan's stored rate by ≥0.25pp) a "rates moved" line. Reuses `computePlanMetrics` + `computeGoalProgress`. This is the actual reason to send the email.
-3. **Add unsubscribe link + List-Unsubscribe header.** Issue/lookup a token in `email_unsubscribe_tokens`, render `https://keystonehomeowners.com/unsubscribe?token=…`, set `List-Unsubscribe: <mailto:…>, <https…>` headers on the queued payload. We already have the suppression table; we just don't link to it.
-4. **Show "Last sent / Next due" in the toggle UI.** `getReminderPrefs` already returns `lastAt` and `nextAt` — render them. Closes the trust loop.
-5. **Cadence picker (monthly / quarterly).** Add `reminder_cadence_days INT DEFAULT 30` to `profiles`, expose in the toggle. People don't all want monthly; some want a quarterly check-in. Simple migration + 2 lines of UI.
+1. **Single source of truth.** Extract a shared `PLAN_THEMES` module (e.g. `src/lib/plan-themes.ts`) with one normalized shape (paper/ink/inkSoft/inkMute/faint/ember/sage/gold). Both `plan-pdf.server.ts` and `p.$slug.tsx` import it. Eliminates drift; required before adding more themes.
+2. **Add 2 brand‑forward themes.** `navy` (deep navy + warm white, finance/trust) and `terracotta` (terracotta + sage, warmer/lifestyle). Five total: light / dark / sepia / navy / terracotta. Update the `theme` enum in `src/lib/plans.functions.ts` validator and DB column comment if any.
+3. **Move the picker out of Settings into the export row.** Render the swatches inline next to "Export PDF / CSV" on the `PlanCard`, with the active swatch highlighted. Keeps Plus‑gating; drops 1 click; makes the feature discoverable.
+4. **Show the active theme on the card** even when picker is closed — tiny colored dot + name ("Sepia") next to the title or in the export row. Costs ~5 lines, closes the trust loop.
+5. **Mini live preview.** Render a small (180×100) themed swatch card next to the picker — header bar, ember accent, mute body line — so the user sees the palette before downloading. Pure CSS, no PDF round‑trip.
 
 ### Skip
-- **Per-plan reminders**: nice idea, scope creep — single-user-cadence is enough.
-- **AI-written copy variants**: too expensive per send for marginal value.
-- **Rate-move trigger as separate email**: that's Feature #9 (rate alerts), don't bleed it in here.
+
+- **Custom user colors** — scope creep, support burden, and 99% of outputs would be ugly. Curated set only.
+- **Per‑section accent overrides** — same reason.
+- **Typography variants** (serif vs sans report) — real feature but separate from "themed".
+- **OG image / share‑page screenshot in theme** — Feature #6/social adjacent, not here.
 
 ### What I'd ship
 
-**#1 + #2 + #3 + #4.** Skip #5 — cadence choice is real but not load-bearing; if users complain, add later.
+**#1 + #2 + #3 + #4.** Skip #5 (mini preview) for this pass — nice but not load‑bearing once #3 puts swatches in front of the user; revisit if upgrade conversion on this lever stays flat.
 
 ### Files I'd touch
 
-- `supabase/migrations/<new>.sql` — `cron.schedule('reminders-dispatch', '0 14 * * *', ...net.http_post(...))` calling the stable preview URL with service-role bearer. Idempotent (`cron.unschedule` first).
-- `src/routes/api/public/reminders/dispatch.ts` — call `computePlanMetrics` + `computeGoalProgress` per plan, enrich digest with progress/pace; mint or reuse unsubscribe token; pass `list_unsubscribe` and unsubscribe URL to the email payload; replace the `auth.users` schema-cast lookup with `supabaseAdmin.auth.admin.getUserById(userId)` (cleaner, supported API).
-- `src/routes/dashboard.tsx` — render `lastAt` and `nextAt` in `RemindersToggle`.
-- `src/routes/unsubscribe.tsx` — confirm the route exists and accepts `?token=`; if missing, add a minimal page that POSTs to a server fn which marks the token used and inserts into `suppressed_emails`.
+- **New** `src/lib/plan-themes.ts` — exported `PLAN_THEMES` record + `PlanTheme` type + `THEME_IDS` array.
+- `src/lib/plan-pdf.server.ts` — replace local `THEMES` with import from `plan-themes`; map `[r,g,b]` once at top.
+- `src/routes/p.$slug.tsx` — replace local `THEMES` with import from `plan-themes` (adapter for the slightly different keys it currently uses).
+- `src/routes/dashboard.tsx` — move theme picker from Settings panel (~line 837) to the export row in `PlanCard`; render small active‑theme dot/label on the card header; keep `handleTheme` + `requirePlus` exactly as is.
+- `src/lib/plans.functions.ts` — extend `theme` Zod enum (line ~285) to include the two new IDs.
+- (Optional) `supabase/migrations/<new>.sql` — only if the column has a CHECK constraint on theme values; quick `read_query` against `information_schema` will confirm. If it's a plain `text` column (likely), no migration needed.
 
 ### Open questions
 
-1. **Production URL for cron.** I'll target the stable `project--{project-id}.lovable.app` URL — confirm that's the right deployment. (Custom domain `keystonehomeowners.com` exists but isn't in `project_urls`; safer to use the stable Lovable URL for cron.)
-2. **Unsubscribe page**: I should check whether `src/routes/unsubscribe.tsx` already exists before scaffolding one. (Would do this during build.)
-3. **Email queue worker cadence.** Out of scope for this feature, but if `process.ts` isn't itself on a cron, the dispatcher will enqueue and nothing will send. Worth a quick check before declaring victory.
+1. **Two new theme IDs okay?** I'm proposing `navy` and `terracotta`. If you'd rather pick from the curated palette list (e.g. `emerald`, `noir-gold`), name them now and I'll wire those instead.
+2. **Picker placement on `PlanCard` export row** — small swatches (5 dots) is my plan. If you'd rather a dropdown, say so; otherwise swatches.
 
-Want me to proceed with #1+#2+#3+#4? I'll verify the unsubscribe route and queue worker schedule as I go.
+Want me to proceed with #1+#2+#3+#4 as scoped?

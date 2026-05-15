@@ -24,6 +24,7 @@ import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
 import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
+import { PLAN_THEMES, THEME_IDS, getPlanTheme, type PlanThemeId } from "@/lib/plan-themes";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -634,7 +635,7 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     title?: string;
     tags?: string[];
     notes?: string | null;
-    theme?: "light" | "dark" | "sepia";
+    theme?: PlanThemeId;
     targetMoveIn?: string | null;
     currentSavings?: number | null;
     environment?: "sandbox" | "live";
@@ -720,10 +721,11 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     setShowSettings(false);
   };
 
-  const handleTheme = (theme: "light" | "dark" | "sepia") => {
+  const handleTheme = (theme: PlanThemeId) => {
     if (!requirePlus("Themed reports")) return;
     metaM.mutate({ planId: plan.id, theme, environment: env });
   };
+  const activeTheme = getPlanTheme(plan.theme);
 
   const shareUrl = plan.share_slug
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${plan.share_slug}`
@@ -761,9 +763,12 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
                 </span>
               )}
             </div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.inkMute, marginTop: 4 }}>
-              {new Date(plan.created_at).toLocaleDateString()}
-              {plan.share_enabled && <span style={{ color: C.ember, marginLeft: 8 }}>· Shared</span>}
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C.inkMute, marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span>{new Date(plan.created_at).toLocaleDateString()}</span>
+              {plan.share_enabled && <span style={{ color: C.ember }}>· Shared</span>}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.inkMute }} title={`Theme: ${activeTheme.label}`}>
+                · <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 999, background: activeTheme.ember, border: `1px solid ${C.inkFaint}` }} /> {activeTheme.label}
+              </span>
             </div>
           </div>
         )}
@@ -834,13 +839,6 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
             <button type="button" onClick={handleSaveSettings} style={{ padding: "6px 12px", background: C.ink, color: C.paper, border: "none", borderRadius: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Save</button>
             <button type="button" onClick={() => setShowSettings(false)} style={{ padding: "6px 12px", background: "transparent", color: C.inkMute, border: "none", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>Cancel</button>
           </div>
-          {/* Theme picker */}
-          <div style={{ display: "flex", gap: 6, alignItems: "center", paddingTop: 8, borderTop: `1px solid ${C.inkFaint}` }}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute, marginRight: 4 }}>Theme</span>
-            {(["light", "dark", "sepia"] as const).map((t) => (
-              <button key={t} type="button" onClick={() => handleTheme(t)} style={{ padding: "4px 10px", borderRadius: 999, border: `1px solid ${(plan.theme ?? "light") === t ? C.ink : C.inkFaint}`, background: (plan.theme ?? "light") === t ? C.ink : "transparent", color: (plan.theme ?? "light") === t ? C.paper : C.inkSoft, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>{t}</button>
-            ))}
-          </div>
         </div>
       )}
 
@@ -897,6 +895,37 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
         <ActionLink onClick={() => { if (confirm("Delete this plan?")) deleteM.mutate(); }} danger>
           Delete
         </ActionLink>
+      </div>
+
+      {/* Theme picker — surfaced next to exports so it's actually findable */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.inkMute }}>
+          Report theme {sub.isPlus ? "" : "(Plus)"}
+        </span>
+        {THEME_IDS.map((id) => {
+          const th = PLAN_THEMES[id];
+          const isActive = (plan.theme ?? "light") === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleTheme(id)}
+              title={th.label}
+              aria-label={`Use ${th.label} theme`}
+              style={{
+                width: 22, height: 22, borderRadius: 999, padding: 0, cursor: "pointer",
+                background: th.paper,
+                border: `2px solid ${isActive ? C.ink : C.inkFaint}`,
+                outline: isActive ? `1px solid ${C.ink}` : "none",
+                outlineOffset: 1,
+                position: "relative",
+                opacity: sub.isPlus ? 1 : 0.55,
+              }}
+            >
+              <span style={{ position: "absolute", inset: 4, borderRadius: 999, background: th.ember }} />
+            </button>
+          );
+        })}
       </div>
     </div>
   );

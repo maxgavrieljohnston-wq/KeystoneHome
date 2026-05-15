@@ -1,0 +1,2 @@
+ALTER TABLE public.plans DROP CONSTRAINT IF EXISTS plans_theme_check;
+ALTER TABLE public.plans ADD CONSTRAINT plans_theme_check CHECK (theme = ANY (ARRAY['light'::text, 'dark'::text, 'sepia'::text, 'navy'::text, 'terracotta'::text]));

@@ -44,15 +44,11 @@ export const Route = createFileRoute("/p/$slug")({
   component: SharedPlanPage,
 });
 
-const THEMES: Record<string, { paper: string; ink: string; soft: string; mute: string; ember: string }> = {
-  light: { paper: "#f5efe6", ink: "#1a1a1a", soft: "#3d3d3d", mute: "#6b6b6b", ember: "#c4452d" },
-  dark:  { paper: "#0f0f0f", ink: "#f5efe6", soft: "#d4cdc1", mute: "#9a9385", ember: "#e6724f" },
-  sepia: { paper: "#f1e4cf", ink: "#3d2a17", soft: "#5a4128", mute: "#8a6d4d", ember: "#a13a1f" },
-};
+import { getPlanTheme, type PlanTheme } from "@/lib/plan-themes";
 
 function SharedPlanPage() {
   const { plan } = Route.useLoaderData();
-  const theme = THEMES[plan.theme as string] ?? THEMES.light;
+  const theme = getPlanTheme(plan.theme as string | null);
   const a = (plan.answers ?? {}) as Record<string, unknown>;
   const ov = (plan.assumptions ?? {}) as Record<string, number>;
 
@@ -135,7 +131,7 @@ function SharedPlanPage() {
         <h1 style={{ fontSize: 44, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 8px" }}>
           {plan.title || `${styleName} in ${zipData.city}`}
         </h1>
-        <p style={{ color: theme.mute, fontSize: 14, margin: "0 0 32px" }}>
+        <p style={{ color: theme.inkMute, fontSize: 14, margin: "0 0 32px" }}>
           Generated {new Date(plan.created_at as string).toLocaleDateString()}
         </p>
 
@@ -170,13 +166,13 @@ function SharedPlanPage() {
           style={{
             marginTop: 48,
             paddingTop: 20,
-            borderTop: `1px solid ${theme.mute}33`,
+            borderTop: `1px solid ${theme.inkMute}33`,
             textAlign: "center",
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 10,
             letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: theme.mute,
+            color: theme.inkMute,
           }}
         >
           Made with{" "}
@@ -189,10 +185,10 @@ function SharedPlanPage() {
   );
 }
 
-function Stat({ label, value, theme, big }: { label: string; value: string; theme: typeof THEMES.light; big?: boolean }) {
+function Stat({ label, value, theme, big }: { label: string; value: string; theme: PlanTheme; big?: boolean }) {
   return (
     <div style={{ padding: "16px 18px", border: `1.5px solid ${theme.ink}`, borderRadius: 10 }}>
-      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: theme.mute, marginBottom: 6 }}>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: theme.inkMute, marginBottom: 6 }}>
         {label}
       </div>
       <div style={{ fontSize: big ? 36 : 22, lineHeight: 1.1, letterSpacing: "-0.01em" }}>{value}</div>
@@ -200,7 +196,7 @@ function Stat({ label, value, theme, big }: { label: string; value: string; them
   );
 }
 
-function Section({ title, theme, children }: { title: string; theme: typeof THEMES.light; children: React.ReactNode }) {
+function Section({ title, theme, children }: { title: string; theme: PlanTheme; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 28 }}>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: theme.ember, marginBottom: 8 }}>
@@ -211,10 +207,10 @@ function Section({ title, theme, children }: { title: string; theme: typeof THEM
   );
 }
 
-function Row({ k, v, theme, bold }: { k: string; v: string; theme: typeof THEMES.light; bold?: boolean }) {
+function Row({ k, v, theme, bold }: { k: string; v: string; theme: PlanTheme; bold?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${theme.mute}22`, gap: 12 }}>
-      <span style={{ color: theme.soft, fontSize: 16 }}>{k}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${theme.inkMute}22`, gap: 12 }}>
+      <span style={{ color: theme.inkSoft, fontSize: 16 }}>{k}</span>
       <span style={{ fontSize: 16, fontWeight: bold ? 600 : 400 }}>{v}</span>
     </div>
   );
