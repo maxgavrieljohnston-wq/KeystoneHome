@@ -70,7 +70,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   const M = 50;
 
   // Page background (matters for dark/sepia)
-  page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: rgb(...t.bg) });
+  page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: rgb(bg[0], bg[1], bg[2]) });
 
   let y = 752;
 
