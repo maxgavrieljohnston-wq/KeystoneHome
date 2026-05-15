@@ -93,7 +93,6 @@ const FLOW = [
   "risk1",
   "risk2",
   "risk3",
-  "handoff",
   "dashboard",
 ] as const;
 type Screen = (typeof FLOW)[number];
@@ -364,7 +363,7 @@ function KeystoneApp() {
 
   return (
     <Shell>
-      {screen !== "welcome" && screen !== "dashboard" && screen !== "handoff" && (
+      {screen !== "welcome" && screen !== "dashboard" && (
         <TopBar
           screen={screen}
           onBack={screenIdx > 0 ? back : undefined}
@@ -1422,8 +1421,6 @@ function ScreenSwitch({
     return <IntroPage {...i} onNext={next} />;
   }
 
-  if (screen === "handoff") return <Handoff email={d.email} onNext={next} />;
-
   if (screen === "dashboard") return <Report d={d} />;
 
   return null;
@@ -2029,83 +2026,6 @@ function IntroPage({
         {body}
       </p>
       <Cta onClick={onNext}>Begin</Cta>
-    </div>
-  );
-}
-
-function Handoff({ email, onNext }: { email: string; onNext: () => void }) {
-  return (
-    <div style={{ paddingTop: 60, textAlign: "center" }}>
-      <div
-        style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontStyle: "italic",
-          fontWeight: 400,
-          fontSize: 16,
-          color: C.inkMute,
-          marginBottom: 28,
-        }}
-      >
-        — That's everything
-      </div>
-      <div style={{ height: 1, background: C.ink, marginBottom: 32 }} />
-      <h2
-        style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontWeight: 400,
-          fontSize: 38,
-          lineHeight: 1.08,
-          letterSpacing: "-0.02em",
-          margin: "0 0 22px",
-          color: C.ink,
-        }}
-      >
-        Your timeline is ready
-      </h2>
-      <p
-        style={{
-          fontSize: 15,
-          lineHeight: 1.6,
-          color: C.inkSoft,
-          margin: "0 auto 16px",
-          maxWidth: 420,
-        }}
-      >
-        We mapped out a plan to help you reach your down payment—faster.
-      </p>
-      <p
-        style={{
-          fontSize: 14,
-          lineHeight: 1.6,
-          color: C.inkSoft,
-          margin: "0 auto 16px",
-          maxWidth: 420,
-        }}
-      >
-        {email ? (
-          <>
-            We're emailing a PDF copy to{" "}
-            <span style={{ color: C.ink, fontWeight: 600 }}>{email}</span>{" "}
-            so you can save it, share it, or bring it to a lender.
-          </>
-        ) : (
-          "We're emailing a PDF copy so you can save it, share it, or bring it to a lender."
-        )}
-      </p>
-      <p
-        style={{
-          fontSize: 13,
-          lineHeight: 1.6,
-          color: C.inkMute,
-          margin: "0 auto 40px",
-          maxWidth: 420,
-          fontStyle: "italic",
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-        }}
-      >
-        Most people take years. Yours might look different.
-      </p>
-      <Cta onClick={onNext}>Show Me My Timeline →</Cta>
     </div>
   );
 }
