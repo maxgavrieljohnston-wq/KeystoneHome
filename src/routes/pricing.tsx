@@ -93,6 +93,7 @@ function splitFeatures(plan: Plan) {
 function PricingPage() {
   const navigate = useNavigate();
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
+  const [expanded, setExpanded] = useState<Record<PlanId, boolean>>({ plus: false, pro: false });
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const { openCheckout, loading } = usePaddleCheckout();
