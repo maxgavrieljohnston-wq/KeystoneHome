@@ -21,6 +21,7 @@ import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CoachRouteImport } from './routes/coach'
+import { Route as BrokerMatchRouteImport } from './routes/broker-match'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
@@ -90,6 +91,11 @@ const CoachRoute = CoachRouteImport.update({
   path: '/coach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BrokerMatchRoute = BrokerMatchRouteImport.update({
+  id: '/broker-match',
+  path: '/broker-match',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountsRoute = AccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
@@ -137,6 +143,7 @@ const ApiPublicPaymentsWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRoute
+  '/broker-match': typeof BrokerMatchRoute
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRoute
+  '/broker-match': typeof BrokerMatchRoute
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRoute
+  '/broker-match': typeof BrokerMatchRoute
   '/coach': typeof CoachRoute
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accounts'
+    | '/broker-match'
     | '/coach'
     | '/compare'
     | '/dashboard'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/accounts'
+    | '/broker-match'
     | '/coach'
     | '/compare'
     | '/dashboard'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/accounts'
+    | '/broker-match'
     | '/coach'
     | '/compare'
     | '/dashboard'
@@ -273,6 +285,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountsRoute: typeof AccountsRoute
+  BrokerMatchRoute: typeof BrokerMatchRoute
   CoachRoute: typeof CoachRoute
   CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
@@ -379,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoachRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/broker-match': {
+      id: '/broker-match'
+      path: '/broker-match'
+      fullPath: '/broker-match'
+      preLoaderRoute: typeof BrokerMatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accounts': {
       id: '/accounts'
       path: '/accounts'
@@ -441,6 +461,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountsRoute: AccountsRoute,
+  BrokerMatchRoute: BrokerMatchRoute,
   CoachRoute: CoachRoute,
   CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,

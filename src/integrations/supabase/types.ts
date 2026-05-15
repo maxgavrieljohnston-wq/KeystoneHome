@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      broker_match_requests: {
+        Row: {
+          buyer_or_seller: string | null
+          contact_method: string | null
+          contact_time: string | null
+          created_at: string
+          credit_band: string | null
+          first_time_buyer: boolean | null
+          id: string
+          loan_type: string | null
+          notes: string | null
+          plan_id: string | null
+          preferred_language: string | null
+          price_max: number | null
+          price_min: number | null
+          priority: boolean
+          property_type: string | null
+          service_type: string
+          status: string
+          target_city: string | null
+          target_state: string | null
+          target_zip: string | null
+          tier_at_signup: string
+          timeline: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          buyer_or_seller?: string | null
+          contact_method?: string | null
+          contact_time?: string | null
+          created_at?: string
+          credit_band?: string | null
+          first_time_buyer?: boolean | null
+          id?: string
+          loan_type?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          preferred_language?: string | null
+          price_max?: number | null
+          price_min?: number | null
+          priority?: boolean
+          property_type?: string | null
+          service_type: string
+          status?: string
+          target_city?: string | null
+          target_state?: string | null
+          target_zip?: string | null
+          tier_at_signup?: string
+          timeline?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          buyer_or_seller?: string | null
+          contact_method?: string | null
+          contact_time?: string | null
+          created_at?: string
+          credit_band?: string | null
+          first_time_buyer?: boolean | null
+          id?: string
+          loan_type?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          preferred_language?: string | null
+          price_max?: number | null
+          price_min?: number | null
+          priority?: boolean
+          property_type?: string | null
+          service_type?: string
+          status?: string
+          target_city?: string | null
+          target_state?: string | null
+          target_zip?: string | null
+          tier_at_signup?: string
+          timeline?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       broker_waitlist: {
         Row: {
           created_at: string
