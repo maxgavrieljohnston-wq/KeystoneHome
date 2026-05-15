@@ -289,18 +289,22 @@ function KeystoneApp() {
   const sub = useSubscription();
   const fetchMyPlan = useServerFn(getMyPlan);
   const [contactPrefilled, setContactPrefilled] = useState(false);
+  const [agePrefilled, setAgePrefilled] = useState(false);
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const isNewPlanFlow = search.new === true;
 
-  // Any signed-in user lands straight on the dashboard so they see their saved
-  // plan and unlocked features (rather than re-doing the welcome questionnaire).
+  // Signed-in users normally land on the dashboard. When they explicitly start
+  // a new plan (?new=1) we skip the redirect so the wizard runs.
   useEffect(() => {
+    if (isNewPlanFlow) return;
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
       if (data.session) navigate({ to: "/dashboard", replace: true });
     });
     return () => { cancelled = true; };
-  }, [navigate]);
+  }, [navigate, isNewPlanFlow]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -316,31 +320,44 @@ function KeystoneApp() {
     }
   }, []);
 
-  // For paid (Plus/Pro) signed-in users, pull contact info on file so the
-  // wizard doesn't ask again. Falls back gracefully if anything is missing.
+  // For any signed-in user, pull contact info on file so the wizard doesn't
+  // ask for name / email / phone / age again. Falls back gracefully if
+  // anything is missing.
   useEffect(() => {
-    if (!sub.isPlus || contactPrefilled) return;
+    if (contactPrefilled) return;
     let cancelled = false;
-    fetchMyPlan()
-      .then((res) => {
-        if (cancelled || !res?.email) return;
-        setD((prev) => ({
-          ...prev,
-          email: prev.email || res.email || "",
-          firstName: prev.firstName || res.lead?.first_name || "",
-          lastName: prev.lastName || res.lead?.last_name || "",
-          phone: prev.phone || res.lead?.phone || "",
-        }));
-        setContactPrefilled(true);
-      })
-      .catch((err) => console.error("[prefillContact]", err));
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled || !data.session) return;
+      fetchMyPlan()
+        .then((res) => {
+          if (cancelled || !res?.email) return;
+          const leadAnswers = (res.lead?.answers ?? {}) as Record<string, unknown>;
+          const ageFromLead = typeof leadAnswers.age === "number" ? leadAnswers.age : null;
+          setD((prev) => ({
+            ...prev,
+            email: prev.email || res.email || "",
+            firstName: prev.firstName || res.lead?.first_name || "",
+            lastName: prev.lastName || res.lead?.last_name || "",
+            phone: prev.phone || res.lead?.phone || "",
+            age: ageFromLead ?? prev.age,
+          }));
+          if (ageFromLead) setAgePrefilled(true);
+          setContactPrefilled(true);
+        })
+        .catch((err) => console.error("[prefillContact]", err));
+    });
     return () => {
       cancelled = true;
     };
-  }, [sub.isPlus, contactPrefilled, fetchMyPlan]);
+  }, [contactPrefilled, fetchMyPlan]);
 
   const set = <K extends keyof Data>(k: K, v: Data[K]) =>
     setD((prev) => ({ ...prev, [k]: v }));
+
+  const hasContactOnFile =
+    d.email.includes("@") &&
+    d.firstName.trim().length > 0 &&
+    d.lastName.trim().length > 0;
 
   const shouldSkip = (idx: number) => {
     const s = FLOW[idx];
@@ -351,8 +368,9 @@ function KeystoneApp() {
     // Partnered users: skip per-partner detail screens. We only need the
     // shared "with a partner" flag plus household totals on the main finances screen.
     if (d.hasPartner === true && ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit"].includes(s)) return true;
-    // Paid signed-in users already gave us name/email/phone — don't ask again.
-    if (s === "email" && sub.isPlus && d.email.includes("@")) return true;
+    // Returning users: don't re-ask for name/email/phone or age — we have it on file.
+    if (s === "email" && hasContactOnFile) return true;
+    if (s === "age" && agePrefilled) return true;
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
       const partnerOver = d.hasPartner ? d.partnerAge > 38 : true;
