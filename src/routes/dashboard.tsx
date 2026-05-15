@@ -721,10 +721,11 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     setShowSettings(false);
   };
 
-  const handleTheme = (theme: "light" | "dark" | "sepia") => {
+  const handleTheme = (theme: PlanThemeId) => {
     if (!requirePlus("Themed reports")) return;
     metaM.mutate({ planId: plan.id, theme, environment: env });
   };
+  const activeTheme = getPlanTheme(plan.theme);
 
   const shareUrl = plan.share_slug
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${plan.share_slug}`
