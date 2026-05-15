@@ -13,6 +13,7 @@ import {
   sendCoachMessage,
   clearCoachHistory,
   listCoachPlans,
+  getCoachStarters,
 } from "@/lib/coach.functions";
 
 export const Route = createFileRoute("/coach")({
@@ -41,7 +42,6 @@ const C = {
 
 const mono = "'JetBrains Mono', monospace";
 
-// Tight, brand-aligned markdown renderer. Avoids the default 1998 look.
 function CoachMarkdown({ children, dark = false }: { children: string; dark?: boolean }) {
   const linkColor = C.ember;
   const codeBg = dark ? "rgba(255,255,255,0.10)" : "rgba(26,26,26,0.06)";
@@ -108,6 +108,15 @@ type CoachMsg = {
   meta?: { chips?: string[]; plan_id?: string } | null;
 };
 
+// Optimistic message rendered before the server-saved row arrives.
+type LocalMsg = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  meta?: { chips?: string[]; plan_id?: string } | null;
+  pending?: boolean;
+};
+
 function CoachPage() {
   const auth = useAuthReady();
   const sub = useSubscription();
@@ -115,10 +124,15 @@ function CoachPage() {
   const qc = useQueryClient();
   const fetchMsgs = useServerFn(getCoachMessages);
   const fetchPlans = useServerFn(listCoachPlans);
+  const fetchStarters = useServerFn(getCoachStarters);
   const sendMsg = useServerFn(sendCoachMessage);
   const clearMsgs = useServerFn(clearCoachHistory);
   const [input, setInput] = useState("");
   const [planId, setPlanId] = useState<string | "">("");
+  const [pending, setPending] = useState<LocalMsg[]>([]);
+  const [streamingText, setStreamingText] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const proLocked = !sub.loading && !sub.isPro;
@@ -135,51 +149,122 @@ function CoachPage() {
     enabled: auth.ready && !!auth.user && !proLocked,
   });
   const plans = plansData?.plans ?? [];
+  const planTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of plans) map.set(p.id, p.title || "Untitled plan");
+    return map;
+  }, [plans]);
 
-  const send = useMutation({
-    mutationFn: async (content: string) => {
-      return sendMsg({
-        data: {
-          content,
-          environment: getPaddleEnvironment(),
-          planId: planId || undefined,
-        },
-      });
-    },
+  const { data: startersData } = useQuery({
+    queryKey: ["coach-starters", auth.user?.id, planId || "latest"],
+    queryFn: () => fetchStarters({ data: { planId: planId || undefined } }),
+    enabled: auth.ready && !!auth.user && !proLocked,
+  });
+  const starters = startersData?.starters ?? [];
+
+  const clear = useMutation({
+    mutationFn: () => clearMsgs(),
     onSuccess: () => {
-      setInput("");
+      setPending([]);
+      setStreamingText("");
+      setStreamError(null);
       qc.invalidateQueries({ queryKey: ["coach-messages"] });
     },
   });
 
-  const clear = useMutation({
-    mutationFn: () => clearMsgs(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-messages"] }),
-  });
+  const messages = (data?.messages ?? []) as CoachMsg[];
+  // Combine server messages, optimistic pending user message, and the
+  // currently-streaming assistant draft.
+  const view: LocalMsg[] = useMemo(() => {
+    const out: LocalMsg[] = messages.map((m) => ({
+      id: m.id,
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
+      meta: m.meta ?? null,
+    }));
+    out.push(...pending);
+    if (isStreaming) {
+      out.push({
+        id: "__streaming__",
+        role: "assistant",
+        content: streamingText || " ",
+        pending: true,
+      });
+    }
+    return out;
+  }, [messages, pending, streamingText, isStreaming]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [data?.messages?.length, send.isPending]);
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [view.length, streamingText]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || send.isPending) return;
-    send.mutate(text);
+  const send = async (content: string) => {
+    if (!content.trim() || isStreaming) return;
+    setStreamError(null);
+    setInput("");
+    const localId = `local-${Date.now()}`;
+    const activePlanId = planId || undefined;
+    setPending([
+      {
+        id: localId,
+        role: "user",
+        content,
+        meta: activePlanId ? { plan_id: activePlanId } : null,
+      },
+    ]);
+    setStreamingText("");
+    setIsStreaming(true);
+    try {
+      const stream = await sendMsg({
+        data: {
+          content,
+          environment: getPaddleEnvironment(),
+          planId: activePlanId,
+        },
+      });
+      let acc = "";
+      for await (const chunk of stream as AsyncIterable<
+        | { type: "delta"; delta: string }
+        | { type: "done"; chips: string[]; reply: string }
+      >) {
+        if (chunk.type === "delta") {
+          acc += chunk.delta;
+          setStreamingText(acc);
+        }
+      }
+    } catch (e) {
+      console.error("[coach] send failed", e);
+      setStreamError("Couldn't send that message. Try again.");
+      // Roll back optimistic + restore input so user doesn't lose their text.
+      setPending([]);
+      setInput(content);
+    } finally {
+      setIsStreaming(false);
+      setStreamingText("");
+      setPending([]);
+      qc.invalidateQueries({ queryKey: ["coach-messages"] });
+    }
   };
 
-  // Last assistant message — used to surface follow-up chips.
-  const messages = (data?.messages ?? []) as CoachMsg[];
   const lastAssistantChips = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const m = messages[i];
+    if (isStreaming) return [];
+    for (let i = view.length - 1; i >= 0; i--) {
+      const m = view[i];
       if (m.role === "assistant") {
         return m.meta?.chips && Array.isArray(m.meta.chips) ? m.meta.chips : [];
       }
       if (m.role === "user") return [];
     }
     return [];
-  }, [messages]);
+  }, [view, isStreaming]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void send(input.trim());
+  };
 
   return (
     <div
@@ -194,7 +279,7 @@ function CoachPage() {
     >
       <header
         style={{
-          padding: "20px 24px 14px",
+          padding: "20px 20px 14px",
           borderBottom: `1px solid ${C.ink}`,
           maxWidth: 720,
           width: "100%",
@@ -202,7 +287,14 @@ function CoachPage() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <Link
             to="/dashboard"
             style={{
@@ -212,6 +304,7 @@ function CoachPage() {
               letterSpacing: "0.18em",
               textTransform: "uppercase",
               textDecoration: "none",
+              whiteSpace: "nowrap",
             }}
           >
             ← Dashboard
@@ -227,25 +320,33 @@ function CoachPage() {
           >
             Coach
           </div>
-          {!proLocked && messages.length > 0 ? (
+          {!proLocked && (messages.length > 0 || pending.length > 0) ? (
             <button
               type="button"
               onClick={() => clear.mutate()}
+              aria-label="Clear conversation"
+              title="Clear conversation"
               style={{
                 background: "transparent",
-                border: "none",
+                border: `1px solid ${C.inkFaint}`,
                 color: C.inkMute,
                 fontFamily: mono,
-                fontSize: 10,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
+                fontSize: 14,
+                lineHeight: 1,
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: "pointer",
+                padding: 0,
               }}
             >
-              Clear
+              ×
             </button>
           ) : (
-            <span style={{ width: 40 }} />
+            <span style={{ width: 28 }} />
           )}
         </div>
 
@@ -254,8 +355,9 @@ function CoachPage() {
             style={{
               marginTop: 12,
               display: "flex",
+              flexWrap: "wrap",
               alignItems: "center",
-              gap: 10,
+              gap: 8,
               fontFamily: mono,
               fontSize: 10,
               letterSpacing: "0.16em",
@@ -263,12 +365,13 @@ function CoachPage() {
               color: C.inkMute,
             }}
           >
-            <span>About plan</span>
+            <span style={{ flexShrink: 0 }}>About plan</span>
             <select
               value={planId}
               onChange={(e) => setPlanId(e.target.value)}
               style={{
-                flex: 1,
+                flex: "1 1 200px",
+                minWidth: 0,
                 background: "#fff",
                 border: `1px solid ${C.inkFaint}`,
                 borderRadius: 6,
@@ -424,51 +527,115 @@ function CoachPage() {
           </div>
         ) : isLoading ? (
           <p style={{ color: C.inkMute }}>Loading…</p>
-        ) : messages.length === 0 ? (
+        ) : view.length === 0 ? (
           <div style={{ color: C.inkSoft, fontSize: 17, lineHeight: 1.5, padding: "20px 0" }}>
-            <p>Hi — I'm your Keystone Coach. Ask me anything about your homebuying plan.</p>
-            <p style={{ color: C.inkMute, fontSize: 14, marginTop: 16 }}>
-              Try: "How can I improve my credit score before applying?" or "Is my timeline realistic?"
+            <p style={{ margin: "0 0 8px" }}>
+              Hi — I'm your Keystone Coach. Ask me anything about your homebuying plan.
             </p>
+            <p style={{ color: C.inkMute, fontSize: 13, margin: "16px 0 10px", fontFamily: mono, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+              Try one of these
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(starters.length > 0
+                ? starters
+                : [
+                    "Is my homebuying timeline realistic?",
+                    "What if I invested my down payment instead?",
+                    "What lender questions should I ask first?",
+                  ]
+              ).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => void send(s)}
+                  style={{
+                    textAlign: "left",
+                    background: "#fff",
+                    border: `1px solid ${C.inkFaint}`,
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    fontFamily: "inherit",
+                    fontSize: 16,
+                    color: C.ink,
+                    cursor: "pointer",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            {messages.map((m) => (
+            {view.map((m) => {
+              const tagPlan =
+                plans.length > 1 && m.role === "user" && m.meta?.plan_id
+                  ? planTitleById.get(m.meta.plan_id)
+                  : null;
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                    maxWidth: "85%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: m.role === "user" ? "flex-end" : "flex-start",
+                    gap: 4,
+                  }}
+                >
+                  {tagPlan && (
+                    <div
+                      style={{
+                        fontFamily: mono,
+                        fontSize: 9,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: C.inkMute,
+                      }}
+                    >
+                      About: {tagPlan}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      background: m.role === "user" ? C.ink : "#fff",
+                      color: m.role === "user" ? C.paper : C.ink,
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      border: m.role === "user" ? "none" : `1px solid ${C.inkFaint}`,
+                    }}
+                  >
+                    <CoachMarkdown dark={m.role === "user"}>
+                      {m.content}
+                    </CoachMarkdown>
+                  </div>
+                </div>
+              );
+            })}
+            {isStreaming && !streamingText && (
               <div
-                key={m.id}
                 style={{
-                  alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                  maxWidth: "85%",
-                  background: m.role === "user" ? C.ink : "#fff",
-                  color: m.role === "user" ? C.paper : C.ink,
-                  padding: "12px 16px",
-                  borderRadius: 12,
-                  border: m.role === "user" ? "none" : `1px solid ${C.inkFaint}`,
+                  alignSelf: "flex-start",
+                  color: C.inkMute,
+                  fontStyle: "italic",
+                  fontSize: 15,
                 }}
               >
-                <CoachMarkdown dark={m.role === "user"}>{m.content}</CoachMarkdown>
-              </div>
-            ))}
-            {send.isPending && (
-              <div style={{ alignSelf: "flex-start", color: C.inkMute, fontStyle: "italic", fontSize: 15 }}>
                 Coach is thinking…
               </div>
             )}
-            {send.isError && (
-              <div style={{ color: C.ember, fontSize: 14 }}>
-                Couldn't send that message. Your input is still there — try again.
-              </div>
+            {streamError && (
+              <div style={{ color: C.ember, fontSize: 14 }}>{streamError}</div>
             )}
-            {!send.isPending && lastAssistantChips.length > 0 && (
+            {!isStreaming && lastAssistantChips.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 4 }}>
                 {lastAssistantChips.map((chip) => (
                   <button
                     key={chip}
                     type="button"
-                    onClick={() => {
-                      setInput(chip);
-                      send.mutate(chip);
-                    }}
+                    onClick={() => void send(chip)}
                     style={{
                       background: "transparent",
                       border: `1px solid ${C.inkFaint}`,
@@ -511,6 +678,7 @@ function CoachPage() {
             placeholder="Ask your coach…"
             style={{
               flex: 1,
+              minWidth: 0,
               padding: "12px 14px",
               border: `1.5px solid ${C.ink}`,
               borderRadius: 8,
@@ -521,7 +689,7 @@ function CoachPage() {
           />
           <button
             type="submit"
-            disabled={!input.trim() || send.isPending}
+            disabled={!input.trim() || isStreaming}
             style={{
               background: C.ink,
               color: C.paper,
@@ -532,8 +700,8 @@ function CoachPage() {
               fontSize: 11,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              cursor: input.trim() && !send.isPending ? "pointer" : "default",
-              opacity: input.trim() && !send.isPending ? 1 : 0.5,
+              cursor: input.trim() && !isStreaming ? "pointer" : "default",
+              opacity: input.trim() && !isStreaming ? 1 : 0.5,
             }}
           >
             Send

@@ -1,53 +1,63 @@
-## Feature #7 — Themed reports
+## Goal
+Tighten the AI Coach (Pro feature #1) before building the remaining two Pro features. Three focused turns.
 
-### Current state (honest read)
+---
 
-**What exists.** Three themes (`light`, `dark`, `sepia`) defined in `src/lib/plan-pdf.server.ts` (`THEMES` with bg/ink/mute/faint/ember/sage/gold). Persisted as `plans.theme`. Plus-gated via `requirePlus("Themed reports")` in `handleTheme`. Re-rendered in:
-- PDF (`buildPlanPdfBytes`) — full theme honoured.
-- Public share page (`src/routes/p.$slug.tsx`) — has its **own duplicate** `THEMES` map with a different shape (`paper/ink/soft/mute/ember`).
+## Turn 1 — Coach polish
 
-**What's weak.**
-1. **Only 3 themes**, and they're generic. The marketing copy says "themed reports" but you get light, dark, or sepia — same tonal family the rest of the internet ships. No brand‑forward option (navy/trust, emerald/prestige, terracotta/sage) — exactly the kind of palettes the design system already curates.
-2. **Picker is buried.** Theme buttons live at the bottom of the per‑plan "Settings" panel (`dashboard.tsx` line ~837), under target date / current savings / notes. Users open Settings to edit a goal, never to pick a theme. Most Plus users will never find it.
-3. **No live preview.** The picker mutates `plan.theme` and… nothing on the dashboard changes. To see the theme you have to export the PDF or open the share link. Picking blind kills the upsell.
-4. **Two sources of truth for themes.** PDF defines `bg/ink/mute/faint/ember/sage/gold`. Share page defines `paper/ink/soft/mute/ember`. Different keys, different hex values, no shared module. Add a fourth theme and you'll do it twice and they'll drift.
-5. **No swatch indicator on the card.** Once theme is set, nothing on the `PlanCard` tells you which one. Users will toggle, forget, re‑download to verify.
+**1. Streaming responses**
+- Convert `sendCoachMessage` in `src/lib/coach.functions.ts` to an `async function*` handler that yields `{ delta }` chunks parsed from the gateway's SSE stream, then a final `{ done: true, chips, planId }`.
+- Keep the rolling-summary refresh (non-streaming) before the main call.
+- Persist `user` + `assistant` rows in `coach_messages` only after the upstream stream completes — preserves the "no orphan rows on failure" invariant.
+- Frontend `src/routes/coach.tsx`: replace the `useMutation` with an async-iterator loop that appends deltas to the last assistant bubble in local state, then invalidates the history query on completion.
 
-### Verdict
+**2. Optimistic user message**
+- On submit, append the user's message to local state immediately and clear the input. Reconcile from the `coach-messages` query after the stream ends.
 
-Themed reports is shipped but unfindable, undifferentiated, and duplicated across two renderers. Cheap to fix.
+**3. Plan-aware starter prompts**
+- New `getCoachStarters` server fn: takes optional `planId`, loads the plan, runs `computePlanMetrics` + `investEdge`, returns 3 plan-specific starter strings (e.g. "Is my 18-month timeline realistic at $1,200/mo?", "What if I invest the down payment instead?", "What lender questions should I ask first?").
+- Empty-state in `coach.tsx` renders these as chips — clicking sends the message.
+- Falls back to 3 generic starters when no plan exists.
 
-### Proposed improvements (ranked)
+**4. Plan tag on user bubbles**
+- When `messages.length > 1` plans and a user message has `meta.plan_id`, show a small `mono` caption above the bubble: `About: {plan.title}`.
 
-1. **Single source of truth.** Extract a shared `PLAN_THEMES` module (e.g. `src/lib/plan-themes.ts`) with one normalized shape (paper/ink/inkSoft/inkMute/faint/ember/sage/gold). Both `plan-pdf.server.ts` and `p.$slug.tsx` import it. Eliminates drift; required before adding more themes.
-2. **Add 2 brand‑forward themes.** `navy` (deep navy + warm white, finance/trust) and `terracotta` (terracotta + sage, warmer/lifestyle). Five total: light / dark / sepia / navy / terracotta. Update the `theme` enum in `src/lib/plans.functions.ts` validator and DB column comment if any.
-3. **Move the picker out of Settings into the export row.** Render the swatches inline next to "Export PDF / CSV" on the `PlanCard`, with the active swatch highlighted. Keeps Plus‑gating; drops 1 click; makes the feature discoverable.
-4. **Show the active theme on the card** even when picker is closed — tiny colored dot + name ("Sepia") next to the title or in the export row. Costs ~5 lines, closes the trust loop.
-5. **Mini live preview.** Render a small (180×100) themed swatch card next to the picker — header bar, ember accent, mute body line — so the user sees the palette before downloading. Pure CSS, no PDF round‑trip.
+**5. Mobile header trim (390px)**
+- Replace the "Clear" text button with an icon-only button (×) on the right.
+- Let the plan picker wrap cleanly below the title row.
 
-### Skip
+No DB migration. No new dependencies.
 
-- **Custom user colors** — scope creep, support burden, and 99% of outputs would be ugly. Curated set only.
-- **Per‑section accent overrides** — same reason.
-- **Typography variants** (serif vs sans report) — real feature but separate from "themed".
-- **OG image / share‑page screenshot in theme** — Feature #6/social adjacent, not here.
+---
 
-### What I'd ship
+## Turn 2 — Pro #2: Side-by-side scenario compare (up to 3 plans)
 
-**#1 + #2 + #3 + #4.** Skip #5 (mini preview) for this pass — nice but not load‑bearing once #3 puts swatches in front of the user; revisit if upgrade conversion on this lever stays flat.
+- New route `src/routes/compare.tsx` (Pro-gated like `coach.tsx`).
+- Multi-select plan picker (up to 3); URL state `?plans=id1,id2,id3` for shareable Pro-only links.
+- Server fn `getComparePlans` returns `{ plans: [{ id, title, metrics, scenarios, edge }] }` using existing `computePlanMetrics` + `projectScenarios` + `investEdge`.
+- Render a 3-column comparison table on desktop, vertically stacked cards on mobile, with rows: target home price, down payment, timeline, monthly required (saved vs invested), invest-vs-save delta (months sooner, dollars saved), savings gap.
+- Highlight the "winning" cell per row (e.g. shortest timeline, smallest monthly).
+- Link entry from dashboard "What you get" card (Pro tier).
 
-### Files I'd touch
+---
 
-- **New** `src/lib/plan-themes.ts` — exported `PLAN_THEMES` record + `PlanTheme` type + `THEME_IDS` array.
-- `src/lib/plan-pdf.server.ts` — replace local `THEMES` with import from `plan-themes`; map `[r,g,b]` once at top.
-- `src/routes/p.$slug.tsx` — replace local `THEMES` with import from `plan-themes` (adapter for the slightly different keys it currently uses).
-- `src/routes/dashboard.tsx` — move theme picker from Settings panel (~line 837) to the export row in `PlanCard`; render small active‑theme dot/label on the card header; keep `handleTheme` + `requirePlus` exactly as is.
-- `src/lib/plans.functions.ts` — extend `theme` Zod enum (line ~285) to include the two new IDs.
-- (Optional) `supabase/migrations/<new>.sql` — only if the column has a CHECK constraint on theme values; quick `read_query` against `information_schema` will confirm. If it's a plain `text` column (likely), no migration needed.
+## Turn 3 — Pro #3: Live mortgage rate alerts
 
-### Open questions
+**Data source decision** — needs user input:
+- Option A: Free public source (e.g. FRED `MORTGAGE30US` weekly series, Mon-only update). No key needed, conservative SLA.
+- Option B: Paid real-time provider (Mortgage News Daily, Optimal Blue) — needs API key + budget.
+- I'll recommend FRED weekly + a simple delta-trigger; revisit if Pro users ask for intraday.
 
-1. **Two new theme IDs okay?** I'm proposing `navy` and `terracotta`. If you'd rather pick from the curated palette list (e.g. `emerald`, `noir-gold`), name them now and I'll wire those instead.
-2. **Picker placement on `PlanCard` export row** — small swatches (5 dots) is my plan. If you'd rather a dropdown, say so; otherwise swatches.
+**Implementation (assuming FRED)**:
+- Migration: `rate_alerts` table (`user_id`, `direction` enum `up|down|either`, `threshold_bps`, `last_notified_rate`, `active`, `created_at`); `mortgage_rates_history` table (`fetched_at`, `rate_30y_fixed`, `source`).
+- Daily cron via `/api/public/rates/refresh` (Bearer-protected, like reminders): pulls FRED, inserts row, evaluates active alerts, enqueues an email when threshold crossed.
+- New route `src/routes/rates.tsx` (Pro-gated): current rate + 90-day sparkline, "Alert me when 30-yr fixed moves ±25 bps" form.
+- Reuse `enqueue_email` RPC + the existing email queue processor.
 
-Want me to proceed with #1+#2+#3+#4 as scoped?
+---
+
+## Out of scope across all three turns
+- Switching coach to a reasoning model (revisit only if quality issues).
+- Voice/file input on coach.
+- Cross-plan questions inside the coach (compare route handles that).
+- Intraday rate updates.
