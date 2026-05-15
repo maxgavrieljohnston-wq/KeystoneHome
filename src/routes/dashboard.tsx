@@ -240,8 +240,8 @@ function DashboardPage() {
           </>
         )}
 
-        {plans.length > 0 && (
-          <div id="premium-features">
+        <div id="premium-features">
+          {plans.length > 0 && (
             <InvestmentSection
               answers={plans[0].answers}
               assumptions={plans[0].assumptions}
@@ -249,13 +249,13 @@ function DashboardPage() {
               isPlus={sub.isPlus}
               isPro={sub.isPro}
             />
-          </div>
-        )}
+          )}
 
-        <PremiumPanel
-          isPlus={sub.isPlus}
-          isPro={sub.isPro}
-        />
+          <PremiumPanel
+            isPlus={sub.isPlus}
+            isPro={sub.isPro}
+          />
+        </div>
       </div>
     </div>
   );
@@ -265,9 +265,15 @@ function TierBanner({ isPlus, isPro, loading }: { isPlus: boolean; isPro: boolea
   if (loading) return null;
   if (!isPlus && !isPro) return null;
   const label = isPro ? "Pro" : "Plus";
+  const jumpToFeatures = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    document.getElementById("premium-features")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", "#premium-features");
+  };
   return (
     <a
       href="#premium-features"
+      onClick={jumpToFeatures}
       style={{
         display: "block",
         marginBottom: 24,
