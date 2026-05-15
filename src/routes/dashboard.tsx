@@ -223,7 +223,7 @@ function DashboardPage() {
           {greeting}
         </h1>
 
-        <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} />
+        <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} hasPlan={plans.length > 0} />
 
         {!auth.ready || (auth.ready && !auth.user) || isLoading ? (
           <p style={{ color: C.inkSoft, fontSize: 18 }}>Loading your plans…</p>
