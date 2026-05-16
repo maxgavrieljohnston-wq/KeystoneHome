@@ -3063,6 +3063,7 @@ function Report({ d }: { d: Data }) {
       })()}
 
       <ReportPaywall />
+      <StickyUpgradeBar />
 
       {/* Footer */}
       <div
