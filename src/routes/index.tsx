@@ -3096,14 +3096,14 @@ function ReportPaywall() {
 
   const highlights = isPlus
     ? [
-        "AI homebuying coach — plan-aware answers",
-        "Side-by-side compare (up to 3 plans)",
-        "Stress-test against rate shocks & income drops",
+        "Auto-invest your down payment (coming soon)",
+        "AI coach to tune your invest-vs-save mix",
+        "Side-by-side compare: save-only vs invest plans",
       ]
     : [
-        "Save unlimited plans & track progress",
-        "Invest-vs-save projection — reach your goal sooner",
-        "Full PDF + CSV export, themed reports, share link",
+        "See how many years investing shaves off your timeline",
+        "A monthly playbook — exactly what to invest each month",
+        "Curated accounts to grow your down payment faster",
       ];
 
   return (
@@ -3139,8 +3139,8 @@ function ReportPaywall() {
         }}
       >
         {isPlus
-          ? "Go further with your personal coach."
-          : "Save this plan. Reach it faster."}
+          ? "Hand off the investing. Reach your goal faster."
+          : "Own years sooner. Invest your down payment."}
       </h3>
       <ul style={{ listStyle: "none", padding: 0, margin: "18px 0 22px" }}>
         {highlights.map((f) => (
@@ -3225,7 +3225,7 @@ function InlineUpgradeNudge() {
     >
       <span style={{ fontSize: 14, color: C.inkSoft, flex: "1 1 200px", lineHeight: 1.4 }}>
         <span style={{ color: C.ember, marginRight: 6 }}>✦</span>
-        Save this plan so you can come back and track your progress.
+        Want to own 2–4 years sooner? See your invest-vs-save projection.
       </span>
       <button
         type="button"
@@ -3243,7 +3243,7 @@ function InlineUpgradeNudge() {
           cursor: "pointer",
         }}
       >
-        Upgrade — $5/mo
+        Unlock — $5/mo
       </button>
     </div>
   );
@@ -3290,7 +3290,7 @@ function StickyUpgradeBar() {
       className="md:hidden"
     >
       <span style={{ fontSize: 13, lineHeight: 1.3, flex: 1 }}>
-        Save your plan
+        Own years sooner
         <span style={{ color: C.inkFaint, marginLeft: 6, fontSize: 12 }}>· from $5/mo</span>
       </span>
       <button
@@ -3309,7 +3309,7 @@ function StickyUpgradeBar() {
           cursor: "pointer",
         }}
       >
-        Upgrade
+        See how
       </button>
       <button
         type="button"

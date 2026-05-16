@@ -1,58 +1,35 @@
-# Rework the free-plan upgrade prompt on the results page
+# Sharpen upsell copy around invest-to-own-sooner
 
-The current `ReportPaywall` (src/routes/index.tsx, ~L3088) dumps the full Plus + Pro feature list at the very end of the report. Two problems: it's a wall of text, and by the time a free user scrolls there they've already gotten what they came for. Plan below fixes both.
+Update three pieces in `src/routes/index.tsx`:
 
-## 1. Trim the end-of-report card to just the highlights
+## 1. End-of-report card (free → Plus)
 
-Replace the 10+ bullet `features.map(...)` with **3 curated highlights** (not pulled from `PLUS_FEATURES` wholesale). For free users:
+- Headline: **"Own years sooner. Invest your down payment."**
+- 3 highlights:
+  - See how many years investing shaves off your timeline
+  - A monthly playbook — exactly what to invest each month
+  - Curated accounts to grow your down payment faster
+- Keep both buttons (Start Plus $5/mo, Go Pro $11/mo)
 
-- Save unlimited plans & track progress
-- Invest-vs-save projection — reach your goal sooner
-- Full PDF + CSV export, themed reports, shareable link
+## 2. Plus → Pro variant (when a Plus user sees the card)
 
-For Plus users (upgrading to Pro): 3 Pro highlights (AI coach, side-by-side compare, stress-test).
+- Headline: **"Hand off the investing. Reach your goal faster."**
+- 3 highlights:
+  - Auto-invest your down payment (coming soon)
+  - AI coach to tune your invest-vs-save mix
+  - Side-by-side compare: save-only vs invest plans
 
-Also change the card to show **inline pricing + two buttons** instead of a single "See plans →" link, so the decision happens in place:
+## 3. Mid-report inline nudge
 
-```
-[ Start Plus — $5/mo ]   [ Go Pro — $11/mo ]
-                          Cancel anytime
-```
+Replace the generic "save your plan" line with:
+> ✦ Want to own 2–4 years sooner? See your invest-vs-save projection.   **[ Unlock — $5/mo ]**
 
-Buttons open the existing `UpgradeModal` (or jump straight into Paddle via `usePaddleCheckout`) — no extra page hop.
+## 4. Sticky mobile bar
 
-## 2. Surface the upgrade earlier — two additions
-
-**a) Mid-report inline teaser** (placed right after the first big result section, well before the end). A small, single-line nudge — not the full card — e.g.:
-
-```
-🔒 Save this plan so you can come back and track it →  [ Upgrade ]
-```
-
-Quiet styling (paper bg, ember accent, one line). Same modal trigger.
-
-**b) Sticky mobile CTA bar** that appears after the user scrolls past the first result section and stays pinned to the bottom of the viewport on mobile (the user is on a 390px viewport). One line + one button:
-
-```
-Save your plan • from $5/mo            [ Upgrade ]
-```
-
-Hidden on desktop (≥768px) where the inline card is enough. Hidden for Pro users. Dismissible (session-only) so it's not annoying.
-
-## 3. Keep the bottom card, but as the closer — not the only ask
-
-After the trims above, the end-of-report card becomes the formal "here's the offer" closer rather than the first time the user sees the pitch. By then they've already been gently nudged twice.
-
-## Technical notes
-
-- All edits in `src/routes/index.tsx`. `ReportPaywall` rewrite + two new small components (`InlineUpgradeNudge`, `StickyUpgradeBar`).
-- Reuse `useSubscription()` for gating, `useUpgradeGate()` + `UpgradeModal` for the CTA (already wired in the app), and `usePaddleCheckout` if we want one-click checkout from the buttons.
-- Sticky bar: `position: fixed; bottom: 0`, show via `IntersectionObserver` on the first result section, hide on `isPro`, hide if dismissed (sessionStorage key `keystone_upsell_dismissed`).
-- No backend / schema changes. No new routes. No new packages.
-- Highlights are hardcoded short strings in the file (don't try to derive from `PLUS_FEATURES` — those are the long marketing lines).
+Replace "Save your plan · from $5/mo" with:
+> Own years sooner · from $5/mo   **[ See how ]**
 
 ## Out of scope
 
-- Pricing page redesign
-- Changes to `UpgradeModal` itself
-- A/B testing infrastructure
+- No changes to `tier-features.ts`, pricing page, or UpgradeModal
+- No backend / schema changes
