@@ -1446,6 +1446,8 @@ function ScreenSwitch({
     return <IntroPage {...i} onNext={next} />;
   }
 
+  if (screen === "calculating") return <CalculatingScreen onDone={next} />;
+
   if (screen === "dashboard") return <Report d={d} />;
 
   return null;
