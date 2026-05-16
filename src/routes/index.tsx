@@ -3334,6 +3334,7 @@ function StickyUpgradeBar() {
         ×
       </button>
     </div>
+    </>
   );
 }
 
