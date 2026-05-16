@@ -2965,9 +2965,8 @@ function Report({ d }: { d: Data }) {
 
       {/* Section — Cash to close */}
       {(() => {
-        const closingPct = d.assumptions.closingPct ?? 0.03;
-        const closing = Math.round(avgPrice * closingPct);
-        const moving = d.assumptions.movingBudget ?? 1500;
+        const closing = Math.round((avgPrice * derivedA.closingCostPct) / 100);
+        const moving = derivedA.movingCost;
         const totalCash = downPayment + closing + moving;
         const savedPct = Math.max(0, Math.min(100, (d.saved / Math.max(totalCash, 1)) * 100));
         const gap = Math.max(0, totalCash - d.saved);
