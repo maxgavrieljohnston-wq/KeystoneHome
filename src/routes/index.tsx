@@ -158,12 +158,7 @@ type Data = {
   timelineBucket: string | null;
   downGoalPct: number | null;
   riskAnswers: Record<number, number>;
-  assumptions: {
-    propertyTaxRate?: number;
-    insuranceRate?: number;
-    closingPct?: number;
-    movingBudget?: number;
-  };
+  // assumptions removed — derived on the backend from metro/ZIP.
 };
 
 const INITIAL: Data = {
