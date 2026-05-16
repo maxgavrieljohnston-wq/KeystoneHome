@@ -3677,3 +3677,232 @@ function BirthdayScreen({
     </Question>
   );
 }
+
+// ── Calculating screen ───────────────────────────────────────────────────────
+// Shown for first-time users only between the last risk question and the
+// dashboard. ~5s fast-then-slow progress bar with rotating curated facts.
+function CalculatingScreen({ onDone }: { onDone: () => void }) {
+  const DURATION_MS = 5000;
+  const ROTATE_MS = 1500;
+
+  const checkPlans = useServerFn(getMyPlans);
+  const [progress, setProgress] = useState(0);
+  const [factIdx, setFactIdx] = useState(0);
+  const [factKey, setFactKey] = useState(0); // re-trigger fade-in
+  const [shouldRun, setShouldRun] = useState<boolean | null>(null);
+
+  // Randomized fact order, fixed per mount.
+  const facts = useMemo(() => {
+    const arr = [...HOMEOWNERSHIP_FACTS];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, []);
+
+  // First-time detection. No session → first-time (lead). Session + 0 plans → first-time.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          if (!cancelled) setShouldRun(true);
+          return;
+        }
+        const res = await checkPlans();
+        const count = Array.isArray(res?.plans) ? res.plans.length : 0;
+        if (!cancelled) setShouldRun(count === 0);
+      } catch {
+        // On any failure, default to showing the screen (safer than flashing past).
+        if (!cancelled) setShouldRun(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [checkPlans]);
+
+  // Run animation (or skip).
+  useEffect(() => {
+    if (shouldRun === null) return;
+    if (shouldRun === false) {
+      onDone();
+      return;
+    }
+
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / DURATION_MS);
+      // easeOutQuart — fast at start, slow at the end.
+      const eased = 1 - Math.pow(1 - t, 4);
+      setProgress(eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else onDone();
+    };
+    raf = requestAnimationFrame(tick);
+
+    const rotate = window.setInterval(() => {
+      setFactIdx((i) => (i + 1) % facts.length);
+      setFactKey((k) => k + 1);
+    }, ROTATE_MS);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(rotate);
+    };
+  }, [shouldRun, facts.length, onDone]);
+
+  if (shouldRun !== true) {
+    // Either still checking or skipping — render an empty paper-coloured
+    // placeholder so we don't flash white before onDone() fires.
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: C.paper,
+        }}
+      />
+    );
+  }
+
+  const fact = facts[factIdx];
+  const pct = Math.round(progress * 100);
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: C.paper,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 24px",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 560 }}>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: C.ember,
+            marginBottom: 14,
+          }}
+        >
+          — Crunching the numbers
+        </div>
+        <h1
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontWeight: 400,
+            fontSize: 38,
+            lineHeight: 1.1,
+            letterSpacing: "-0.01em",
+            color: C.ink,
+            margin: "0 0 12px",
+          }}
+        >
+          Calculating your plan.
+        </h1>
+        <p
+          style={{
+            color: C.inkSoft,
+            fontSize: 15,
+            lineHeight: 1.5,
+            margin: "0 0 36px",
+          }}
+        >
+          We're pricing your market, modeling your timeline, and stress-testing
+          your risk profile. A few seconds.
+        </p>
+
+        {/* Rotating fact */}
+        <div
+          style={{
+            minHeight: 110,
+            marginBottom: 28,
+            padding: "20px 22px",
+            border: `1px solid ${C.inkFaint}`,
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.5)",
+          }}
+        >
+          <div
+            key={factKey}
+            className="animate-fade-in"
+            style={{ display: "flex", flexDirection: "column", gap: 8 }}
+          >
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: C.ember,
+              }}
+            >
+              Did you know
+            </div>
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 22,
+                lineHeight: 1.25,
+                color: C.ink,
+              }}
+            >
+              {fact.headline}
+            </div>
+            <div style={{ fontSize: 13, color: C.inkMute, lineHeight: 1.4 }}>
+              {fact.sub}
+            </div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              height: 8,
+              background: "rgba(26,26,26,0.08)",
+              borderRadius: 999,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${pct}%`,
+                height: "100%",
+                background: C.ember,
+                borderRadius: 999,
+                transition: "width 80ms linear",
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              letterSpacing: "0.1em",
+              color: C.inkMute,
+              minWidth: 36,
+              textAlign: "right",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {pct}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
