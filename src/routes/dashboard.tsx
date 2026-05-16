@@ -20,6 +20,7 @@ import { getPaddleEnvironment } from "@/lib/paddle";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
+import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
@@ -1336,6 +1337,16 @@ function InvestmentSection({
         locked={!isPlus}
         onLockedClick={() => gate.openUpgrade("plus", "Recommended accounts")}
         timelineYears={metrics.timelineYears}
+      />
+
+      <AssumptionsPanel
+        planId={planId}
+        answers={answers}
+        targetPrice={metrics.targetPrice}
+        assumptions={assumptions}
+        isPlus={isPlus}
+        locked={!isPlus}
+        onLockedClick={() => gate.openUpgrade("plus", "Custom assumptions")}
       />
 
       <RiskScenariosPanel

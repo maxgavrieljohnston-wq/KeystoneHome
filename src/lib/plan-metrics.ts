@@ -8,6 +8,7 @@ import {
   combinedEmploymentAdjustment,
   getPriceByZip,
 } from "@/lib/keystone";
+import { deriveAssumptions } from "@/lib/plan-assumptions";
 
 export type PlanMetrics = {
   zip: string;
@@ -90,9 +91,16 @@ export function computeGoalProgress(
 
 export function computePlanMetrics(
   answers: Record<string, unknown>,
-  assumptions?: Record<string, number> | null,
+  storedAssumptions?: Record<string, number> | null,
 ): PlanMetrics {
   const a = answers ?? {};
+  // Backend always derives defaults from the user's metro (or national fallback).
+  // Any stored overrides from the Plus dashboard editor win over the derived values.
+  const derived = deriveAssumptions(a);
+  const assumptions: Record<string, number> = {
+    ...derived,
+    ...(storedAssumptions ?? {}),
+  };
   const num = (k: string, fb = 0): number => {
     const v = a[k];
     return typeof v === "number" && isFinite(v) ? v : fb;

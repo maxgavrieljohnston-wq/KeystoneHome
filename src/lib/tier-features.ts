@@ -39,6 +39,11 @@ export const PLUS_FEATURES: TierFeature[] = [
     long: "Tags, notes & goal tracker",
   },
   {
+    id: "assumptions",
+    short: "Custom assumptions",
+    long: "Override the auto-filled tax, insurance, closing, mortgage rate, and expected return for any plan",
+  },
+  {
     id: "theme",
     short: "Themed reports",
     long: "Themed reports (Light, Dark, Sepia, Navy, Terracotta)",
