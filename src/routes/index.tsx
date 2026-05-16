@@ -198,7 +198,7 @@ const INITIAL: Data = {
   timelineBucket: null,
   downGoalPct: null,
   riskAnswers: {},
-  assumptions: {},
+  
 };
 
 // Feature-adjusted price multiplier — same math used live on "Picture the place".
