@@ -3139,8 +3139,8 @@ function ReportPaywall() {
         }}
       >
         {isPlus
-          ? "Go further with your personal coach."
-          : "Save this plan. Reach it faster."}
+          ? "Hand off the investing. Reach your goal faster."
+          : "Own years sooner. Invest your down payment."}
       </h3>
       <ul style={{ listStyle: "none", padding: 0, margin: "18px 0 22px" }}>
         {highlights.map((f) => (
