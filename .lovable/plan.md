@@ -1,41 +1,50 @@
 ## Goal
 
-Drop the `advancedAssumptions` step from the signup wizard. Compute tax / insurance / closing / etc. automatically from the user's ZIP (via `metroByZip` in `src/data/metros.ts`), with a national-average fallback. Keep manual editing as a Plus-gated feature, but only on the dashboard — never during signup.
+Insert a 5-second "calculating your plan" screen between the last risk question and the dashboard/results — but only for first-time users (their first plan). Show a progress bar with a fast-then-slow fill curve, and rotate inspiring homeownership facts above it.
 
 ## Changes
 
-### 1. Signup flow (`src/routes/index.tsx`)
-- Remove `"advancedAssumptions"` from the `FLOW` and `PROGRESS_SCREENS` arrays.
-- Remove the `assumptions` field from the `Data` type and `INITIAL` constant (no longer collected client-side).
-- Delete the `AdvancedAssumptionsScreen` component and its `if (screen === "advancedAssumptions")` branch.
-- Anywhere `d.assumptions.*` is read (lines ~2695, ~3116 — closing %, moving, tax/insurance rates), replace with the same defaults the new helper uses, or just let `computePlanMetrics` derive them. No user-provided overrides during signup.
-- When the plan is submitted, save `assumptions: {}` (empty) so the backend/derivation always wins.
+### 1. Flow change (`src/routes/index.tsx`)
+- Add `"calculating"` to the `FLOW` array between `"risk3"` and `"dashboard"`.
+- Add a screen renderer `if (screen === "calculating") return <CalculatingScreen ... />`.
+- After the last risk question, instead of jumping straight to `dashboard`, advance to `calculating`.
+- Decide first-time vs returning at flow time:
+  - **First-time** = user has zero saved plans before this submit. Detect by calling the existing `getMyPlans` server fn once on mount of the calculating step (or checking the user's session — if not signed in yet, treat as first-time, which covers the lead-capture path).
+  - If the user is **not** first-time, skip the calculating screen entirely (advance straight to dashboard). No flicker.
+- The screen runs `submitPlan` in parallel with the 5s animation. Whichever finishes last gates the transition — so the bar always completes visually, and a slow network never gets cut off mid-progress.
 
-### 2. New shared derivation helper (`src/lib/plan-assumptions.ts`)
-- Export `deriveAssumptions(answers)` returning the assumption object expected by `computePlanMetrics`:
-  - `propertyTaxRate` / `insuranceRate` → from `metroByZip(zip)` if matched, else national fallback (0.012 / 0.006).
-  - `closingPct: 0.03`, `movingBudget: 1500`, plus any other current defaults.
-- Pure function, no DB calls. Safe to import from server fns and client.
+### 2. New `CalculatingScreen` component (inline in `src/routes/index.tsx`)
+- Full-bleed, same paper/ink palette as the rest of the wizard.
+- Headline: "Calculating your plan." Subtitle: "Crunching the numbers on your timeline, market, and risk profile."
+- Progress bar (custom, not shadcn):
+  - Width 100%, height ~8px, ink-on-paper, with a single filled span using the ember accent.
+  - Fast-then-slow curve via `easeOutQuart`: `1 - (1 - t)^4`. Drives a `useEffect` requestAnimationFrame loop over ~5000 ms.
+  - Numeric % label beside it (monospace, "12%").
+- Rotating facts:
+  - Render the current fact above the bar; fade/slide-swap every ~1500 ms (so ~3 facts visible across 5s).
+  - Use `animate-fade-in` from the project's existing animation set for the swap.
+  - Pick a random ordering on mount so consecutive plans show different facts.
+- When `progress === 1` AND `submitPlan` has resolved, advance to dashboard (or in the not-signed-in path, the same post-submit destination today's flow goes to).
 
-### 3. Backend always derives (`src/lib/plan-metrics.ts` + server fns)
-- Update `computePlanMetrics(answers, assumptions)` so it ignores stored `assumptions` and always calls `deriveAssumptions(answers)` first, merging only `investMonthly` (the slider value persisted by the invest panel) from the stored row. This satisfies "Recompute everything on next view" for legacy plans without nuking the Plus invest-slider override.
-- Add a small allow-list of keys that can still come from the stored `assumptions` blob: currently just `investMonthly`. Everything else is derived.
+### 3. New facts data file (`src/lib/homeownership-facts.ts`)
+- Export `HOMEOWNERSHIP_FACTS: { headline: string; sub: string }[]` with ~12 curated, sourced-feeling lines. Example tone:
+  - "Homeowners build ~$255K more wealth than renters by retirement." / "Source: Federal Reserve SCF."
+  - "Every mortgage payment pays down principal — your future down payment for the next home."
+  - "Home equity is the #1 source of wealth for middle-class Americans."
+  - "The average homeowner stays put 13 years — long enough to ride out any market cycle."
+  - "Fixed-rate mortgages turn rent inflation into a flat line for 30 years."
+  - …etc. (10–12 total, mix of financial + emotional/lifestyle).
+- Plain TS data, no DB, no fetch.
 
-### 4. Plus-only dashboard editor (`src/routes/dashboard.tsx` + new component)
-- Add `src/components/dashboard/AssumptionsPanel.tsx`:
-  - Shows derived defaults (tax %, insurance %, closing %, moving $, mortgage rate, expected return %).
-  - Plus members can override each field; saves through the existing `updatePlanMeta` server fn (writes to `plans.assumptions`).
-  - Free/Plus-locked state reuses the existing `Section` lock pattern from `InvestVsSavePanel.tsx`.
-- Extend `computePlanMetrics`' allow-list to honor any of these specific overrides when present in stored `assumptions`. Derivation is the floor; Plus overrides win.
-
-### 5. Tier-features copy (`src/lib/tier-features.ts`)
-- Replace the implicit "Plus = override assumptions during signup" affordance with an explicit Plus item: `Custom assumptions (tax, insurance, closing, rate)`. Drop any pricing-page copy that referenced "fine-tune during onboarding".
+### 4. Wire-up details
+- The existing submit path (the code that today fires `submitPlan` when entering the dashboard screen) gets moved into / coordinated with the calculating screen for first-time users, so we don't double-submit. For returning users it stays exactly as it is today.
+- If `submitPlan` fails: keep the existing error handling (whatever the dashboard transition currently does on error). We just surface it after the animation completes.
 
 ## Out of scope
-- No DB migration — the `plans.assumptions` jsonb column stays; we just stop populating it from signup and treat most keys as read-only overrides on the dashboard.
-- No changes to PDF / stress test / compare beyond what falls out of `computePlanMetrics` now sourcing defaults itself (they already call it).
+- No backend changes — purely a presentational screen plus a static facts file.
+- No accessibility prompt to skip (5s feels short; add later if requested).
+- No per-metro personalization for this iteration — pure static facts as confirmed.
 
-## Notes for the user
-- Signup gets one screen shorter and no longer hints at a "Plus feature" mid-flow.
-- Existing saved plans will re-render with metro-derived numbers next time the dashboard loads. If a user had previously typed a custom tax rate as a Plus member, they will need to re-enter it from the new dashboard panel (one-time).
-- National-fallback rates (1.2 % tax, 0.6 % insurance) match what's already in `plan-metrics.ts` today, so unrecognized ZIPs behave identically to today.
+## Notes
+- The fast-then-slow curve plus rotating facts together do the heavy lifting on "feels substantive." A linear bar with no facts feels fake; this combo reads as "real work, worth waiting for."
+- Reusing the existing paper/ink/ember palette keeps it cohesive with the rest of the wizard — no new visual primitives introduced.
