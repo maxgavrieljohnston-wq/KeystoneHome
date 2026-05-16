@@ -2825,81 +2825,8 @@ function Report({ d }: { d: Data }) {
 
       <InlineUpgradeNudge />
 
-      {/* Down payment buckets — mirror the options the user was offered earlier in the flow */}
-      {(() => {
-        // Mirror exactly the down-payment options offered on the question screen.
-        const visibleOptsR = computeOfferedDownOpts(d);
-
-        return (
-      <Section number="02" title="Your down payment options.">
-        <div style={{ marginTop: 14 }}>
-          {visibleOptsR.map((b) => {
-            const dp = Math.round((avgPrice * b.pct) / 100);
-            const m = calcMortgage(avgPrice, b.pct, mortgageRate);
-            const pmiB = b.pct < 20 ? (avgPrice * (1 - b.pct / 100) * 0.005) / 12 : 0;
-            const allIn = m + taxIns + pmiB + hoa + reserve;
-            const isMatch = b.pct === effectiveDownPct;
-            return (
-              <div
-                key={b.pct}
-                style={{
-                  borderTop: `1px solid ${C.ink}`,
-                  background: isMatch ? C.cream : "transparent",
-                  padding: "14px 12px",
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr auto",
-                  gap: 14,
-                  alignItems: "baseline",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "\'Fraunces\', serif",
-                    fontSize: 22,
-                    fontWeight: 600,
-                    color: isMatch ? C.ember : C.ink,
-                    minWidth: 56,
-                  }}
-                >
-                  {b.pct}%
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, color: C.ink, marginBottom: 2 }}>
-                    {b.tag} · {b.desc}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "\'JetBrains Mono\', monospace",
-                      fontSize: 11,
-                      color: C.inkMute,
-                    }}
-                  >
-                    {fmt(dp)} down · {fmt(allIn)}/mo all-in{b.pct < 20 ? " · PMI" : " · no PMI"}
-                  </div>
-                </div>
-                {isMatch && (
-                  <span
-                    style={{
-                      fontFamily: "\'JetBrains Mono\', monospace",
-                      fontSize: 9,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      color: C.ember,
-                    }}
-                  >
-                    ◆ Yours
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </Section>
-        );
-      })()}
-
-      {/* Section 3 — Affordability */}
-      <Section number="03" title="What it costs to live there.">
+      {/* Section 2 — Affordability */}
+      <Section number="02" title="What it costs to live there.">
         <p style={SubP}>
           A {(mortgageRate * 100).toFixed(2)}% / 30-year fixed mortgage based on your{" "}
           {qualifyingCredit < 670 ? "credit profile" : "credit standing"}.
