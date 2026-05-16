@@ -3292,7 +3292,7 @@ function StickyUpgradeBar() {
       }}
       className="md:hidden"
     >
-      <span style={{ fontSize: 13, lineHeight: 1.3, flex: 1 }}>
+      <span style={{ fontSize: 13, lineHeight: 1.3, flex: 1, minWidth: 0 }}>
         Own years sooner
         <span style={{ color: C.inkFaint, marginLeft: 6, fontSize: 12 }}>· from $5/mo</span>
       </span>
@@ -3310,6 +3310,8 @@ function StickyUpgradeBar() {
           background: C.paper,
           color: C.ink,
           cursor: "pointer",
+          whiteSpace: "nowrap",
+          flexShrink: 0,
         }}
       >
         See how
