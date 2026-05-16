@@ -3243,7 +3243,7 @@ function InlineUpgradeNudge() {
           cursor: "pointer",
         }}
       >
-        Upgrade — $5/mo
+        Unlock — $5/mo
       </button>
     </div>
   );
