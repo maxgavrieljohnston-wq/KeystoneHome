@@ -875,8 +875,7 @@ function ScreenSwitch({
       </Question>
     );
 
-  if (screen === "advancedAssumptions")
-    return <AdvancedAssumptionsScreen d={d} set={set} next={next} />;
+  // advancedAssumptions screen removed — backend derives defaults from metro.
 
   if (screen === "timeline") {
     const zipData = d.zipData ?? { city: "your area", avg: 400000 };
