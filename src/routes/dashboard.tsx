@@ -20,6 +20,7 @@ import { getPaddleEnvironment } from "@/lib/paddle";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
+import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
