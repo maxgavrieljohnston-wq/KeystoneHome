@@ -3096,14 +3096,14 @@ function ReportPaywall() {
 
   const highlights = isPlus
     ? [
-        "AI homebuying coach — plan-aware answers",
-        "Side-by-side compare (up to 3 plans)",
-        "Stress-test against rate shocks & income drops",
+        "Auto-invest your down payment (coming soon)",
+        "AI coach to tune your invest-vs-save mix",
+        "Side-by-side compare: save-only vs invest plans",
       ]
     : [
-        "Save unlimited plans & track progress",
-        "Invest-vs-save projection — reach your goal sooner",
-        "Full PDF + CSV export, themed reports, share link",
+        "See how many years investing shaves off your timeline",
+        "A monthly playbook — exactly what to invest each month",
+        "Curated accounts to grow your down payment faster",
       ];
 
   return (
