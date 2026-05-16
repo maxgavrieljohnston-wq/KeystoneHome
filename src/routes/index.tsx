@@ -97,7 +97,7 @@ const FLOW = [
   "homeStyle",
   "homeFeatures",
   "downGoal",
-  "advancedAssumptions",
+  // "advancedAssumptions" removed — backend now derives these from the user's metro.
   "timeline",
   "introRisk",
   "risk0",
