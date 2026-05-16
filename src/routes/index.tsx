@@ -3225,7 +3225,7 @@ function InlineUpgradeNudge() {
     >
       <span style={{ fontSize: 14, color: C.inkSoft, flex: "1 1 200px", lineHeight: 1.4 }}>
         <span style={{ color: C.ember, marginRight: 6 }}>✦</span>
-        Want to own 2–4 years sooner? See your invest-vs-save projection.
+        Want to own 2–4 years sooner? Time to find out how.
       </span>
       <button
         type="button"
