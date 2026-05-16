@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
 import { getMyPlan } from "@/lib/account.functions";
 import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
+import { deriveAssumptions } from "@/lib/plan-assumptions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
 import { useSubscription } from "@/hooks/useSubscription";
