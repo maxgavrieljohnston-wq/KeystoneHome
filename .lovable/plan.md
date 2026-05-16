@@ -1,35 +1,23 @@
-# Sharpen upsell copy around invest-to-own-sooner
+## Changes to `src/routes/index.tsx`
 
-Update three pieces in `src/routes/index.tsx`:
+### 1. Mid-report inline nudge (lines ~3228 and ~3246)
 
-## 1. End-of-report card (free → Plus)
+- Replace nudge text:
+  - From: `Want to own 2–4 years sooner? See your invest-vs-save projection.`
+  - To: `Want to own 2–4 years sooner? Time to find out how.`
+- Replace button label:
+  - From: `Unlock — $5/mo`
+  - To: `Find out how`
 
-- Headline: **"Own years sooner. Invest your down payment."**
-- 3 highlights:
-  - See how many years investing shaves off your timeline
-  - A monthly playbook — exactly what to invest each month
-  - Curated accounts to grow your down payment faster
-- Keep both buttons (Start Plus $5/mo, Go Pro $11/mo)
+### 2. Remove "§02 Your down payment options" from the report (lines ~2828–2899)
 
-## 2. Plus → Pro variant (when a Plus user sees the card)
+Delete the entire IIFE block — the leading comment, `computeOfferedDownOpts(d)` call, and the `<Section number="02" title="Your down payment options.">…</Section>` it renders. After removal, the next section (`<Section number="03" title="What it costs to live there.">`) becomes the section that follows `<InlineUpgradeNudge />`.
 
-- Headline: **"Hand off the investing. Reach your goal faster."**
-- 3 highlights:
-  - Auto-invest your down payment (coming soon)
-  - AI coach to tune your invest-vs-save mix
-  - Side-by-side compare: save-only vs invest plans
+Note: the existing section numbers 03/04/… are hard-coded strings, not derived from order. Leaving them as-is keeps the diff minimal but the report will jump §01 → §03. **Question for confirmation: renumber 03→02, 04→03, etc., or leave the numbers as-is?** Default assumption if not specified: renumber so the report reads §01, §02, §03… without a gap.
 
-## 3. Mid-report inline nudge
+The shared helper `computeOfferedDownOpts` stays — it's still used by the wizard question screen at line 1041.
 
-Replace the generic "save your plan" line with:
-> ✦ Want to own 2–4 years sooner? See your invest-vs-save projection.   **[ Unlock — $5/mo ]**
-
-## 4. Sticky mobile bar
-
-Replace "Save your plan · from $5/mo" with:
-> Own years sooner · from $5/mo   **[ See how ]**
-
-## Out of scope
-
-- No changes to `tier-features.ts`, pricing page, or UpgradeModal
-- No backend / schema changes
+### Out of scope
+- No copy changes elsewhere (end-of-report cards, sticky bar, headlines).
+- No changes to `tier-features.ts`, pricing page, UpgradeModal, or any backend/schema.
+- The wizard's down-payment question screen is untouched.
