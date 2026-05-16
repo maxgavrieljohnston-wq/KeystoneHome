@@ -3271,7 +3271,10 @@ function StickyUpgradeBar() {
   if (loading || isPro || dismissed || !scrolled) return null;
 
   return (
-    <div
+    <>
+      {/* Spacer so the fixed bar never covers the report footer on mobile */}
+      <div aria-hidden className="md:hidden" style={{ height: 84 }} />
+      <div
       style={{
         position: "fixed",
         left: 12,
@@ -3331,6 +3334,7 @@ function StickyUpgradeBar() {
         ×
       </button>
     </div>
+    </>
   );
 }
 
