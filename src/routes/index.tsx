@@ -5,7 +5,7 @@ import { getMyPlan } from "@/lib/account.functions";
 import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
 import { deriveAssumptions } from "@/lib/plan-assumptions";
 import { getPaddleEnvironment } from "@/lib/paddle";
-import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
+
 import { HOMEOWNERSHIP_FACTS } from "@/lib/homeownership-facts";
 import { getMyPlans } from "@/lib/plans.functions";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -2823,6 +2823,8 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
+      <InlineUpgradeNudge />
+
       {/* Down payment buckets — mirror the options the user was offered earlier in the flow */}
       {(() => {
         // Mirror exactly the down-payment options offered on the question screen.
@@ -3061,6 +3063,7 @@ function Report({ d }: { d: Data }) {
       })()}
 
       <ReportPaywall />
+      <StickyUpgradeBar />
 
       {/* Footer */}
       <div
@@ -3086,15 +3089,21 @@ function Report({ d }: { d: Data }) {
 
 // ── Report paywall ───────────────────────────────────────────────────────────
 function ReportPaywall() {
-  const { isPlus, isPro, tier, loading } = useSubscription();
+  const { isPlus, isPro, loading } = useSubscription();
+  const gate = useUpgradeGate();
   if (loading) return null;
   if (isPro) return null;
 
-  const features = isPlus
-    ? PRO_FEATURES.map((f) => f.long)
+  const highlights = isPlus
+    ? [
+        "AI homebuying coach — plan-aware answers",
+        "Side-by-side compare (up to 3 plans)",
+        "Stress-test against rate shocks & income drops",
+      ]
     : [
-        ...PLUS_FEATURES.map((f) => f.long),
-        ...PRO_FEATURES.map((f) => `${f.long} (Pro)`),
+        "Save unlimited plans & track progress",
+        "Invest-vs-save projection — reach your goal sooner",
+        "Full PDF + CSV export, themed reports, share link",
       ];
 
   return (
@@ -3122,7 +3131,7 @@ function ReportPaywall() {
       <h3
         style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: 36,
+          fontSize: 32,
           fontWeight: 400,
           letterSpacing: "-0.02em",
           lineHeight: 1.05,
@@ -3131,22 +3140,16 @@ function ReportPaywall() {
       >
         {isPlus
           ? "Go further with your personal coach."
-          : "Save this plan. Track it. Reach it faster."}
+          : "Save this plan. Reach it faster."}
       </h3>
-      <p style={{ fontSize: 16, color: "#d6cfc1", marginTop: 10, lineHeight: 1.5 }}>
-        You're on the{" "}
-        <span style={{ textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>
-          {tier}
-        </span>{" "}
-        plan. Upgrade to unlock:
-      </p>
-      <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 24px" }}>
-        {features.map((f) => (
+      <ul style={{ listStyle: "none", padding: 0, margin: "18px 0 22px" }}>
+        {highlights.map((f) => (
           <li
             key={f}
             style={{
-              fontSize: 16,
+              fontSize: 15,
               padding: "8px 0",
+              color: "#d6cfc1",
               borderTop: "1px solid #3a3a3a",
             }}
           >
@@ -3154,24 +3157,180 @@ function ReportPaywall() {
           </li>
         ))}
       </ul>
-      <Link
-        to="/pricing"
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        {!isPlus && (
+          <button
+            type="button"
+            onClick={() => gate.openUpgrade("plus", "the full plan")}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              padding: "13px 18px",
+              borderRadius: 8,
+              border: `1.5px solid ${C.paper}`,
+              background: "transparent",
+              color: C.paper,
+              cursor: "pointer",
+            }}
+          >
+            Start Plus — $5/mo
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => gate.openUpgrade("pro", "Pro")}
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            padding: "13px 18px",
+            borderRadius: 8,
+            border: "none",
+            background: C.paper,
+            color: C.ink,
+            cursor: "pointer",
+          }}
+        >
+          Go Pro — $11/mo
+        </button>
+      </div>
+      <p style={{ fontSize: 12, color: C.inkFaint, margin: "12px 0 0" }}>
+        Cancel anytime.
+      </p>
+    </section>
+  );
+}
+
+// ── Mid-report inline nudge ──────────────────────────────────────────────────
+function InlineUpgradeNudge() {
+  const { isPlus, loading } = useSubscription();
+  const gate = useUpgradeGate();
+  if (loading || isPlus) return null;
+  return (
+    <div
+      style={{
+        margin: "28px 0 32px",
+        padding: "14px 16px",
+        border: `1px solid ${C.ink}`,
+        borderRadius: 10,
+        background: C.paper,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={{ fontSize: 14, color: C.inkSoft, flex: "1 1 200px", lineHeight: 1.4 }}>
+        <span style={{ color: C.ember, marginRight: 6 }}>✦</span>
+        Save this plan so you can come back and track your progress.
+      </span>
+      <button
+        type="button"
+        onClick={() => gate.openUpgrade("plus", "saving your plan")}
         style={{
-          display: "inline-block",
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 12,
+          fontSize: 10,
           letterSpacing: "0.16em",
           textTransform: "uppercase",
-          padding: "14px 22px",
-          borderRadius: 8,
-          background: C.paper,
-          color: C.ink,
-          textDecoration: "none",
+          padding: "10px 14px",
+          borderRadius: 6,
+          border: "none",
+          background: C.ink,
+          color: C.paper,
+          cursor: "pointer",
         }}
       >
-        See plans →
-      </Link>
-    </section>
+        Upgrade — $5/mo
+      </button>
+    </div>
+  );
+}
+
+// ── Sticky mobile upgrade bar ────────────────────────────────────────────────
+function StickyUpgradeBar() {
+  const { isPro, loading } = useSubscription();
+  const gate = useUpgradeGate();
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("keystone_upsell_dismissed") === "1";
+  });
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 600);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (loading || isPro || dismissed || !scrolled) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        left: 12,
+        right: 12,
+        bottom: 12,
+        zIndex: 60,
+        background: C.ink,
+        color: C.paper,
+        borderRadius: 12,
+        padding: "12px 14px",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        boxShadow: "0 12px 32px rgba(0,0,0,0.25)",
+      }}
+      className="md:hidden"
+    >
+      <span style={{ fontSize: 13, lineHeight: 1.3, flex: 1 }}>
+        Save your plan
+        <span style={{ color: C.inkFaint, marginLeft: 6, fontSize: 12 }}>· from $5/mo</span>
+      </span>
+      <button
+        type="button"
+        onClick={() => gate.openUpgrade("plus", "saving your plan")}
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          padding: "9px 12px",
+          borderRadius: 6,
+          border: "none",
+          background: C.paper,
+          color: C.ink,
+          cursor: "pointer",
+        }}
+      >
+        Upgrade
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          sessionStorage.setItem("keystone_upsell_dismissed", "1");
+          setDismissed(true);
+        }}
+        aria-label="Dismiss"
+        style={{
+          background: "transparent",
+          border: "none",
+          color: C.inkFaint,
+          fontSize: 20,
+          cursor: "pointer",
+          padding: "0 4px",
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </button>
+    </div>
   );
 }
 
