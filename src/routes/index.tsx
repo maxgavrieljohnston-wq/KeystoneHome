@@ -2900,7 +2900,7 @@ function Report({ d }: { d: Data }) {
         const savedPct = Math.max(0, Math.min(100, (d.saved / Math.max(totalCash, 1)) * 100));
         const gap = Math.max(0, totalCash - d.saved);
         return (
-          <Section number="04" title="Cash to close">
+          <Section number="03" title="Cash to close">
             <p style={SubP}>
               The deposit isn't the whole bill. Closing costs run about 3% of the
               price, plus a moving budget. Here's the full cash you'll hand over
