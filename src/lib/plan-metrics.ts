@@ -8,6 +8,7 @@ import {
   combinedEmploymentAdjustment,
   getPriceByZip,
 } from "@/lib/keystone";
+import { deriveAssumptions } from "@/lib/plan-assumptions";
 
 export type PlanMetrics = {
   zip: string;
