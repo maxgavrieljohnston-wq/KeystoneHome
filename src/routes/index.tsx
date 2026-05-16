@@ -3309,7 +3309,7 @@ function StickyUpgradeBar() {
           cursor: "pointer",
         }}
       >
-        Upgrade
+        See how
       </button>
       <button
         type="button"
