@@ -1,50 +1,58 @@
-## Goal
+# Rework the free-plan upgrade prompt on the results page
 
-Insert a 5-second "calculating your plan" screen between the last risk question and the dashboard/results — but only for first-time users (their first plan). Show a progress bar with a fast-then-slow fill curve, and rotate inspiring homeownership facts above it.
+The current `ReportPaywall` (src/routes/index.tsx, ~L3088) dumps the full Plus + Pro feature list at the very end of the report. Two problems: it's a wall of text, and by the time a free user scrolls there they've already gotten what they came for. Plan below fixes both.
 
-## Changes
+## 1. Trim the end-of-report card to just the highlights
 
-### 1. Flow change (`src/routes/index.tsx`)
-- Add `"calculating"` to the `FLOW` array between `"risk3"` and `"dashboard"`.
-- Add a screen renderer `if (screen === "calculating") return <CalculatingScreen ... />`.
-- After the last risk question, instead of jumping straight to `dashboard`, advance to `calculating`.
-- Decide first-time vs returning at flow time:
-  - **First-time** = user has zero saved plans before this submit. Detect by calling the existing `getMyPlans` server fn once on mount of the calculating step (or checking the user's session — if not signed in yet, treat as first-time, which covers the lead-capture path).
-  - If the user is **not** first-time, skip the calculating screen entirely (advance straight to dashboard). No flicker.
-- The screen runs `submitPlan` in parallel with the 5s animation. Whichever finishes last gates the transition — so the bar always completes visually, and a slow network never gets cut off mid-progress.
+Replace the 10+ bullet `features.map(...)` with **3 curated highlights** (not pulled from `PLUS_FEATURES` wholesale). For free users:
 
-### 2. New `CalculatingScreen` component (inline in `src/routes/index.tsx`)
-- Full-bleed, same paper/ink palette as the rest of the wizard.
-- Headline: "Calculating your plan." Subtitle: "Crunching the numbers on your timeline, market, and risk profile."
-- Progress bar (custom, not shadcn):
-  - Width 100%, height ~8px, ink-on-paper, with a single filled span using the ember accent.
-  - Fast-then-slow curve via `easeOutQuart`: `1 - (1 - t)^4`. Drives a `useEffect` requestAnimationFrame loop over ~5000 ms.
-  - Numeric % label beside it (monospace, "12%").
-- Rotating facts:
-  - Render the current fact above the bar; fade/slide-swap every ~1500 ms (so ~3 facts visible across 5s).
-  - Use `animate-fade-in` from the project's existing animation set for the swap.
-  - Pick a random ordering on mount so consecutive plans show different facts.
-- When `progress === 1` AND `submitPlan` has resolved, advance to dashboard (or in the not-signed-in path, the same post-submit destination today's flow goes to).
+- Save unlimited plans & track progress
+- Invest-vs-save projection — reach your goal sooner
+- Full PDF + CSV export, themed reports, shareable link
 
-### 3. New facts data file (`src/lib/homeownership-facts.ts`)
-- Export `HOMEOWNERSHIP_FACTS: { headline: string; sub: string }[]` with ~12 curated, sourced-feeling lines. Example tone:
-  - "Homeowners build ~$255K more wealth than renters by retirement." / "Source: Federal Reserve SCF."
-  - "Every mortgage payment pays down principal — your future down payment for the next home."
-  - "Home equity is the #1 source of wealth for middle-class Americans."
-  - "The average homeowner stays put 13 years — long enough to ride out any market cycle."
-  - "Fixed-rate mortgages turn rent inflation into a flat line for 30 years."
-  - …etc. (10–12 total, mix of financial + emotional/lifestyle).
-- Plain TS data, no DB, no fetch.
+For Plus users (upgrading to Pro): 3 Pro highlights (AI coach, side-by-side compare, stress-test).
 
-### 4. Wire-up details
-- The existing submit path (the code that today fires `submitPlan` when entering the dashboard screen) gets moved into / coordinated with the calculating screen for first-time users, so we don't double-submit. For returning users it stays exactly as it is today.
-- If `submitPlan` fails: keep the existing error handling (whatever the dashboard transition currently does on error). We just surface it after the animation completes.
+Also change the card to show **inline pricing + two buttons** instead of a single "See plans →" link, so the decision happens in place:
+
+```
+[ Start Plus — $5/mo ]   [ Go Pro — $11/mo ]
+                          Cancel anytime
+```
+
+Buttons open the existing `UpgradeModal` (or jump straight into Paddle via `usePaddleCheckout`) — no extra page hop.
+
+## 2. Surface the upgrade earlier — two additions
+
+**a) Mid-report inline teaser** (placed right after the first big result section, well before the end). A small, single-line nudge — not the full card — e.g.:
+
+```
+🔒 Save this plan so you can come back and track it →  [ Upgrade ]
+```
+
+Quiet styling (paper bg, ember accent, one line). Same modal trigger.
+
+**b) Sticky mobile CTA bar** that appears after the user scrolls past the first result section and stays pinned to the bottom of the viewport on mobile (the user is on a 390px viewport). One line + one button:
+
+```
+Save your plan • from $5/mo            [ Upgrade ]
+```
+
+Hidden on desktop (≥768px) where the inline card is enough. Hidden for Pro users. Dismissible (session-only) so it's not annoying.
+
+## 3. Keep the bottom card, but as the closer — not the only ask
+
+After the trims above, the end-of-report card becomes the formal "here's the offer" closer rather than the first time the user sees the pitch. By then they've already been gently nudged twice.
+
+## Technical notes
+
+- All edits in `src/routes/index.tsx`. `ReportPaywall` rewrite + two new small components (`InlineUpgradeNudge`, `StickyUpgradeBar`).
+- Reuse `useSubscription()` for gating, `useUpgradeGate()` + `UpgradeModal` for the CTA (already wired in the app), and `usePaddleCheckout` if we want one-click checkout from the buttons.
+- Sticky bar: `position: fixed; bottom: 0`, show via `IntersectionObserver` on the first result section, hide on `isPro`, hide if dismissed (sessionStorage key `keystone_upsell_dismissed`).
+- No backend / schema changes. No new routes. No new packages.
+- Highlights are hardcoded short strings in the file (don't try to derive from `PLUS_FEATURES` — those are the long marketing lines).
 
 ## Out of scope
-- No backend changes — purely a presentational screen plus a static facts file.
-- No accessibility prompt to skip (5s feels short; add later if requested).
-- No per-metro personalization for this iteration — pure static facts as confirmed.
 
-## Notes
-- The fast-then-slow curve plus rotating facts together do the heavy lifting on "feels substantive." A linear bar with no facts feels fake; this combo reads as "real work, worth waiting for."
-- Reusing the existing paper/ink/ember palette keeps it cohesive with the rest of the wizard — no new visual primitives introduced.
+- Pricing page redesign
+- Changes to `UpgradeModal` itself
+- A/B testing infrastructure
