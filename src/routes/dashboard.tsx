@@ -1339,6 +1339,16 @@ function InvestmentSection({
         timelineYears={metrics.timelineYears}
       />
 
+      <AssumptionsPanel
+        planId={planId}
+        answers={answers}
+        targetPrice={metrics.targetPrice}
+        assumptions={assumptions}
+        isPlus={isPlus}
+        locked={!isPlus}
+        onLockedClick={() => gate.openUpgrade("plus", "Custom assumptions")}
+      />
+
       <RiskScenariosPanel
         answers={answers}
         assumptions={assumptions}
