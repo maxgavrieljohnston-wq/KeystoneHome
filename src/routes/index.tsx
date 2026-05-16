@@ -3290,7 +3290,7 @@ function StickyUpgradeBar() {
       className="md:hidden"
     >
       <span style={{ fontSize: 13, lineHeight: 1.3, flex: 1 }}>
-        Save your plan
+        Own years sooner
         <span style={{ color: C.inkFaint, marginLeft: 6, fontSize: 12 }}>· from $5/mo</span>
       </span>
       <button
