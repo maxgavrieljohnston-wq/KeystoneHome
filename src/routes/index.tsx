@@ -6,6 +6,8 @@ import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
 import { deriveAssumptions } from "@/lib/plan-assumptions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
+import { HOMEOWNERSHIP_FACTS } from "@/lib/homeownership-facts";
+import { getMyPlans } from "@/lib/plans.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { US_STATES, priceByState } from "@/data/states";
