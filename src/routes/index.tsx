@@ -105,6 +105,7 @@ const FLOW = [
   "risk1",
   "risk2",
   "risk3",
+  "calculating",
   "dashboard",
 ] as const;
 type Screen = (typeof FLOW)[number];
