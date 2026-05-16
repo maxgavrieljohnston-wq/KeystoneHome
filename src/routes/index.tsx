@@ -2823,6 +2823,8 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
+      <InlineUpgradeNudge />
+
       {/* Down payment buckets — mirror the options the user was offered earlier in the flow */}
       {(() => {
         // Mirror exactly the down-payment options offered on the question screen.
