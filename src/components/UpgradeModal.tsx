@@ -102,7 +102,7 @@ export function UpgradeModal({
         priceId: "plus_monthly",
         monthly: 5,
         
-        priceFrame: "Less than $0.17 a day",
+        priceFrame: "Less than $0.25 a day",
         urgency: "Every month you wait is compounding you don't get back.",
         cta: "Start Plus",
         features: PLUS_FEATURES,
@@ -116,7 +116,7 @@ export function UpgradeModal({
         
         priceFrame: "Pays for itself if it saves one month",
         urgency: "The market won't wait. Neither should your plan.",
-        cta: "Add your AI coach",
+        cta: "Start Pro",
         features: [
           { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as TierFeature,
           ...orderProFeatures(PRO_FEATURES),
