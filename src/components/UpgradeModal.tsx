@@ -73,11 +73,13 @@ export function UpgradeModal({
   onClose,
   requiredTier,
   featureName,
+  openedFrom,
 }: {
   open: boolean;
   onClose: () => void;
   requiredTier: RequiredTier;
   featureName: string;
+  openedFrom?: string;
 }) {
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
