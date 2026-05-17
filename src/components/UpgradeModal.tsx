@@ -72,7 +72,7 @@ export function UpgradeModal({
   open,
   onClose,
   requiredTier,
-  featureName,
+  featureName: _featureName,
   openedFrom,
 }: {
   open: boolean;
@@ -102,7 +102,7 @@ export function UpgradeModal({
         priceId: "plus_monthly",
         monthly: 5,
         
-        priceFrame: "Less than $0.17 a day",
+        priceFrame: "Less than $0.25 a day",
         urgency: "Every month you wait is compounding you don't get back.",
         cta: "Start Plus",
         features: PLUS_FEATURES,
@@ -116,7 +116,7 @@ export function UpgradeModal({
         
         priceFrame: "Pays for itself if it saves one month",
         urgency: "The market won't wait. Neither should your plan.",
-        cta: "Add your AI coach",
+        cta: "Start Pro",
         features: [
           { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as TierFeature,
           ...orderProFeatures(PRO_FEATURES),
@@ -146,18 +146,7 @@ export function UpgradeModal({
     });
   };
 
-  const headline =
-    requiredTier === "pro"
-      ? {
-          eyebrow: "Your personal homebuying coach",
-          title: "Stop guessing. Get a plan that adapts.",
-          sub: `${featureName} is part of Pro — AI coach, stress-tests, and live market data working for you.`,
-        }
-      : {
-          eyebrow: "Your plan, accelerated",
-          title: "Reach your home 2–4 years sooner.",
-          sub: `${featureName} is part of Plus — plus the tools to actually shave years off your timeline.`,
-        };
+
 
   return (
     <div
@@ -206,27 +195,7 @@ export function UpgradeModal({
           boxShadow: "0 30px 80px rgba(0,0,0,0.3)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-          <div>
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                color: C.ember,
-                marginBottom: 8,
-              }}
-            >
-              {headline.eyebrow}
-            </div>
-            <h2
-              className="km-upgrade-headline"
-              style={{ margin: 0, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.15 }}
-            >
-              {headline.title}
-            </h2>
-          </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }}>
           <button
             type="button"
             onClick={onClose}
@@ -239,15 +208,13 @@ export function UpgradeModal({
               color: C.inkMute,
               lineHeight: 1,
               flexShrink: 0,
+              marginRight: -4,
+              marginTop: -4,
             }}
           >
             ×
           </button>
         </div>
-
-        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 14px", lineHeight: 1.55 }}>
-          {headline.sub}
-        </p>
 
         {/* Social proof + risk reversal strip */}
         <div
