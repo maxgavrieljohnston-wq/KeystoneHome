@@ -134,7 +134,16 @@ export function UpgradeModal({
   const showRecommended = visible.length > 1;
 
   const handlePick = async (tier: typeof tiers[number]) => {
-    await openCheckout({ priceId: tier.priceId, customerEmail: email, userId });
+    // Last-click attribution: which surface opened the modal.
+    // Fall back to modal_{tier} if opened programmatically with no source.
+    const source = openedFrom || `modal_${tier.id}`;
+    trackUpgradeEvent({ event_type: "checkout_open", source, tier: tier.id, email });
+    await openCheckout({
+      priceId: tier.priceId,
+      customerEmail: email,
+      userId,
+      source,
+    });
   };
 
   const headline =
