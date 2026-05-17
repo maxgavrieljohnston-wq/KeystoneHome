@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "exact-pixel-perfect-313"
+const SITE_NAME = "Keystone"
 const ROOT_DOMAIN = "keystonehomeowners.com"
 
 // Sample data for preview mode ONLY (not used in actual email sending).

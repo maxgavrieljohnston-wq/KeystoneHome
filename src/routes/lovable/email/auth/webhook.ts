@@ -31,7 +31,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "exact-pixel-perfect-313"
+const SITE_NAME = "Keystone"
 const SENDER_DOMAIN = "notify.keystonehomeowners.com"
 const ROOT_DOMAIN = "keystonehomeowners.com"
 const FROM_DOMAIN = "keystonehomeowners.com"
