@@ -2772,7 +2772,12 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
-      <InlineUpgradeNudge />
+      <InlineUpgradeNudge
+        saved={d.saved}
+        target={downPayment}
+        monthly={savedOnlyMonthly}
+        timelineMonths={months}
+      />
 
       {/* Section 2 — Affordability */}
       <Section number="02" title="What it costs to live there.">
