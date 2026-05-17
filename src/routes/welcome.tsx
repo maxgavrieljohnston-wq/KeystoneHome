@@ -186,6 +186,84 @@ function WelcomePage() {
           ))}
         </ul>
 
+        {needsPassword && !pwSaved && (
+          <form
+            onSubmit={handleSavePassword}
+            style={{
+              border: `1.5px solid ${C.ember}`,
+              background: `${C.ember}11`,
+              borderRadius: 12,
+              padding: 18,
+              margin: "0 0 24px",
+              textAlign: "left",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: C.ember,
+                marginBottom: 8,
+              }}
+            >
+              One last step
+            </div>
+            <h3 style={{ fontSize: 22, fontWeight: 400, margin: "0 0 6px" }}>
+              Set a password to sign in next time.
+            </h3>
+            <p style={{ fontSize: 14, color: C.inkSoft, margin: "0 0 14px", lineHeight: 1.5 }}>
+              You signed in without a password. Add one so you can come straight back.
+            </p>
+            <input
+              type="password"
+              placeholder="New password (8+ chars)"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              minLength={8}
+              autoComplete="new-password"
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                borderBottom: `1.5px solid ${C.ink}`,
+                padding: "10px 0",
+                fontSize: 18,
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                color: C.ink,
+                outline: "none",
+                marginBottom: 14,
+              }}
+            />
+            <button
+              type="submit"
+              disabled={pwBusy || pw.length < 8}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                background: C.ink,
+                color: C.paper,
+                border: "none",
+                borderRadius: 8,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 12,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                cursor: pwBusy || pw.length < 8 ? "default" : "pointer",
+                opacity: pwBusy || pw.length < 8 ? 0.5 : 1,
+              }}
+            >
+              {pwBusy ? "Saving…" : "Save password"}
+            </button>
+            {pwError && (
+              <div style={{ marginTop: 10, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
+                {pwError}
+              </div>
+            )}
+          </form>
+        )}
+
         <button
           onClick={() => navigate({ to: "/dashboard" })}
           style={{
