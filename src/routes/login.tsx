@@ -644,14 +644,42 @@ function LoginPage() {
             </p>
 
             <form onSubmit={handleSetPassword}>
-              <input
-                type="password"
-                placeholder="New password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ ...inputStyle, marginBottom: 32 }}
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative", marginBottom: 32 }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="New password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: 0, paddingRight: 56 }}
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "transparent",
+                    border: "none",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: C.inkMute,
+                    cursor: "pointer",
+                    padding: "8px 4px",
+                  }}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              <p style={{ marginTop: -22, marginBottom: 24, fontSize: 13, color: C.inkMute, lineHeight: 1.4 }}>
+                Use 8+ characters. Mix letters and numbers for a stronger password.
+              </p>
 
               <button
                 type="submit"
