@@ -1,7 +1,6 @@
-Update the `/pricing` page header to match the new homepage copy.
+In `src/routes/index.tsx` homepage pricing teaser (around lines 2151-2191):
 
-In `src/routes/pricing.tsx`:
-- Headline: "One plan stays free. Two go further." → **"Simple pricing. Serious progress."**
-- Subhead: "Use Keystone forever at no cost. Upgrade to Plus for the full planner, or Pro for ongoing coaching and live data. Cancel anytime." → **"7-day free trial."**
+1. Change the "Unlock everything" button to read **"Compare plans"** and navigate to `/pricing` (use `<Link to="/pricing">` styled like the current button) instead of calling `onStart`.
+2. Remove the separate "Compare plans →" link below the bonus footnote.
 
-No other changes.
+The "Bonus: Pro ($11/mo) adds Auto-Investing." line stays.
