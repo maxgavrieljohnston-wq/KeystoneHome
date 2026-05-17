@@ -34,6 +34,30 @@ function WelcomePage() {
     return () => clearInterval(t);
   }, [sub.isActive]);
 
+  // Backup client-side attribution event in case the webhook log fails or
+  // is delayed. The server-side log (in the Paddle webhook) is authoritative;
+  // this fires only when ?checkout=success&src=... is present on the URL.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "success") return;
+    const source = params.get("src");
+    if (!source) return;
+    const tier: "plus" | "pro" =
+      sub.tier === "pro" ? "pro" : "plus";
+    trackUpgradeEvent({
+      event_type: "checkout_success",
+      source,
+      tier,
+      metadata: { via: "welcome_page" },
+    });
+    // Clean the param so a reload doesn't double-log.
+    params.delete("src");
+    const next = params.toString();
+    const url = `${window.location.pathname}${next ? `?${next}` : ""}`;
+    window.history.replaceState({}, "", url);
+  }, [sub.tier]);
+
   const tierName = sub.tier === "pro" ? "Pro" : sub.tier === "plus" ? "Plus" : "premium";
 
   const features = sub.tier === "pro"
