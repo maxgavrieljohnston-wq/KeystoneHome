@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSubscription } from "@/hooks/useSubscription";
 import { trackUpgradeEvent } from "@/lib/upgrade-tracking";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/welcome")({
   head: () => ({
@@ -24,6 +25,48 @@ const C = {
 function WelcomePage() {
   const sub = useSubscription();
   const navigate = useNavigate();
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSaved, setPwSaved] = useState(false);
+
+  // Detect users who need to set a password (came in via magic link / OAuth
+  // without an email+password identity).
+  useEffect(() => {
+    let cancelled = false;
+    if (typeof window !== "undefined" && localStorage.getItem("keystone_pw_set") === "1") {
+      return;
+    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled || !data.user) return;
+      const identities = data.user.identities ?? [];
+      const hasEmailIdentity = identities.some((i: { provider?: string }) => i.provider === "email");
+      if (!hasEmailIdentity) setNeedsPassword(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw.length < 8) {
+      setPwError("Use at least 8 characters.");
+      return;
+    }
+    setPwBusy(true);
+    setPwError(null);
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    setPwBusy(false);
+    if (error) {
+      setPwError(error.message);
+    } else {
+      setPwSaved(true);
+      setNeedsPassword(false);
+      if (typeof window !== "undefined") localStorage.setItem("keystone_pw_set", "1");
+    }
+  };
 
   // Poll briefly: webhook may take a few seconds after checkout.
   useEffect(() => {
