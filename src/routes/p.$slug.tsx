@@ -48,6 +48,28 @@ import { getPlanTheme, type PlanTheme } from "@/lib/plan-themes";
 
 function SharedPlanPage() {
   const { plan } = Route.useLoaderData();
+  return <PlanView plan={plan} />;
+}
+
+export type PlanViewPlan = {
+  title?: string | null;
+  theme?: string | null;
+  answers?: Record<string, unknown> | null;
+  assumptions?: Record<string, number> | null;
+  current_savings?: number | null;
+  target_move_in?: string | null;
+  created_at?: string | null;
+};
+
+export function PlanView({
+  plan,
+  kicker = "— A shared Keystone plan",
+  footer,
+}: {
+  plan: PlanViewPlan;
+  kicker?: string;
+  footer?: React.ReactNode;
+}) {
   const theme = getPlanTheme(plan.theme as string | null);
   const a = (plan.answers ?? {}) as Record<string, unknown>;
   const ov = (plan.assumptions ?? {}) as Record<string, number>;
