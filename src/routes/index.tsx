@@ -2213,7 +2213,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
               textAlign: "center",
             }}
           >
-            Bonus: Pro ($11/mo) adds an AI coach.
+            Bonus: Pro ($11/mo) adds Auto-Investing.
           </p>
           <Link
             to="/pricing"
