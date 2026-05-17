@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { lovable } from "@/integrations/lovable";
 
 type LoginSearch = {
   email?: string;
@@ -54,10 +55,59 @@ function LoginPage() {
   // Signup flow steps
   const [step, setStep] = useState<"email" | "otp" | "password">("email");
   const [otp, setOtp] = useState("");
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+
+  // Auto-focus OTP input on step change.
+  useEffect(() => {
+    if (step === "otp") {
+      otpInputRef.current?.focus();
+    }
+  }, [step]);
+
+  // Countdown for resend cooldown.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      setError(friendlyError(result.error.message));
+      return;
+    }
+    if (result.redirected) return;
+    setBusy(false);
+    navigate({ to: "/dashboard" });
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || !validEmail) return;
+    setError(null);
+    setBusy(true);
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: true },
+    });
+    setBusy(false);
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      setResendCooldown(45);
+    }
+  };
 
   const handleForgotPassword = async () => {
     setError(null);
