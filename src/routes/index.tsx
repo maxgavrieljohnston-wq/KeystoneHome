@@ -3723,8 +3723,8 @@ function BirthdayScreen({
 // Shown for first-time users only between the last risk question and the
 // dashboard. ~5s fast-then-slow progress bar with rotating curated facts.
 function CalculatingScreen({ onDone }: { onDone: () => void }) {
-  const DURATION_MS = 5000;
-  const ROTATE_MS = 1500;
+  const DURATION_MS = 8000;
+  const ROTATE_MS = 4000;
 
   const checkPlans = useServerFn(getMyPlans);
   const [progress, setProgress] = useState(0);
