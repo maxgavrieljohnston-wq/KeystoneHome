@@ -14,6 +14,12 @@ const C = {
 
 export type RequiredTier = "plus" | "pro";
 
+// Strip a trailing "(coming soon)" / "(coming-soon)" from a label — the SOON
+// badge already communicates this, and the duplicate text wraps awkwardly.
+function cleanLabel(label: string): string {
+  return label.replace(/\s*\(coming[\s-]?soon\)\s*$/i, "");
+}
+
 export function UpgradeModal({
   open,
   onClose,
@@ -81,10 +87,28 @@ export function UpgradeModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 20,
+        padding: 16,
       }}
     >
+      {/* Scoped responsive styles — inline-style file, so we inject CSS for breakpoints */}
+      <style>{`
+        .km-upgrade-modal { padding: 20px; }
+        .km-upgrade-headline { font-size: 24px; }
+        .km-upgrade-tiers {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        .km-upgrade-card { padding: 16px; }
+        @media (min-width: 560px) {
+          .km-upgrade-modal { padding: 28px; }
+          .km-upgrade-headline { font-size: 28px; }
+          .km-upgrade-tiers.km-two { grid-template-columns: 1fr 1fr; gap: 10px; }
+          .km-upgrade-card { padding: 18px; }
+        }
+      `}</style>
       <div
+        className="km-upgrade-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: C.paper,
@@ -94,7 +118,6 @@ export function UpgradeModal({
           width: "100%",
           maxHeight: "90vh",
           overflowY: "auto",
-          padding: 28,
           fontFamily: "'Cormorant Garamond', Georgia, serif",
           boxShadow: "0 30px 80px rgba(0,0,0,0.3)",
         }}
@@ -113,7 +136,10 @@ export function UpgradeModal({
             >
               Premium feature
             </div>
-            <h2 style={{ margin: 0, fontWeight: 400, fontSize: 28, letterSpacing: "-0.01em" }}>
+            <h2
+              className="km-upgrade-headline"
+              style={{ margin: 0, fontWeight: 400, letterSpacing: "-0.01em" }}
+            >
               Unlock {featureName}
             </h2>
           </div>
@@ -134,27 +160,21 @@ export function UpgradeModal({
           </button>
         </div>
 
-        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 20px", lineHeight: 1.5 }}>
+        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 16px", lineHeight: 1.55 }}>
           {requiredTier === "pro"
             ? "This feature is part of Pro — your personal homebuying coach."
             : "Upgrade to Plus or Pro to unlock this and more."}
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: visible.length > 1 ? "1fr 1fr" : "1fr",
-            gap: 12,
-          }}
-        >
+        <div className={`km-upgrade-tiers ${visible.length > 1 ? "km-two" : ""}`}>
           {visible.map((tier) => {
             return (
               <div
                 key={tier.id}
+                className="km-upgrade-card"
                 style={{
                   border: `1.5px solid ${C.ink}`,
                   borderRadius: 10,
-                  padding: 18,
                   background: tier.highlight ? C.ink : "transparent",
                   color: tier.highlight ? C.paper : C.ink,
                   display: "flex",
@@ -176,27 +196,45 @@ export function UpgradeModal({
                     /mo
                   </span>
                 </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: "12px 0", flex: 1, fontSize: 14 }}>
-                  {tier.features.map((f) => (
-                    <li key={f.id} style={{ padding: "4px 0", opacity: 0.9, display: "flex", gap: 6, alignItems: "baseline" }}>
-                      <span>✓ {f.short}</span>
-                      {"comingSoon" in f && f.comingSoon && (
-                        <span
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                            fontSize: 8,
-                            letterSpacing: "0.14em",
-                            padding: "2px 5px",
-                            borderRadius: 4,
-                            background: tier.highlight ? C.paper : C.ink,
-                            color: tier.highlight ? C.ink : C.paper,
-                          }}
-                        >
-                          SOON
-                        </span>
-                      )}
-                    </li>
-                  ))}
+                <ul style={{ listStyle: "none", padding: 0, margin: "14px 0", flex: 1, fontSize: 15 }}>
+                  {tier.features.map((f) => {
+                    const isSoon = "comingSoon" in f && f.comingSoon;
+                    const label = isSoon ? cleanLabel(f.short) : f.short;
+                    return (
+                      <li
+                        key={f.id}
+                        style={{
+                          padding: "6px 0",
+                          opacity: 0.92,
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "flex-start",
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        <span aria-hidden="true" style={{ flexShrink: 0 }}>✓</span>
+                        <span style={{ flex: 1 }}>{label}</span>
+                        {isSoon && (
+                          <span
+                            style={{
+                              fontFamily: "'JetBrains Mono', monospace",
+                              fontSize: 8,
+                              letterSpacing: "0.14em",
+                              padding: "2px 5px",
+                              borderRadius: 4,
+                              background: tier.highlight ? C.paper : C.ink,
+                              color: tier.highlight ? C.ink : C.paper,
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                              alignSelf: "center",
+                            }}
+                          >
+                            SOON
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
                 <button
                   type="button"
