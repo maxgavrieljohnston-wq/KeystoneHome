@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
-import { PLUS_FEATURES, PRO_FEATURES } from "@/lib/tier-features";
+import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
 
 const C = {
   paper: "#f5efe6",
@@ -14,10 +14,37 @@ const C = {
 
 export type RequiredTier = "plus" | "pro";
 
-// Strip a trailing "(coming soon)" / "(coming-soon)" from a label — the SOON
-// badge already communicates this, and the duplicate text wraps awkwardly.
+// Strip a trailing "(coming soon)" / "(coming-soon)" — SOON badge handles it.
 function cleanLabel(label: string): string {
   return label.replace(/\s*\(coming[\s-]?soon\)\s*$/i, "");
+}
+
+// Display-only ordering for Pro: shipped features first, "SOON" last.
+// Source of truth (tier-features.ts) is untouched.
+const PRO_DISPLAY_ORDER = [
+  "coach",
+  "stress",
+  "compare",
+  "market",
+  "alerts",
+  "docs",
+  "broker",
+  "investing",
+];
+
+function orderProFeatures(features: readonly TierFeature[]): TierFeature[] {
+  const byId = new Map(features.map((f) => [f.id, f]));
+  const ordered: TierFeature[] = [];
+  for (const id of PRO_DISPLAY_ORDER) {
+    const f = byId.get(id);
+    if (f) {
+      ordered.push(f);
+      byId.delete(id);
+    }
+  }
+  // Append any features not in the explicit order (defensive).
+  for (const f of byId.values()) ordered.push(f);
+  return ordered;
 }
 
 export function UpgradeModal({
@@ -43,36 +70,61 @@ export function UpgradeModal({
     });
   }, [open]);
 
+  const tiers = useMemo(
+    () => [
+      {
+        id: "plus" as const,
+        name: "Plus",
+        priceId: "plus_monthly",
+        monthly: 5,
+        yearly: 60,
+        priceFrame: "Less than one coffee",
+        urgency: "Every month you wait is compounding you don't get back.",
+        cta: "Start saving years",
+        features: PLUS_FEATURES,
+        highlight: false,
+      },
+      {
+        id: "pro" as const,
+        name: "Pro",
+        priceId: "pro_monthly",
+        monthly: 11,
+        yearly: 132,
+        priceFrame: "Pays for itself if it saves one month",
+        urgency: "The market won't wait. Neither should your plan.",
+        cta: "Unlock my coach",
+        features: [
+          { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as TierFeature,
+          ...orderProFeatures(PRO_FEATURES),
+        ],
+        highlight: true,
+      },
+    ],
+    [],
+  );
+
   if (!open) return null;
 
-  const tiers = [
-    {
-      id: "plus" as const,
-      name: "Plus",
-      priceId: "plus_monthly",
-      monthly: 5,
-      features: PLUS_FEATURES,
-      highlight: false,
-    },
-    {
-      id: "pro" as const,
-      name: "Pro",
-      priceId: "pro_monthly",
-      monthly: 11,
-      features: [
-        { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" } as const,
-        ...PRO_FEATURES,
-      ],
-      highlight: true,
-    },
-  ];
-
-  // If feature requires Pro, hide Plus option
+  // If feature requires Pro, hide Plus option.
   const visible = requiredTier === "pro" ? tiers.filter((t) => t.id === "pro") : tiers;
+  const showRecommended = visible.length > 1;
 
   const handlePick = async (tier: typeof tiers[number]) => {
     await openCheckout({ priceId: tier.priceId, customerEmail: email, userId });
   };
+
+  const headline =
+    requiredTier === "pro"
+      ? {
+          eyebrow: "Your personal homebuying coach",
+          title: "Stop guessing. Get a plan that adapts.",
+          sub: `${featureName} is part of Pro — AI coach, stress-tests, and live market data working for you.`,
+        }
+      : {
+          eyebrow: "Your plan, accelerated",
+          title: "Reach your home 2–4 years sooner.",
+          sub: `${featureName} is part of Plus — plus the tools to actually shave years off your timeline.`,
+        };
 
   return (
     <div
@@ -90,20 +142,19 @@ export function UpgradeModal({
         padding: 16,
       }}
     >
-      {/* Scoped responsive styles — inline-style file, so we inject CSS for breakpoints */}
       <style>{`
         .km-upgrade-modal { padding: 20px; }
-        .km-upgrade-headline { font-size: 24px; }
+        .km-upgrade-headline { font-size: 26px; }
         .km-upgrade-tiers {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 12px;
+          gap: 14px;
         }
         .km-upgrade-card { padding: 16px; }
         @media (min-width: 560px) {
           .km-upgrade-modal { padding: 28px; }
-          .km-upgrade-headline { font-size: 28px; }
-          .km-upgrade-tiers.km-two { grid-template-columns: 1fr 1fr; gap: 10px; }
+          .km-upgrade-headline { font-size: 30px; }
+          .km-upgrade-tiers.km-two { grid-template-columns: 1fr 1fr; gap: 12px; }
           .km-upgrade-card { padding: 18px; }
         }
       `}</style>
@@ -114,7 +165,7 @@ export function UpgradeModal({
           background: C.paper,
           color: C.ink,
           borderRadius: 14,
-          maxWidth: 560,
+          maxWidth: 580,
           width: "100%",
           maxHeight: "90vh",
           overflowY: "auto",
@@ -134,13 +185,13 @@ export function UpgradeModal({
                 marginBottom: 8,
               }}
             >
-              Premium feature
+              {headline.eyebrow}
             </div>
             <h2
               className="km-upgrade-headline"
-              style={{ margin: 0, fontWeight: 400, letterSpacing: "-0.01em" }}
+              style={{ margin: 0, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.15 }}
             >
-              Unlock {featureName}
+              {headline.title}
             </h2>
           </div>
           <button
@@ -154,33 +205,55 @@ export function UpgradeModal({
               cursor: "pointer",
               color: C.inkMute,
               lineHeight: 1,
+              flexShrink: 0,
             }}
           >
             ×
           </button>
         </div>
 
-        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 16px", lineHeight: 1.55 }}>
-          {requiredTier === "pro"
-            ? "This feature is part of Pro — your personal homebuying coach."
-            : "Upgrade to Plus or Pro to unlock this and more."}
+        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 18px", lineHeight: 1.55 }}>
+          {headline.sub}
         </p>
 
         <div className={`km-upgrade-tiers ${visible.length > 1 ? "km-two" : ""}`}>
           {visible.map((tier) => {
+            const isPro = tier.id === "pro";
+            const recommended = showRecommended && isPro;
             return (
               <div
                 key={tier.id}
                 className="km-upgrade-card"
                 style={{
-                  border: `1.5px solid ${C.ink}`,
+                  position: "relative",
+                  border: `${recommended ? 2 : 1.5}px solid ${C.ink}`,
                   borderRadius: 10,
                   background: tier.highlight ? C.ink : "transparent",
                   color: tier.highlight ? C.paper : C.ink,
                   display: "flex",
                   flexDirection: "column",
+                  boxShadow: recommended ? `0 0 0 3px ${C.ember}33` : "none",
                 }}
               >
+                {recommended && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -10,
+                      right: 14,
+                      background: C.ember,
+                      color: C.paper,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 9,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      padding: "4px 8px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    Most popular
+                  </div>
+                )}
                 <div style={{ fontSize: 22, fontWeight: 400 }}>{tier.name}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
                   <span style={{ fontSize: 32, fontWeight: 400 }}>${tier.monthly}</span>
@@ -195,7 +268,30 @@ export function UpgradeModal({
                   >
                     /mo
                   </span>
+                  <span
+                    style={{
+                      marginLeft: 6,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      opacity: 0.55,
+                    }}
+                  >
+                    · ${tier.yearly}/yr
+                  </span>
                 </div>
+                <div
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    opacity: 0.75,
+                    marginTop: 6,
+                  }}
+                >
+                  {tier.priceFrame}
+                </div>
+
                 <ul style={{ listStyle: "none", padding: 0, margin: "14px 0", flex: 1, fontSize: 15 }}>
                   {tier.features.map((f) => {
                     const isSoon = "comingSoon" in f && f.comingSoon;
@@ -236,6 +332,20 @@ export function UpgradeModal({
                     );
                   })}
                 </ul>
+
+                <p
+                  style={{
+                    fontStyle: "italic",
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                    textAlign: "center",
+                    margin: "0 0 10px",
+                    opacity: 0.78,
+                  }}
+                >
+                  {tier.urgency}
+                </p>
+
                 <button
                   type="button"
                   onClick={() => handlePick(tier)}
@@ -245,7 +355,7 @@ export function UpgradeModal({
                     fontSize: 11,
                     letterSpacing: "0.16em",
                     textTransform: "uppercase",
-                    padding: "12px 14px",
+                    padding: "13px 14px",
                     borderRadius: 8,
                     border: "none",
                     cursor: loading ? "default" : "pointer",
@@ -254,7 +364,7 @@ export function UpgradeModal({
                     opacity: loading ? 0.6 : 1,
                   }}
                 >
-                  {loading ? "Opening…" : `Choose ${tier.name}`}
+                  {loading ? "Opening checkout…" : `${tier.cta} →`}
                 </button>
               </div>
             );
@@ -264,12 +374,15 @@ export function UpgradeModal({
         <p
           style={{
             textAlign: "center",
-            margin: "16px 0 0",
-            fontSize: 12,
-            color: C.inkMute,
+            margin: "18px 0 0",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: C.inkFaint,
           }}
         >
-          Cancel anytime.
+          Cancel anytime · Secure checkout · Instant access
         </p>
       </div>
     </div>
