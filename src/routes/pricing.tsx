@@ -144,7 +144,7 @@ function PricingPage() {
               margin: 0,
             }}
           >
-            One plan stays free. Two go further.
+            Simple pricing. Serious progress.
           </h1>
           <p
             style={{
@@ -155,8 +155,7 @@ function PricingPage() {
               lineHeight: 1.5,
             }}
           >
-            Use Keystone forever at no cost. Upgrade to Plus for the full planner, or Pro for
-            ongoing coaching and live data. Cancel anytime.
+            7-day free trial.
           </p>
         </header>
 
