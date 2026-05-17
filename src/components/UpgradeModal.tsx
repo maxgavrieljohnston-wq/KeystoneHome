@@ -218,7 +218,7 @@ export function UpgradeModal({
 
         <div className={`km-upgrade-tiers ${visible.length > 1 ? "km-two" : ""}`}>
           {visible.map((tier, idx) => {
-            const socialStrip = visible.length > 1 && idx === 0 ? (
+            const socialStrip = visible.length > 1 && idx === 1 ? (
               <div
                 key="social-strip"
                 style={{
