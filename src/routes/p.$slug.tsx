@@ -148,7 +148,7 @@ export function PlanView({
             marginBottom: 14,
           }}
         >
-          — A shared Keystone plan
+          {kicker}
         </div>
         <h1 style={{ fontSize: 44, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 8px" }}>
           {plan.title || `${styleName} in ${zipData.city}`}
