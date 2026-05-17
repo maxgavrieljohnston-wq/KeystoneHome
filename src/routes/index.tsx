@@ -2504,6 +2504,7 @@ function Report({ d }: { d: Data }) {
 
   const investedMonthly = calcRequiredMonthly(d.saved, downPayment, months, risk.rate);
   const savedOnlyMonthly = calcRequiredMonthly(d.saved, downPayment, months, 0);
+  const paywallMonthsSooner = computeMonthsSooner(d.saved, downPayment, savedOnlyMonthly, months);
 
   const empAdjReady = combinedEmploymentAdjustment(
     d.employment,
