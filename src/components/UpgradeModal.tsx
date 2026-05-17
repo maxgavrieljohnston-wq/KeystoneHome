@@ -42,9 +42,29 @@ function orderProFeatures(features: readonly TierFeature[]): TierFeature[] {
       byId.delete(id);
     }
   }
-  // Append any features not in the explicit order (defensive).
   for (const f of byId.values()) ordered.push(f);
   return ordered;
+}
+
+// Featured highlights shown above the fold; the rest is collapsed behind
+// "Show all features". Order matters — these render top-to-bottom.
+const PLUS_HIGHLIGHT_IDS = ["action", "assumptions", "accounts", "tags"];
+const PRO_HIGHLIGHT_IDS = ["_plus", "stress", "market", "broker", "investing"];
+
+function splitFeatures(
+  features: readonly TierFeature[],
+  highlightIds: readonly string[],
+): { highlights: TierFeature[]; rest: TierFeature[] } {
+  const byId = new Map(features.map((f) => [f.id, f]));
+  const highlights: TierFeature[] = [];
+  for (const id of highlightIds) {
+    const f = byId.get(id);
+    if (f) {
+      highlights.push(f);
+      byId.delete(id);
+    }
+  }
+  return { highlights, rest: Array.from(byId.values()) };
 }
 
 export function UpgradeModal({
