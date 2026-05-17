@@ -1463,96 +1463,918 @@ function ScreenSwitch({
 
 // ── Welcome ──────────────────────────────────────────────────────────────────
 function Welcome({ onStart }: { onStart: () => void }) {
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const serif = "'Instrument Serif', 'Cormorant Garamond', Georgia, serif";
+  const sans = "'Work Sans', 'Inter', system-ui, sans-serif";
+  const mono = "'JetBrains Mono', monospace";
+
+  const scrollTo = (id: string) => {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const monoLabel: React.CSSProperties = {
+    fontFamily: mono,
+    fontSize: 10,
+    letterSpacing: "0.22em",
+    textTransform: "uppercase",
+    fontWeight: 500,
+  };
+
+  const navLink: React.CSSProperties = {
+    ...monoLabel,
+    color: C.ink,
+    textDecoration: "none",
+    cursor: "pointer",
+    background: "none",
+    border: "none",
+    padding: 0,
+  };
+
   return (
-    <div style={{ paddingTop: 36 }}>
-      <div
+    <div
+      style={{
+        background: C.paper,
+        color: C.ink,
+        fontFamily: sans,
+        minHeight: "100vh",
+      }}
+    >
+      {/* ── NAV ─────────────────────────────────────────────── */}
+      <nav
         style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "26px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingBottom: 14,
-          borderBottom: `1px solid ${C.rule}`,
-          marginBottom: 80,
+          gap: 16,
         }}
       >
-        <Wordmark />
-        <Link
-          to="/login"
+        <div
           style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 11,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: C.ember,
-            textDecoration: "none",
+            fontFamily: serif,
+            fontSize: 30,
+            fontWeight: 500,
+            letterSpacing: "-0.01em",
           }}
         >
-          Sign in
-        </Link>
-      </div>
+          Keystone<span style={{ color: C.ember }}>.</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+          <button
+            onClick={() => scrollTo("how-it-works")}
+            style={{ ...navLink, display: "none" }}
+            className="ks-desktop-only"
+          >
+            How it works
+          </button>
+          <button
+            onClick={() => scrollTo("pricing")}
+            style={{ ...navLink, display: "none" }}
+            className="ks-desktop-only"
+          >
+            Pricing
+          </button>
+          <Link to="/login" style={{ ...navLink, color: C.ember }}>
+            Sign in
+          </Link>
+        </div>
+      </nav>
 
-      <div
+      {/* ── HERO ────────────────────────────────────────────── */}
+      <section
         style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: C.ember,
-          marginBottom: 18,
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "32px 24px 80px",
         }}
       >
-        — A homebuying plan
-      </div>
+        <div
+          className="ks-hero-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 56,
+            alignItems: "center",
+          }}
+        >
+          {/* LEFT: Editorial copy + CTA */}
+          <div>
+            <div
+              style={{
+                ...monoLabel,
+                display: "inline-block",
+                padding: "6px 12px",
+                border: `1px solid rgba(26,26,26,0.18)`,
+                borderRadius: 999,
+                color: C.inkSoft,
+                marginBottom: 28,
+              }}
+            >
+              A homebuying plan for everyone
+            </div>
 
-      <h1
+            <h1
+              style={{
+                fontFamily: serif,
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: "clamp(54px, 9vw, 104px)",
+                lineHeight: 0.9,
+                letterSpacing: "-0.03em",
+                margin: "0 0 28px",
+                color: C.ink,
+              }}
+            >
+              An investment account for your future home.
+            </h1>
+
+            <p
+              style={{
+                fontFamily: sans,
+                fontWeight: 300,
+                fontSize: 20,
+                lineHeight: 1.5,
+                color: "rgba(26,26,26,0.72)",
+                maxWidth: 460,
+                margin: "0 0 32px",
+              }}
+            >
+              Built for first-time home buyers who want a plan, not just another
+              savings account.
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 14,
+              }}
+            >
+              <button
+                onClick={onStart}
+                style={{
+                  background: C.ink,
+                  color: C.paper,
+                  border: "none",
+                  padding: "18px 28px",
+                  fontFamily: mono,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.background = C.ember)}
+                onMouseOut={(e) => (e.currentTarget.style.background = C.ink)}
+              >
+                Build my plan →
+              </button>
+              <button
+                onClick={() => scrollTo("how-it-works")}
+                style={{
+                  background: "transparent",
+                  color: C.ink,
+                  border: `1px solid ${C.ink}`,
+                  padding: "18px 28px",
+                  fontFamily: mono,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.background = C.paperDeep)
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                See an example
+              </button>
+            </div>
+
+            <div
+              style={{
+                marginTop: 28,
+                display: "flex",
+                gap: 18,
+                ...monoLabel,
+                color: C.inkFaint,
+              }}
+            >
+              <span>~ 2 minutes</span>
+              <span>·</span>
+              <span>Free plan preview</span>
+            </div>
+          </div>
+
+          {/* RIGHT: Product peek — plan card with soft rotation */}
+          <div style={{ position: "relative", padding: "20px 0" }}>
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                bottom: -32,
+                left: -24,
+                width: 240,
+                height: 240,
+                background: C.paperDeep,
+                opacity: 0.7,
+                zIndex: 0,
+              }}
+            />
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+                background: "#ffffff",
+                border: `1px solid ${C.paperDeep}`,
+                boxShadow: "0 30px 60px -20px rgba(26,26,26,0.25)",
+                padding: 36,
+                transform: "rotate(2deg)",
+                transition: "transform 0.5s ease",
+              }}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.transform = "rotate(0deg)")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.transform = "rotate(2deg)")
+              }
+            >
+              <div
+                style={{
+                  ...monoLabel,
+                  color: C.ember,
+                  marginBottom: 28,
+                }}
+              >
+                Your projection
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  borderBottom: `1px solid ${C.paper}`,
+                  paddingBottom: 18,
+                  marginBottom: 24,
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(26,26,26,0.5)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Estimated home price
+                  </div>
+                  <div style={{ fontFamily: serif, fontSize: 32, lineHeight: 1 }}>
+                    $540,000
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "rgba(26,26,26,0.5)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Target date
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: serif,
+                      fontStyle: "italic",
+                      fontSize: 32,
+                      lineHeight: 1,
+                    }}
+                  >
+                    Oct 2026
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    ...monoLabel,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span>Savings progress</span>
+                  <span>42%</span>
+                </div>
+                <div
+                  style={{
+                    height: 8,
+                    background: C.paper,
+                    width: "100%",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: "42%",
+                      background: C.ember,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ background: C.paper, padding: 20 }}>
+                <div
+                  style={{
+                    fontFamily: serif,
+                    fontStyle: "italic",
+                    fontSize: 15,
+                    color: "rgba(26,26,26,0.65)",
+                    marginBottom: 6,
+                  }}
+                >
+                  Note from Keystone:
+                </div>
+                <p
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 1.55,
+                    margin: 0,
+                    color: C.ink,
+                  }}
+                >
+                  Increasing your monthly contribution by $250 moves your purchase
+                  date forward by 4 months.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROOF STRIP ─────────────────────────────────────── */}
+      <section style={{ background: C.paperDeep, padding: "44px 24px" }}>
+        <div
+          className="ks-proof"
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 24,
+            opacity: 0.7,
+          }}
+        >
+          <div style={{ ...monoLabel, color: C.ink }}>
+            Trusted by future homeowners at
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 36,
+              fontFamily: serif,
+              fontStyle: "italic",
+              fontSize: 24,
+            }}
+          >
+            <span>Vanguard</span>
+            <span>Zillow</span>
+            <span>NerdWallet</span>
+            <span>Fidelity</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ────────────────────────────────────── */}
+      <section
+        id="how-it-works"
         style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontWeight: 400,
-          fontSize: 56,
-          lineHeight: 0.98,
-          letterSpacing: "-0.025em",
-          margin: "0 0 22px",
-          color: C.ink,
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "96px 24px",
         }}
       >
-        An investment account for your future home.
-      </h1>
+        <div style={{ marginBottom: 64 }}>
+          <div style={{ ...monoLabel, color: C.ember, marginBottom: 14 }}>
+            Process
+          </div>
+          <h2
+            style={{
+              fontFamily: serif,
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: "clamp(40px, 6vw, 72px)",
+              lineHeight: 1,
+              letterSpacing: "-0.02em",
+              margin: 0,
+            }}
+          >
+            Everything you need
+            <br />
+            to get the keys.
+          </h2>
+        </div>
+        <div
+          className="ks-process"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 48,
+          }}
+        >
+          {[
+            {
+              n: "01.",
+              t: "The Audit",
+              p: "We connect your current accounts to see exactly where you stand today. No spreadsheets required.",
+            },
+            {
+              n: "02.",
+              t: "The Projection",
+              p: "Calculate your timeline based on real local market data and your actual saving capacity.",
+            },
+            {
+              n: "03.",
+              t: "The Purchase",
+              p: "When you're ready, we match you with lenders and agents specialized in your target market.",
+            },
+          ].map((s) => (
+            <div key={s.n} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div
+                style={{
+                  fontFamily: serif,
+                  fontSize: 36,
+                  color: C.ember,
+                  lineHeight: 1,
+                }}
+              >
+                {s.n}
+              </div>
+              <h3
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  margin: 0,
+                }}
+              >
+                {s.t}
+              </h3>
+              <p
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1.6,
+                  color: "rgba(26,26,26,0.7)",
+                  margin: 0,
+                }}
+              >
+                {s.p}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <p
+      {/* ── DASHBOARD MOMENT ───────────────────────────────── */}
+      <section
         style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: 19,
-          lineHeight: 1.45,
-          color: C.inkSoft,
-          margin: "0 0 32px",
-          maxWidth: 460,
+          background: C.ink,
+          color: C.paper,
+          padding: "96px 24px",
+          overflow: "hidden",
         }}
       >
-        Built for first-time home buyers who want a plan, not just another
-        savings account.
-      </p>
+        <div
+          className="ks-dash"
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 64,
+            alignItems: "center",
+          }}
+        >
+          {/* Mock chart */}
+          <div
+            style={{
+              background: "rgba(245,239,230,0.04)",
+              border: "1px solid rgba(245,239,230,0.1)",
+              borderRadius: 8,
+              padding: 28,
+            }}
+          >
+            <div style={{ display: "flex", gap: 8, marginBottom: 32 }}>
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 999,
+                  background: C.ember,
+                }}
+              />
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.2)",
+                }}
+              />
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.2)",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 10,
+                height: 220,
+                marginBottom: 24,
+              }}
+            >
+              {[
+                { h: 20, bg: "rgba(255,255,255,0.1)", marker: false },
+                { h: 35, bg: "rgba(255,255,255,0.1)", marker: false },
+                { h: 45, bg: "rgba(255,255,255,0.1)", marker: false },
+                { h: 55, bg: "rgba(255,255,255,0.1)", marker: false },
+                { h: 75, bg: C.ember, marker: true },
+                { h: 85, bg: "rgba(255,255,255,0.2)", marker: false },
+              ].map((b, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: `${b.h}%`,
+                    background: b.bg,
+                    position: "relative",
+                  }}
+                >
+                  {b.marker && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -34,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: C.ember,
+                        color: C.paper,
+                        padding: "4px 10px",
+                        fontFamily: mono,
+                        fontSize: 9,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Buying window
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                ...monoLabel,
+                color: "rgba(255,255,255,0.4)",
+              }}
+            >
+              <span>2024</span>
+              <span>2025</span>
+              <span>2026</span>
+              <span>2027</span>
+            </div>
+          </div>
 
-      <Cta onClick={onStart} large>
-        Build My Plan →
-      </Cta>
+          <div>
+            <h2
+              style={{
+                fontFamily: serif,
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: "clamp(36px, 5.5vw, 64px)",
+                lineHeight: 1.02,
+                letterSpacing: "-0.02em",
+                margin: "0 0 24px",
+              }}
+            >
+              Watch your timeline shrink.
+            </h2>
+            <p
+              style={{
+                fontSize: 18,
+                lineHeight: 1.6,
+                color: "rgba(245,239,230,0.65)",
+                margin: "0 0 28px",
+                maxWidth: 460,
+              }}
+            >
+              Keystone dynamically updates your plan as you save. See the literal
+              date you'll be able to afford your dream home shift in real-time.
+            </p>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              {[
+                "Smart mortgage forecasting",
+                "Market volatility alerts",
+                "Tax-advantaged savings tips",
+              ].map((t) => (
+                <li
+                  key={t}
+                  style={{
+                    ...monoLabel,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <span style={{ color: C.ember }}>+</span>
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-      <div
+      {/* ── PRICING TEASER ─────────────────────────────────── */}
+      <section
+        id="pricing"
         style={{
-          marginTop: 32,
-          paddingTop: 16,
-          borderTop: `1px solid ${C.rule}`,
-          display: "flex",
-          justifyContent: "space-between",
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: C.inkFaint,
+          maxWidth: 720,
+          margin: "0 auto",
+          padding: "96px 24px",
+          textAlign: "center",
         }}
       >
-        <span>~ 2 minutes</span>
-        <span>Free plan preview</span>
-      </div>
+        <div style={{ ...monoLabel, color: C.ember, marginBottom: 14 }}>
+          Fair pricing
+        </div>
+        <h2
+          style={{
+            fontFamily: serif,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: "clamp(40px, 6vw, 60px)",
+            lineHeight: 1,
+            letterSpacing: "-0.02em",
+            margin: "0 0 18px",
+          }}
+        >
+          Start planning for free.
+        </h2>
+        <p
+          style={{
+            fontSize: 17,
+            lineHeight: 1.55,
+            color: "rgba(26,26,26,0.6)",
+            margin: "0 auto 44px",
+            maxWidth: 520,
+          }}
+        >
+          Build your entire roadmap at no cost. Only upgrade when you want
+          unlimited scenarios, plan exports, and the AI coach.
+        </p>
+        <div
+          style={{
+            padding: 48,
+            border: `1px solid ${C.ink}`,
+            background: "#ffffff",
+            display: "flex",
+            flexDirection: "column",
+            gap: 22,
+          }}
+        >
+          <div style={{ ...monoLabel }}>Keystone Plus</div>
+          <div style={{ fontFamily: serif, fontSize: 64, lineHeight: 1 }}>
+            $19
+            <span style={{ fontSize: 22, color: "rgba(26,26,26,0.4)" }}>/mo</span>
+          </div>
+          <button
+            onClick={onStart}
+            style={{
+              background: C.ink,
+              color: C.paper,
+              border: "none",
+              padding: "20px",
+              fontFamily: mono,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "background 0.2s",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = C.ember)}
+            onMouseOut={(e) => (e.currentTarget.style.background = C.ink)}
+          >
+            Unlock everything
+          </button>
+        </div>
+      </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────── */}
+      <section style={{ background: C.paperDeep, padding: "96px 24px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <h2
+            style={{
+              fontFamily: serif,
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: "clamp(32px, 5vw, 48px)",
+              lineHeight: 1.05,
+              letterSpacing: "-0.02em",
+              margin: "0 0 40px",
+            }}
+          >
+            Frequently asked questions
+          </h2>
+          <div>
+            {[
+              {
+                q: "How is this different from a savings account?",
+                a: "A savings account earns ~4%. Keystone builds a structured plan around your real timeline, target market prices, and risk tolerance — so you arrive at closing with the right number, not just a balance.",
+              },
+              {
+                q: "Can I use Keystone with my partner?",
+                a: "Yes. The plan supports joint households — shared income, shared down payment goals, and combined credit considerations.",
+              },
+              {
+                q: "What if home prices in my area go up?",
+                a: "Your plan recalibrates as conditions shift. We track local market data so your projection reflects what a home actually costs today — not last year.",
+              },
+            ].map((f, i) => {
+              const open = openFaq === i;
+              return (
+                <div
+                  key={f.q}
+                  style={{ borderTop: `1px solid rgba(26,26,26,0.12)` }}
+                >
+                  <button
+                    onClick={() => setOpenFaq(open ? null : i)}
+                    style={{
+                      width: "100%",
+                      background: "none",
+                      border: "none",
+                      padding: "22px 0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      fontFamily: mono,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: C.ink,
+                    }}
+                  >
+                    <span>{f.q}</span>
+                    <span style={{ fontSize: 20, color: C.ember }}>
+                      {open ? "–" : "+"}
+                    </span>
+                  </button>
+                  {open && (
+                    <p
+                      style={{
+                        fontSize: 16,
+                        lineHeight: 1.6,
+                        color: "rgba(26,26,26,0.72)",
+                        margin: "0 0 24px",
+                        maxWidth: 600,
+                      }}
+                    >
+                      {f.a}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+            <div style={{ borderTop: `1px solid rgba(26,26,26,0.12)` }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER CTA ─────────────────────────────────────── */}
+      <footer
+        style={{
+          padding: "120px 24px 64px",
+          textAlign: "center",
+          background: C.paper,
+        }}
+      >
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <h2
+            style={{
+              fontFamily: serif,
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: "clamp(54px, 9vw, 104px)",
+              lineHeight: 0.95,
+              letterSpacing: "-0.03em",
+              margin: "0 0 48px",
+            }}
+          >
+            Ready to own your tomorrow?
+          </h2>
+          <button
+            onClick={onStart}
+            style={{
+              background: C.ember,
+              color: "#ffffff",
+              border: "none",
+              padding: "24px 48px",
+              fontFamily: mono,
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              boxShadow: "0 16px 32px -12px rgba(196,69,45,0.45)",
+              transition: "transform 0.2s",
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.transform = "translateY(-2px)")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
+          >
+            Build my plan today
+          </button>
+          <div
+            style={{
+              marginTop: 88,
+              paddingTop: 32,
+              borderTop: `1px solid rgba(26,26,26,0.1)`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 16,
+              ...monoLabel,
+              color: "rgba(26,26,26,0.4)",
+            }}
+          >
+            <span>© 2026 Keystone Financial Technologies</span>
+            <div style={{ display: "flex", gap: 28 }}>
+              <Link to="/login" style={{ color: "inherit", textDecoration: "none" }}>
+                Sign in
+              </Link>
+              <span>Privacy</span>
+              <span>Terms</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <style>{`
+        @media (min-width: 760px) {
+          .ks-hero-grid { grid-template-columns: 1.05fr 1fr !important; gap: 80px !important; }
+          .ks-process { grid-template-columns: repeat(3, 1fr) !important; gap: 56px !important; }
+          .ks-dash { grid-template-columns: 1fr 1fr !important; }
+          .ks-dash > div:last-child { order: -1; }
+          .ks-proof { flex-direction: row !important; }
+          .ks-desktop-only { display: inline-block !important; }
+        }
+        @media (min-width: 1000px) {
+          .ks-dash > div:last-child { order: 0; }
+        }
+      `}</style>
     </div>
   );
 }
