@@ -528,12 +528,22 @@ function LoginPage() {
 
             <form onSubmit={handleVerifyOtp}>
               <input
+                ref={otpInputRef}
                 type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={8}
                 placeholder="8-digit code"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                style={{ ...inputStyle, marginBottom: 32, letterSpacing: "0.2em" }}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
+                  if (pasted) {
+                    e.preventDefault();
+                    setOtp(pasted);
+                  }
+                }}
+                style={{ ...inputStyle, marginBottom: 32, letterSpacing: "0.2em", fontFeatureSettings: '"tnum"' }}
                 autoComplete="one-time-code"
               />
 
