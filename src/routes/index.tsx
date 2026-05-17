@@ -2147,8 +2147,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
             $5
             <span style={{ fontSize: 22, color: "rgba(26,26,26,0.4)" }}>/mo</span>
           </div>
-          <button
-            onClick={onStart}
+          <Link
+            to="/pricing"
             style={{
               background: C.ink,
               color: C.paper,
@@ -2161,12 +2161,15 @@ function Welcome({ onStart }: { onStart: () => void }) {
               textTransform: "uppercase",
               cursor: "pointer",
               transition: "background 0.2s",
+              textDecoration: "none",
+              textAlign: "center",
+              display: "block",
             }}
             onMouseOver={(e) => (e.currentTarget.style.background = C.ember)}
             onMouseOut={(e) => (e.currentTarget.style.background = C.ink)}
           >
-            Unlock everything
-          </button>
+            Compare plans
+          </Link>
           <p
             style={{
               fontSize: 12,
@@ -2177,17 +2180,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
           >
             Bonus: Pro ($11/mo) adds Auto-Investing.
           </p>
-          <Link
-            to="/pricing"
-            style={{
-              ...monoLabel,
-              color: C.ember,
-              textDecoration: "none",
-              textAlign: "center",
-            }}
-          >
-            Compare plans →
-          </Link>
         </div>
       </section>
 
