@@ -1635,8 +1635,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
               >
                 Build my plan →
               </button>
-              <button
-                onClick={() => scrollTo("how-it-works")}
+              <Link
+                to="/example"
                 style={{
                   background: "transparent",
                   color: C.ink,
@@ -1648,6 +1648,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
                   cursor: "pointer",
+                  textDecoration: "none",
                   transition: "background 0.2s",
                 }}
                 onMouseOver={(e) =>
@@ -1658,7 +1659,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 }
               >
                 See an example
-              </button>
+              </Link>
             </div>
 
             <div
