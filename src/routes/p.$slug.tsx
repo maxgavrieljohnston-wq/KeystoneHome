@@ -48,6 +48,28 @@ import { getPlanTheme, type PlanTheme } from "@/lib/plan-themes";
 
 function SharedPlanPage() {
   const { plan } = Route.useLoaderData();
+  return <PlanView plan={plan} />;
+}
+
+export type PlanViewPlan = {
+  title?: string | null;
+  theme?: string | null;
+  answers?: Record<string, unknown> | null;
+  assumptions?: Record<string, number> | null;
+  current_savings?: number | null;
+  target_move_in?: string | null;
+  created_at?: string | null;
+};
+
+export function PlanView({
+  plan,
+  kicker = "— A shared Keystone plan",
+  footer,
+}: {
+  plan: PlanViewPlan;
+  kicker?: string;
+  footer?: React.ReactNode;
+}) {
   const theme = getPlanTheme(plan.theme as string | null);
   const a = (plan.answers ?? {}) as Record<string, unknown>;
   const ov = (plan.assumptions ?? {}) as Record<string, number>;
@@ -126,14 +148,16 @@ function SharedPlanPage() {
             marginBottom: 14,
           }}
         >
-          — A shared Keystone plan
+          {kicker}
         </div>
         <h1 style={{ fontSize: 44, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 8px" }}>
           {plan.title || `${styleName} in ${zipData.city}`}
         </h1>
-        <p style={{ color: theme.inkMute, fontSize: 14, margin: "0 0 32px" }}>
-          Generated {new Date(plan.created_at as string).toLocaleDateString()}
-        </p>
+        {plan.created_at && (
+          <p style={{ color: theme.inkMute, fontSize: 14, margin: "0 0 32px" }}>
+            Generated {new Date(plan.created_at as string).toLocaleDateString()}
+          </p>
+        )}
 
         <Stat label="Target price" value={fmt(targetPrice)} theme={theme} big />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
@@ -161,6 +185,8 @@ function SharedPlanPage() {
             <Row k="Saved so far" v={fmt(saved)} theme={theme} />
           </Section>
         )}
+
+        {footer}
 
         <div
           style={{

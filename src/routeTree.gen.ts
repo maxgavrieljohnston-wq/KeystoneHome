@@ -17,6 +17,7 @@ import { Route as RateAlertsRouteImport } from './routes/rate-alerts'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MarketRouteImport } from './routes/market'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ExampleRouteImport } from './routes/example'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CompareRouteImport } from './routes/compare'
@@ -70,6 +71,11 @@ const MarketRoute = MarketRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExampleRoute = ExampleRouteImport.update({
+  id: '/example',
+  path: '/example',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocumentsRoute = DocumentsRouteImport.update({
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/example': typeof ExampleRoute
   '/login': typeof LoginRoute
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/example': typeof ExampleRoute
   '/login': typeof LoginRoute
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/example': typeof ExampleRoute
   '/login': typeof LoginRoute
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/dashboard'
     | '/documents'
+    | '/example'
     | '/login'
     | '/market'
     | '/pricing'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/dashboard'
     | '/documents'
+    | '/example'
     | '/login'
     | '/market'
     | '/pricing'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/dashboard'
     | '/documents'
+    | '/example'
     | '/login'
     | '/market'
     | '/pricing'
@@ -302,6 +314,7 @@ export interface RootRouteChildren {
   CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
+  ExampleRoute: typeof ExampleRoute
   LoginRoute: typeof LoginRoute
   MarketRoute: typeof MarketRoute
   PricingRoute: typeof PricingRoute
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/example': {
+      id: '/example'
+      path: '/example'
+      fullPath: '/example'
+      preLoaderRoute: typeof ExampleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/documents': {
@@ -486,6 +506,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
+  ExampleRoute: ExampleRoute,
   LoginRoute: LoginRoute,
   MarketRoute: MarketRoute,
   PricingRoute: PricingRoute,
@@ -505,13 +526,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
