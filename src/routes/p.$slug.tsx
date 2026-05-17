@@ -153,9 +153,11 @@ export function PlanView({
         <h1 style={{ fontSize: 44, fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 8px" }}>
           {plan.title || `${styleName} in ${zipData.city}`}
         </h1>
-        <p style={{ color: theme.inkMute, fontSize: 14, margin: "0 0 32px" }}>
-          Generated {new Date(plan.created_at as string).toLocaleDateString()}
-        </p>
+        {plan.created_at && (
+          <p style={{ color: theme.inkMute, fontSize: 14, margin: "0 0 32px" }}>
+            Generated {new Date(plan.created_at as string).toLocaleDateString()}
+          </p>
+        )}
 
         <Stat label="Target price" value={fmt(targetPrice)} theme={theme} big />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
