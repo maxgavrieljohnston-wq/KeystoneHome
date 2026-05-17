@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useServerFn } from "@tanstack/react-start";
 import { upsertLead } from "@/lib/leads.functions";
 import { getMyPlan } from "@/lib/account.functions";
-import { submitPlan, exportPlanPdf } from "@/lib/plans.functions";
+import { submitPlan } from "@/lib/plans.functions";
 import { deriveAssumptions } from "@/lib/plan-assumptions";
 import { getPaddleEnvironment } from "@/lib/paddle";
 
@@ -2434,11 +2434,9 @@ function LimitReachedGate({ used, limit }: { used: number | null; limit: number 
 function Report({ d }: { d: Data }) {
   const saveLead = useServerFn(upsertLead);
   const submit = useServerFn(submitPlan);
-  const exportFn = useServerFn(exportPlanPdf);
   const sub = useSubscription();
   const gate = useUpgradeGate();
   const [planId, setPlanId] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
   const [limitState, setLimitState] = useState<
     | { reason: "limit_reached"; used: number | null; limit: number | null }
     | null
@@ -2481,35 +2479,6 @@ function Report({ d }: { d: Data }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleExportPdf = async () => {
-    if (!sub.isPlus) {
-      gate.openUpgrade("plus", "PDF export");
-      return;
-    }
-    if (!planId) {
-      alert("Hang on — your plan is still saving. Try again in a moment.");
-      return;
-    }
-    setExporting(true);
-    try {
-      const res = await exportFn({
-        data: { planId, environment: getPaddleEnvironment() },
-      });
-      const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Couldn't export PDF.");
-    } finally {
-      setExporting(false);
-    }
-  };
   if (limitState) {
     return <LimitReachedGate used={limitState.used} limit={limitState.limit} />;
   }
@@ -2600,26 +2569,6 @@ function Report({ d }: { d: Data }) {
       >
         <Wordmark small />
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            disabled={exporting}
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 9,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              padding: "7px 12px",
-              border: `1px solid ${C.ink}`,
-              borderRadius: 6,
-              background: "transparent",
-              color: C.ink,
-              cursor: exporting ? "default" : "pointer",
-              opacity: exporting ? 0.5 : 1,
-            }}
-          >
-            {exporting ? "Exporting…" : sub.isPlus ? "↓ Export PDF" : "↓ Export PDF · Plus"}
-          </button>
           <span
             style={{
               fontFamily: "'JetBrains Mono', monospace",
