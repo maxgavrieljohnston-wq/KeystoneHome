@@ -25,6 +25,7 @@ import { Route as BrokerMatchRouteImport } from './routes/broker-match'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as AdminUpgradeFunnelRouteImport } from './routes/admin.upgrade-funnel'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -111,6 +112,11 @@ const PSlugRoute = PSlugRouteImport.update({
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUpgradeFunnelRoute = AdminUpgradeFunnelRouteImport.update({
+  id: '/admin/upgrade-funnel',
+  path: '/admin/upgrade-funnel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
+    | '/admin/upgrade-funnel'
     | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
+    | '/admin/upgrade-funnel'
     | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
+    | '/admin/upgrade-funnel'
     | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
@@ -298,6 +310,7 @@ export interface RootRouteChildren {
   StressTestRoute: typeof StressTestRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
+  AdminUpgradeFunnelRoute: typeof AdminUpgradeFunnelRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicRemindersDispatchRoute: typeof ApiPublicRemindersDispatchRoute
@@ -420,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/upgrade-funnel': {
+      id: '/admin/upgrade-funnel'
+      path: '/admin/upgrade-funnel'
+      fullPath: '/admin/upgrade-funnel'
+      preLoaderRoute: typeof AdminUpgradeFunnelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -474,6 +494,7 @@ const rootRouteChildren: RootRouteChildren = {
   StressTestRoute: StressTestRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
+  AdminUpgradeFunnelRoute: AdminUpgradeFunnelRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicRemindersDispatchRoute: ApiPublicRemindersDispatchRoute,

@@ -29,13 +29,30 @@ async function resolveUserId(data: any): Promise<string | null> {
   }
 }
 
+async function logCheckoutSuccess(
+  userId: string,
+  data: any,
+  tier: 'plus' | 'pro',
+) {
+  const source = data.customData?.source as string | undefined;
+  if (!source) return;
+  try {
+    await (getSupabase() as any).from('upgrade_events').insert({
+      event_type: 'checkout_success',
+      source,
+      tier,
+      user_id: userId,
+      metadata: { paddle_id: data.id },
+    });
+  } catch (err) {
+    console.warn('[webhook] failed to log upgrade attribution', err);
+  }
+}
+
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   const { id, customerId, items, status, currentBillingPeriod } = data;
   const userId = await resolveUserId(data);
   if (!userId) {
-    // Persist a placeholder row keyed by customerId so we can reconcile when
-    // the user later creates an account with the matching email. For now we
-    // log loudly so the operator can manually link if needed.
     console.error('[webhook] subscription.created with no resolvable userId', {
       customerId, subId: id,
     });
@@ -51,6 +68,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     });
     return;
   }
+  const attributionSource = (data.customData?.source as string | undefined) ?? null;
   await (getSupabase() as any).from('subscriptions').upsert(
     {
       user_id: userId,
@@ -62,10 +80,15 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       current_period_start: currentBillingPeriod?.startsAt,
       current_period_end: currentBillingPeriod?.endsAt,
       environment: env,
+      attribution_source: attributionSource,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'paddle_subscription_id' },
   );
+
+  const tier: 'plus' | 'pro' =
+    priceId.startsWith('pro_') || productId === 'pro_plan' ? 'pro' : 'plus';
+  await logCheckoutSuccess(userId, data, tier);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
@@ -120,6 +143,7 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
     });
     return;
   }
+  const attributionSource = (data.customData?.source as string | undefined) ?? null;
   await (getSupabase() as any).from('subscriptions').upsert(
     {
       user_id: userId,
@@ -132,10 +156,15 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
       current_period_end: null, // null = never expires (lifetime)
       cancel_at_period_end: false,
       environment: env,
+      attribution_source: attributionSource,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'paddle_subscription_id' },
   );
+
+  const tier: 'plus' | 'pro' =
+    priceExtId.startsWith('pro_') || productExtId === 'pro_plan' ? 'pro' : 'plus';
+  await logCheckoutSuccess(userId, data, tier);
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {

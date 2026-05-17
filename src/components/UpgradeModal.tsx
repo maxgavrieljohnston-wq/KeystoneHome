@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
+import { trackUpgradeEvent } from "@/lib/upgrade-tracking";
 
 const C = {
   paper: "#f5efe6",
@@ -72,11 +73,13 @@ export function UpgradeModal({
   onClose,
   requiredTier,
   featureName,
+  openedFrom,
 }: {
   open: boolean;
   onClose: () => void;
   requiredTier: RequiredTier;
   featureName: string;
+  openedFrom?: string;
 }) {
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
@@ -131,7 +134,16 @@ export function UpgradeModal({
   const showRecommended = visible.length > 1;
 
   const handlePick = async (tier: typeof tiers[number]) => {
-    await openCheckout({ priceId: tier.priceId, customerEmail: email, userId });
+    // Last-click attribution: which surface opened the modal.
+    // Fall back to modal_{tier} if opened programmatically with no source.
+    const source = openedFrom || `modal_${tier.id}`;
+    trackUpgradeEvent({ event_type: "checkout_open", source, tier: tier.id, email });
+    await openCheckout({
+      priceId: tier.priceId,
+      customerEmail: email,
+      userId,
+      source,
+    });
   };
 
   const headline =

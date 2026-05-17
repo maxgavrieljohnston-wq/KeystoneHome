@@ -3053,7 +3053,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
         <>
           <button
             type="button"
-            onClick={() => gate.openUpgrade("plus", "the full plan")}
+            onClick={() => gate.openUpgrade("plus", "the full plan", "paywall_plus")}
             style={{
               width: "100%",
               fontFamily: "'JetBrains Mono', monospace",
@@ -3082,7 +3082,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
             Need the AI coach too?{" "}
             <button
               type="button"
-              onClick={() => gate.openUpgrade("pro", "Pro")}
+              onClick={() => gate.openUpgrade("pro", "Pro", "paywall_pro_link")}
               style={{
                 background: "transparent",
                 border: "none",
@@ -3102,7 +3102,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
       ) : (
         <button
           type="button"
-          onClick={() => gate.openUpgrade("pro", "Pro")}
+          onClick={() => gate.openUpgrade("pro", "Pro", "paywall_pro_card")}
           style={{
             width: "100%",
             fontFamily: "'JetBrains Mono', monospace",
@@ -3323,7 +3323,7 @@ function InlineUpgradeNudge({
       {/* CTA */}
       <button
         type="button"
-        onClick={() => gate.openUpgrade("plus", "the faster-path playbook")}
+        onClick={() => gate.openUpgrade("plus", "the faster-path playbook", "inline_nudge")}
         style={{
           width: "100%",
           fontFamily: "'JetBrains Mono', monospace",
@@ -3412,7 +3412,7 @@ function StickyUpgradeBar({ monthsSooner }: { monthsSooner: number }) {
       </span>
       <button
         type="button"
-        onClick={() => gate.openUpgrade("plus", "saving your plan")}
+        onClick={() => gate.openUpgrade("plus", "saving your plan", "sticky_bar")}
         style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: 10,
