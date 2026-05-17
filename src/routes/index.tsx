@@ -3086,6 +3086,28 @@ function ReportPaywall() {
   );
 }
 
+// Personalized "X months sooner if you invest the down payment vs save it"
+// math, shared by InlineUpgradeNudge, StickyUpgradeBar, ReportPaywall.
+function computeMonthsSooner(
+  saved: number,
+  target: number,
+  monthly: number,
+  timelineMonths: number,
+): number {
+  const monthsAt = (rate: number) => {
+    if (saved >= target) return 0;
+    if (monthly <= 0 && rate <= 0) return timelineMonths;
+    const r = rate / 12;
+    if (r === 0) return Math.ceil((target - saved) / Math.max(monthly, 1));
+    const num = target * r + monthly;
+    const den = saved * r + monthly;
+    if (den <= 0 || num / den <= 0) return timelineMonths;
+    const n = Math.log(num / den) / Math.log(1 + r);
+    return isFinite(n) && n > 0 ? Math.ceil(n) : timelineMonths;
+  };
+  return Math.max(0, monthsAt(0.005) - monthsAt(0.07));
+}
+
 // ── Mid-report inline nudge ──────────────────────────────────────────────────
 function InlineUpgradeNudge({
   saved,
