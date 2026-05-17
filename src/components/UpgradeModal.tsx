@@ -114,7 +114,7 @@ export function UpgradeModal({
         priceId: "pro_monthly",
         monthly: 11,
         
-        priceFrame: "Pays for itself if it saves one month",
+        priceFrame: "One month sooner = years of mortgage saved",
         urgency: "The market won't wait. Neither should your plan.",
         cta: "Start Pro",
         features: [
