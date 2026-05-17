@@ -1903,12 +1903,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
             {
               n: "01.",
               t: "The Audit",
-              p: "We connect your current accounts to see exactly where you stand today. No spreadsheets required.",
+              p: "See exactly where you stand today across cash, savings, and brokerage accounts. No spreadsheets required.",
             },
             {
               n: "02.",
-              t: "The Projection",
-              p: "Calculate your timeline based on real local market data and your actual saving capacity.",
+              t: "The Plan",
+              p: "Pick a target home and we model save-vs-invest side by side, so you see how many years investing shaves off your timeline.",
             },
             {
               n: "03.",
