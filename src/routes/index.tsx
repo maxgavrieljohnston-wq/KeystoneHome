@@ -2167,8 +2167,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
             maxWidth: 520,
           }}
         >
-          Build your entire roadmap at no cost. Only upgrade when you want
-          unlimited scenarios, plan exports, and the AI coach.
+          Build your entire roadmap at no cost. Upgrade only when you want
+          unlimited scenarios and plan exports.
         </p>
         <div
           style={{
@@ -2185,9 +2185,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
             $5
             <span style={{ fontSize: 22, color: "rgba(26,26,26,0.4)" }}>/mo</span>
           </div>
-          <p style={{ fontSize: 14, color: "rgba(26,26,26,0.6)", margin: 0 }}>
-            Pro plan with the AI coach is $11/mo.
-          </p>
           <button
             onClick={onStart}
             style={{
@@ -2208,6 +2205,16 @@ function Welcome({ onStart }: { onStart: () => void }) {
           >
             Unlock everything
           </button>
+          <p
+            style={{
+              fontSize: 12,
+              color: "rgba(26,26,26,0.45)",
+              margin: 0,
+              textAlign: "center",
+            }}
+          >
+            Bonus: Pro ($11/mo) adds an AI coach.
+          </p>
           <Link
             to="/pricing"
             style={{
