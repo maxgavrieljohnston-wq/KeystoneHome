@@ -1,64 +1,54 @@
-## Goal
+## Quick-win conversion pack (~30 min)
 
-Track which upgrade surface (modal / sticky / paywall / pro_link / inline_nudge) drives signups. Last-click attribution, in-app data with a small admin view.
+Focused on driving more paid signups by removing friction in the funnel and adding trust/urgency where users hesitate. All small, surgical edits.
 
-## Surfaces being instrumented
+### 1. Auth friction (signup drop-off)
 
-| `source` value | Where |
-|---|---|
-| `paywall_plus` | End-of-report "Start Plus" CTA (`ReportPaywall`) |
-| `paywall_pro_link` | "See Pro" secondary text link under that CTA |
-| `paywall_pro_card` | Pro lock card lower on the paywall |
-| `inline_nudge` | `InlineUpgradeNudge` (mid-flow) |
-| `sticky_bar` | `StickyUpgradeBar` (mobile bottom bar) |
-| `modal_plus` / `modal_pro` | Tier buttons inside `UpgradeModal` |
+- **Google sign-in** on `/login` (top of both Sign In and Sign Up tabs) via the Lovable broker. Also enable provider with `configure_social_auth(["google"])`. Removes the OTP+password gauntlet for ~40% of users.
+- **Resend code** link on the OTP step (60s cooldown) — currently no way to recover from a lost code except restarting.
+- **Show/hide password** toggle on the Create Password step.
+- **Auto-focus** the OTP input on step change, and accept paste of "12345678" with auto-strip of spaces/dashes.
+- **Error copy**: replace `auth/invalid-credentials` style messages with "That email or password didn't match. Try again or reset." (already partially done; sweep the rest).
 
-## Data model
+### 2. Paywall / pricing trust signals
 
-New table `upgrade_events` (RLS on, service-role writes only):
+- **Social proof line** above the Plus/Pro buttons in `UpgradeModal` and on `/pricing`: "Join 1,200+ buyers planning with Keystone" (use a real number once we have one; placeholder fine for now).
+- **Money-back guarantee chip** on both tier cards: "Cancel anytime · 14-day refund". This is the single highest-leverage paywall change.
+- **Annual savings badge** on the Pro yearly toggle: "Save 2 months" with the actual % calculated from prices.
+- **"Most popular" ribbon** on Pro (if not already present) — visual anchor that pulls eyes off Plus.
 
-- `id uuid pk`
-- `event_type text` — `cta_click` | `checkout_open` | `checkout_success`
-- `source text` — one of the values above
-- `tier text` — `plus` | `pro`
-- `user_id uuid null`, `email text null`, `session_id text null` (anon cookie/localStorage UUID for pre-auth attribution)
-- `plan_id uuid null` (when known)
-- `metadata jsonb`
-- `created_at timestamptz default now()`
-- Indexes on `(source, created_at)` and `(session_id)`
+### 3. Sticky bar & inline nudge urgency
 
-Service-role-only ALL policy. A SECURITY DEFINER RPC `log_upgrade_event(...)` lets anon/authenticated clients insert validated events without exposing the table (matches the existing pattern for `leads` / `upsert_lead`).
+- Add a **dynamic value line** to the sticky bar based on what the user is looking at: e.g. on `/dashboard` show "Unlock your full plan + lender match — $X/mo"; on `/coach` show "Ask unlimited questions with Pro".
+- Show the sticky bar **only after 8s of scroll or 30% scroll depth** (instead of immediately) — reduces dismissal rate.
+- After dismissal, suppress for 24h via `localStorage`, not session-only.
 
-## Client flow
+### 4. Post-checkout activation
 
-1. New util `src/lib/upgrade-tracking.ts`:
-   - `getOrCreateSessionId()` — UUID in `localStorage`.
-   - `trackUpgradeEvent({ event_type, source, tier, ... })` — calls the `log_upgrade_event` RPC; fire-and-forget, swallows errors.
-2. Extend `useUpgradeGate.openUpgrade(tier, feature, source)` with a required `source` arg, store it in state, log `cta_click` immediately, and forward it to `<UpgradeModal />`.
-3. Update every call site in `src/routes/index.tsx` (paywall Plus CTA, Pro link, Pro card, inline nudge, sticky bar) to pass its `source`.
-4. `UpgradeModal`'s tier button handler logs `cta_click` with `source: modal_plus|modal_pro` (when the user clicks a tier inside the modal — distinct from the surface that opened it). Then before `openCheckout`, log `checkout_open` and pass `source` into `customData`.
-5. `usePaddleCheckout.openCheckout` accepts and forwards `source` in `customData`; `successUrl` gets `?src={source}` so the `/welcome` page can log `checkout_success` client-side as a backup.
+- On `/welcome`, if the user has no password set (came in via checkout email), surface a single **"Set a password to sign in next time"** card with inline form. Today they have to discover this through the login flow.
 
-## Server-side attribution
+### 5. Admin funnel polish
 
-- `src/routes/api/public/payments/webhook.ts`: in `handleSubscriptionCreated` and `handleTransactionCompleted`, read `data.customData?.source` and insert a `checkout_success` row into `upgrade_events` linked to `user_id`. This is the authoritative signup event.
-- Store `source` on the `subscriptions` row too via a new nullable `attribution_source text` column, so the admin view can join cleanly.
+- Add **conversion-rate columns** (click→open %, open→signup %, click→signup %) to `/admin/upgrade-funnel` — currently only raw counts.
+- Add **"Top source"** stat at the top: "Sticky bar drives 47% of paid signups."
+- Sort rows by signups desc by default (already does, confirm).
 
-## Admin view
+### Out of scope (will propose separately if you want)
 
-- New protected route `src/routes/_authenticated/admin/upgrade-funnel.tsx` (gated behind a server fn that checks the caller's email against an allowlist env var `ADMIN_EMAILS`).
-- Server fn `getUpgradeFunnel({ since })` aggregates from `upgrade_events`:
-  - clicks, checkout opens, paid signups, click→paid % per `source`, 7 / 30 day windows.
-- Simple table UI, no charts.
+- Testimonials section, exit-intent modal, A/B testing framework, email re-engagement sequences, FAQ rewrite. All bigger than 30 min.
 
-## Out of scope
+### Files touched
 
-- No third-party analytics (PostHog/GA) — can be layered later by also calling `track()` inside `trackUpgradeEvent`.
-- No first-touch attribution.
-- No A/B test framework.
+- `src/routes/login.tsx` (Google button, resend, show/hide, paste handling)
+- `src/components/UpgradeModal.tsx` (guarantee, social proof, savings badge)
+- `src/routes/pricing.tsx` (same trust signals)
+- `src/routes/index.tsx` + sticky bar component (scroll-trigger, 24h dismiss, dynamic copy)
+- `src/routes/welcome.tsx` (set-password card)
+- `src/routes/admin.upgrade-funnel.tsx` (rate columns + top-source stat)
+- `supabase--configure_social_auth(["google"])`
 
-## Files touched
+### Recommended priority if you only ship 3 things
 
-- migration: create `upgrade_events`, `log_upgrade_event` RPC, add `attribution_source` to `subscriptions`
-- new: `src/lib/upgrade-tracking.ts`, `src/lib/upgrade-funnel.functions.ts`, `src/routes/_authenticated/admin/upgrade-funnel.tsx`
-- edit: `src/hooks/useUpgradeGate.tsx`, `src/hooks/usePaddleCheckout.ts`, `src/components/UpgradeModal.tsx`, `src/routes/index.tsx`, `src/routes/api/public/payments/webhook.ts`, `src/routes/welcome.tsx`
+1. **Google sign-in** — biggest funnel impact
+2. **Money-back guarantee + social proof on paywall** — biggest checkout impact
+3. **Sticky bar scroll trigger + 24h dismiss** — biggest "don't annoy" impact

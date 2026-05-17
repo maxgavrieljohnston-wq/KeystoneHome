@@ -92,6 +92,25 @@ function UpgradeFunnelPage() {
         {q.data && q.data.rows.length === 0 && (
           <p style={{ color: C.inkMute }}>No events in this range yet.</p>
         )}
+        {q.data && q.data.topSource && (
+          <div
+            style={{
+              padding: "14px 16px",
+              marginBottom: 18,
+              border: `1px solid ${C.ember}`,
+              background: `${C.ember}11`,
+              borderRadius: 8,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 13,
+              color: C.ink,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>{q.data.topSource.source}</strong> ({q.data.topSource.tier}) drives{" "}
+            <strong>{q.data.topSource.share_pct}%</strong> of paid signups — {q.data.topSource.signups} of{" "}
+            {q.data.totalSignups} in the last {days} days.
+          </div>
+        )}
         {q.data && q.data.rows.length > 0 && (
           <table
             style={{
@@ -106,9 +125,10 @@ function UpgradeFunnelPage() {
                 <Th>Surface</Th>
                 <Th>Tier</Th>
                 <Th align="right">Clicks</Th>
-                <Th align="right">Checkout opens</Th>
+                <Th align="right">Opens</Th>
                 <Th align="right">Signups</Th>
                 <Th align="right">Click → paid</Th>
+                <Th align="right">Open → paid</Th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +142,7 @@ function UpgradeFunnelPage() {
                     {r.signups}
                   </Td>
                   <Td align="right">{r.click_to_paid_pct}%</Td>
+                  <Td align="right">{r.open_to_paid_pct}%</Td>
                 </tr>
               ))}
             </tbody>

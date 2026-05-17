@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { lovable } from "@/integrations/lovable";
 
 type LoginSearch = {
   email?: string;
@@ -54,10 +55,59 @@ function LoginPage() {
   // Signup flow steps
   const [step, setStep] = useState<"email" | "otp" | "password">("email");
   const [otp, setOtp] = useState("");
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+
+  // Auto-focus OTP input on step change.
+  useEffect(() => {
+    if (step === "otp") {
+      otpInputRef.current?.focus();
+    }
+  }, [step]);
+
+  // Countdown for resend cooldown.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setBusy(false);
+      setError(friendlyError(result.error.message));
+      return;
+    }
+    if (result.redirected) return;
+    setBusy(false);
+    navigate({ to: "/dashboard" });
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || !validEmail) return;
+    setError(null);
+    setBusy(true);
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: true },
+    });
+    setBusy(false);
+    if (err) {
+      setError(friendlyError(err.message));
+    } else {
+      setResendCooldown(45);
+    }
+  };
 
   const handleForgotPassword = async () => {
     setError(null);
@@ -263,6 +313,59 @@ function LoginPage() {
           </div>
         )}
 
+        {step === "email" && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={busy}
+              style={{
+                width: "100%",
+                padding: "13px 16px",
+                background: "transparent",
+                color: C.ink,
+                border: `1.5px solid ${C.ink}`,
+                borderRadius: 8,
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.08em",
+                cursor: busy ? "default" : "pointer",
+                opacity: busy ? 0.5 : 1,
+                marginBottom: 18,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/>
+              </svg>
+              Continue with Google
+            </button>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                margin: "0 0 22px",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.inkFaint,
+              }}
+            >
+              <span style={{ flex: 1, height: 1, background: C.inkFaint, opacity: 0.4 }} />
+              or
+              <span style={{ flex: 1, height: 1, background: C.inkFaint, opacity: 0.4 }} />
+            </div>
+          </>
+        )}
+
         {tab === "signin" && step === "email" && (
           <div>
             <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
@@ -425,12 +528,22 @@ function LoginPage() {
 
             <form onSubmit={handleVerifyOtp}>
               <input
+                ref={otpInputRef}
                 type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={8}
                 placeholder="8-digit code"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                style={{ ...inputStyle, marginBottom: 32, letterSpacing: "0.2em" }}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
+                  if (pasted) {
+                    e.preventDefault();
+                    setOtp(pasted);
+                  }
+                }}
+                style={{ ...inputStyle, marginBottom: 32, letterSpacing: "0.2em", fontFeatureSettings: '"tnum"' }}
                 autoComplete="one-time-code"
               />
 
@@ -456,30 +569,49 @@ function LoginPage() {
                 {busy ? "Verifying…" : "Verify code"}
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("email");
-                  setOtp("");
-                  setError(null);
-                }}
-                style={{
-                  marginTop: 20,
-                  background: "transparent",
-                  border: "none",
-                  padding: 0,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: C.inkMute,
-                  cursor: "pointer",
-                  width: "100%",
-                  textAlign: "center",
-                }}
-              >
-                ← Back to email
-              </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("email");
+                    setOtp("");
+                    setError(null);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: C.inkMute,
+                    cursor: "pointer",
+                  }}
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={busy || resendCooldown > 0}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: resendCooldown > 0 ? C.inkFaint : C.ink,
+                    cursor: resendCooldown > 0 ? "default" : "pointer",
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                  }}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+                </button>
+              </div>
 
               {error && (
                 <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, textAlign: "center" }}>
@@ -512,14 +644,42 @@ function LoginPage() {
             </p>
 
             <form onSubmit={handleSetPassword}>
-              <input
-                type="password"
-                placeholder="New password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ ...inputStyle, marginBottom: 32 }}
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative", marginBottom: 32 }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="New password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: 0, paddingRight: 56 }}
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "transparent",
+                    border: "none",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: C.inkMute,
+                    cursor: "pointer",
+                    padding: "8px 4px",
+                  }}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              <p style={{ marginTop: -22, marginBottom: 24, fontSize: 13, color: C.inkMute, lineHeight: 1.4 }}>
+                Use 8+ characters. Mix letters and numbers for a stronger password.
+              </p>
 
               <button
                 type="submit"

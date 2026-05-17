@@ -14,6 +14,7 @@ export type FunnelRow = {
   checkout_opens: number;
   signups: number;
   click_to_paid_pct: number;
+  open_to_paid_pct: number;
 };
 
 function getAdminEmails(): string[] {
@@ -45,15 +46,30 @@ export const getUpgradeFunnel = createServerFn({ method: "POST" })
 
     const result: FunnelRow[] = (rows ?? []).map((r: any) => {
       const clicks = Number(r.clicks ?? 0);
+      const opens = Number(r.checkout_opens ?? 0);
       const signups = Number(r.signups ?? 0);
       return {
         source: r.source,
         tier: r.tier,
         clicks,
-        checkout_opens: Number(r.checkout_opens ?? 0),
+        checkout_opens: opens,
         signups,
         click_to_paid_pct: clicks > 0 ? Math.round((signups / clicks) * 1000) / 10 : 0,
+        open_to_paid_pct: opens > 0 ? Math.round((signups / opens) * 1000) / 10 : 0,
       };
     });
-    return { rows: result, since };
+
+    const totalSignups = result.reduce((s, r) => s + r.signups, 0);
+    const top = [...result].sort((a, b) => b.signups - a.signups)[0];
+    const topSource =
+      top && totalSignups > 0
+        ? {
+            source: top.source,
+            tier: top.tier,
+            signups: top.signups,
+            share_pct: Math.round((top.signups / totalSignups) * 100),
+          }
+        : null;
+
+    return { rows: result, since, totalSignups, topSource };
   });
