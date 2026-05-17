@@ -3323,7 +3323,7 @@ function InlineUpgradeNudge({
       {/* CTA */}
       <button
         type="button"
-        onClick={() => gate.openUpgrade("plus", "the faster-path playbook")}
+        onClick={() => gate.openUpgrade("plus", "the faster-path playbook", "inline_nudge")}
         style={{
           width: "100%",
           fontFamily: "'JetBrains Mono', monospace",
