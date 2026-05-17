@@ -2095,8 +2095,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 maxWidth: 460,
               }}
             >
-              Keystone dynamically updates your plan as you save. See the literal
-              date you'll be able to afford your dream home shift in real-time.
+              Invest your down payment in a portfolio matched to your timeline.
+              As markets move and you contribute, your buy date updates in real
+              time.
             </p>
             <ul
               style={{
@@ -2109,9 +2110,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
               }}
             >
               {[
-                "Smart mortgage forecasting",
-                "Market volatility alerts",
-                "Tax-advantaged savings tips",
+                "Save vs. invest, side by side",
+                "Risk matched to your timeline",
+                "Live buy-date forecasting",
               ].map((t) => (
                 <li
                   key={t}
