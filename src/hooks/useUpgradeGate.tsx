@@ -12,8 +12,8 @@ type GateState = {
 
 interface GateContextValue {
   /** Returns true if the user has access; false if the modal was opened. */
-  requireTier: (tier: RequiredTier, featureName: string, source: UpgradeSource | string) => boolean;
-  openUpgrade: (tier: RequiredTier, featureName: string, source: UpgradeSource | string) => void;
+  requireTier: (tier: RequiredTier, featureName: string, source?: UpgradeSource | string) => boolean;
+  openUpgrade: (tier: RequiredTier, featureName: string, source?: UpgradeSource | string) => void;
 }
 
 const GateContext = createContext<GateContextValue | null>(null);
