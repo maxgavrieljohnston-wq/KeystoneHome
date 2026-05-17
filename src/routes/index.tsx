@@ -4156,7 +4156,7 @@ function InlineUpgradeNudge({
           letterSpacing: "0.08em",
         }}
       >
-        Cancel anytime · 7-day refund
+        Cancel anytime · 7-day free trial
       </p>
     </div>
   );

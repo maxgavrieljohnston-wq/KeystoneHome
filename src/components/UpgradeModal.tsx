@@ -270,7 +270,7 @@ export function UpgradeModal({
         >
           <span>★ 2,400+ plans built</span>
           <span style={{ color: C.inkFaint }}>·</span>
-          <span style={{ color: C.ember, fontWeight: 600 }}>7-day money back</span>
+          <span style={{ color: C.ember, fontWeight: 600 }}>7-day free trial</span>
           <span style={{ color: C.inkFaint }}>·</span>
           <span>Cancel anytime</span>
         </div>
