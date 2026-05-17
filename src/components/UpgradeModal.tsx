@@ -206,27 +206,7 @@ export function UpgradeModal({
           boxShadow: "0 30px 80px rgba(0,0,0,0.3)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-          <div>
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                color: C.ember,
-                marginBottom: 8,
-              }}
-            >
-              {headline.eyebrow}
-            </div>
-            <h2
-              className="km-upgrade-headline"
-              style={{ margin: 0, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.15 }}
-            >
-              {headline.title}
-            </h2>
-          </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }}>
           <button
             type="button"
             onClick={onClose}
@@ -239,15 +219,13 @@ export function UpgradeModal({
               color: C.inkMute,
               lineHeight: 1,
               flexShrink: 0,
+              marginRight: -4,
+              marginTop: -4,
             }}
           >
             ×
           </button>
         </div>
-
-        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 14px", lineHeight: 1.55 }}>
-          {headline.sub}
-        </p>
 
         {/* Social proof + risk reversal strip */}
         <div
