@@ -216,34 +216,37 @@ export function UpgradeModal({
           </button>
         </div>
 
-        {/* Social proof + risk reversal strip */}
-        <div
-          style={{
-            display: "flex",
-            gap: 14,
-            flexWrap: "wrap",
-            alignItems: "center",
-            padding: "10px 12px",
-            margin: "0 0 18px",
-            border: `1px solid ${C.ember}33`,
-            background: `${C.ember}11`,
-            borderRadius: 8,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: C.inkSoft,
-          }}
-        >
-          <span>★ 2,400+ plans built</span>
-          <span style={{ color: C.inkFaint }}>·</span>
-          <span style={{ color: C.ember, fontWeight: 600 }}>7-day free trial</span>
-          <span style={{ color: C.inkFaint }}>·</span>
-          <span>Cancel anytime</span>
-        </div>
-
         <div className={`km-upgrade-tiers ${visible.length > 1 ? "km-two" : ""}`}>
-          {visible.map((tier) => {
+          {visible.map((tier, idx) => {
+            const socialStrip = visible.length > 1 && idx === 0 ? (
+              <div
+                key="social-strip"
+                style={{
+                  gridColumn: "1 / -1",
+                  display: "flex",
+                  gap: 14,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "10px 12px",
+                  border: `1px solid ${C.ember}33`,
+                  background: `${C.ember}11`,
+                  borderRadius: 8,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: C.inkSoft,
+                }}
+              >
+                <span>★ 2,400+ plans built</span>
+                <span style={{ color: C.inkFaint }}>·</span>
+                <span style={{ color: C.ember, fontWeight: 600 }}>7-day free trial</span>
+                <span style={{ color: C.inkFaint }}>·</span>
+                <span>Cancel anytime</span>
+              </div>
+            ) : null;
+            const renderTier = (() => {
             const isPro = tier.id === "pro";
             const recommended = showRecommended && isPro;
             return (
