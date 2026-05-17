@@ -246,10 +246,9 @@ export function UpgradeModal({
                 <span>Cancel anytime</span>
               </div>
             ) : null;
-            const renderTier = (() => {
             const isPro = tier.id === "pro";
             const recommended = showRecommended && isPro;
-            return (
+            const card = (
               <div
                 key={tier.id}
                 className="km-upgrade-card"
