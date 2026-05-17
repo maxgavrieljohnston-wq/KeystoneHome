@@ -186,6 +186,8 @@ export function PlanView({
           </Section>
         )}
 
+        {footer}
+
         <div
           style={{
             marginTop: 48,
