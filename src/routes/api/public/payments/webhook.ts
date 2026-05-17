@@ -143,6 +143,7 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
     });
     return;
   }
+  const attributionSource = (data.customData?.source as string | undefined) ?? null;
   await (getSupabase() as any).from('subscriptions').upsert(
     {
       user_id: userId,
@@ -155,10 +156,15 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
       current_period_end: null, // null = never expires (lifetime)
       cancel_at_period_end: false,
       environment: env,
+      attribution_source: attributionSource,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'paddle_subscription_id' },
   );
+
+  const tier: 'plus' | 'pro' =
+    priceExtId.startsWith('pro_') || productExtId === 'pro_plan' ? 'pro' : 'plus';
+  await logCheckoutSuccess(userId, data, tier);
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
