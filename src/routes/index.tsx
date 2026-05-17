@@ -1575,7 +1575,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 marginBottom: 28,
               }}
             >
-              A homebuying plan for everyone
+              Invest your way home
             </div>
 
             <h1
@@ -1604,8 +1604,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 margin: "0 0 32px",
               }}
             >
-              Built for first-time home buyers who want a plan, not just another
-              savings account.
+              Stop parking your down payment in a savings account. Invest it the
+              right way and reach your goal years sooner.
             </p>
 
             <div
