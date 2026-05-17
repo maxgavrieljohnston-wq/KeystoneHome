@@ -2119,7 +2119,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
             margin: "0 0 18px",
           }}
         >
-          Start planning for free.
+          Simple pricing. Serious progress.
         </h2>
         <p
           style={{
@@ -2130,8 +2130,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
             maxWidth: 520,
           }}
         >
-          Build your entire roadmap at no cost. Upgrade only when you want
-          unlimited scenarios and plan exports.
+          7-day free trial.
         </p>
         <div
           style={{
