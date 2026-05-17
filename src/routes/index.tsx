@@ -2434,11 +2434,9 @@ function LimitReachedGate({ used, limit }: { used: number | null; limit: number 
 function Report({ d }: { d: Data }) {
   const saveLead = useServerFn(upsertLead);
   const submit = useServerFn(submitPlan);
-  const exportFn = useServerFn(exportPlanPdf);
   const sub = useSubscription();
   const gate = useUpgradeGate();
   const [planId, setPlanId] = useState<string | null>(null);
-  const [exporting, setExporting] = useState(false);
   const [limitState, setLimitState] = useState<
     | { reason: "limit_reached"; used: number | null; limit: number | null }
     | null
