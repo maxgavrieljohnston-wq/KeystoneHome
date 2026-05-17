@@ -1,80 +1,64 @@
-## TL;DR
+## Goal
 
-You have **decent breadth, weak depth.** Five upsell surfaces exist (inline nudge, end-of-report dark section, mobile sticky bar, modal itself, scattered locked panels). What's missing is the *persuasion stack* — social proof, risk reversal, urgency, and a single dominant CTA per screen. Right now every button competes for attention and the copy varies wildly.
+Track which upgrade surface (modal / sticky / paywall / pro_link / inline_nudge) drives signups. Last-click attribution, in-app data with a small admin view.
 
-## What you have today
+## Surfaces being instrumented
 
-| Surface | Where | Strength | Weakness |
-|---|---|---|---|
-| InlineUpgradeNudge | Mid-report | Personalized number + blurred tease — best in class | Only fires once |
-| Dark "Unlock the full plan" | End of report | Strong visual | Shows **both** Plus + Pro buttons → choice paralysis |
-| StickyUpgradeBar | Mobile, after 600px scroll | Persistent reminder | Generic copy ("Own years sooner") — same for everyone |
-| UpgradeModal | On gate | Highlights + collapse (just shipped) | No social proof, no guarantee, no scarcity |
-| Locked feature cards | Dashboard, coach, compare, etc. | Functional gates | Passive — wait for user to click |
+| `source` value | Where |
+|---|---|
+| `paywall_plus` | End-of-report "Start Plus" CTA (`ReportPaywall`) |
+| `paywall_pro_link` | "See Pro" secondary text link under that CTA |
+| `paywall_pro_card` | Pro lock card lower on the paywall |
+| `inline_nudge` | `InlineUpgradeNudge` (mid-flow) |
+| `sticky_bar` | `StickyUpgradeBar` (mobile bottom bar) |
+| `modal_plus` / `modal_pro` | Tier buttons inside `UpgradeModal` |
 
-## Are CTAs good enough? No.
+## Data model
 
-Three problems:
+New table `upgrade_events` (RLS on, service-role writes only):
 
-1. **Inconsistent voice.** "Start Plus — $5/mo" / "Unlock for $5/mo →" / "See how" / "Find out how" / "Go Pro — $11/mo" — five different verbs across five buttons. Pick one pattern: **outcome verb + price**. e.g. "Cut 16 months — $5/mo".
-2. **Two buttons at once kills conversion.** The end-of-report block shows Plus *and* Pro side by side. Lead with Plus as the hero, make Pro a text link underneath ("Need the AI coach? Go Pro →"). Single dominant CTA always beats two.
-3. **"Go Pro" is transactional, not aspirational.** Sell the outcome: "Add your AI coach — $11/mo" or "Hand off the investing — $11/mo".
+- `id uuid pk`
+- `event_type text` — `cta_click` | `checkout_open` | `checkout_success`
+- `source text` — one of the values above
+- `tier text` — `plus` | `pro`
+- `user_id uuid null`, `email text null`, `session_id text null` (anon cookie/localStorage UUID for pre-auth attribution)
+- `plan_id uuid null` (when known)
+- `metadata jsonb`
+- `created_at timestamptz default now()`
+- Indexes on `(source, created_at)` and `(session_id)`
 
-## The 9 highest-leverage additions, ranked
+Service-role-only ALL policy. A SECURITY DEFINER RPC `log_upgrade_event(...)` lets anon/authenticated clients insert validated events without exposing the table (matches the existing pattern for `leads` / `upsert_lead`).
 
-### Tier A — ship first (biggest lift, low effort)
+## Client flow
 
-**1. Social proof strip above every upgrade card.**
-"**2,431 plans built this month.** 1 in 3 first-time buyers who used Plus closed within 12 months."
-Numbers can be approximate or live from the DB. Trust > everything else for a $5 SaaS.
+1. New util `src/lib/upgrade-tracking.ts`:
+   - `getOrCreateSessionId()` — UUID in `localStorage`.
+   - `trackUpgradeEvent({ event_type, source, tier, ... })` — calls the `log_upgrade_event` RPC; fire-and-forget, swallows errors.
+2. Extend `useUpgradeGate.openUpgrade(tier, feature, source)` with a required `source` arg, store it in state, log `cta_click` immediately, and forward it to `<UpgradeModal />`.
+3. Update every call site in `src/routes/index.tsx` (paywall Plus CTA, Pro link, Pro card, inline nudge, sticky bar) to pass its `source`.
+4. `UpgradeModal`'s tier button handler logs `cta_click` with `source: modal_plus|modal_pro` (when the user clicks a tier inside the modal — distinct from the surface that opened it). Then before `openCheckout`, log `checkout_open` and pass `source` into `customData`.
+5. `usePaddleCheckout.openCheckout` accepts and forwards `source` in `customData`; `successUrl` gets `?src={source}` so the `/welcome` page can log `checkout_success` client-side as a backup.
 
-**2. Money-back guarantee, prominent.**
-"**7-day money-back, no questions.**" — bigger than "cancel anytime." Risk reversal is the #1 conversion lever for sub-$20 SaaS.
+## Server-side attribution
 
-**3. Personalize the sticky bar.**
-Today: "Own years sooner · $5/mo".
-Better: "**Cut 16 months off your plan → $5/mo**" (reuse the same `monthsSooner` math from `InlineUpgradeNudge`). Persistent personalized number is hard to ignore.
+- `src/routes/api/public/payments/webhook.ts`: in `handleSubscriptionCreated` and `handleTransactionCompleted`, read `data.customData?.source` and insert a `checkout_success` row into `upgrade_events` linked to `user_id`. This is the authoritative signup event.
+- Store `source` on the `subscriptions` row too via a new nullable `attribution_source text` column, so the admin view can join cleanly.
 
-**4. Collapse the end-of-report dual-CTA into one hero CTA + secondary link.**
-Hero: "Start Plus — $5/mo · 7-day refund"
-Below: "Want the AI coach too? See Pro →"
+## Admin view
 
-### Tier B — strong adds (medium effort)
+- New protected route `src/routes/_authenticated/admin/upgrade-funnel.tsx` (gated behind a server fn that checks the caller's email against an allowlist env var `ADMIN_EMAILS`).
+- Server fn `getUpgradeFunnel({ since })` aggregates from `upgrade_events`:
+  - clicks, checkout opens, paid signups, click→paid % per `source`, 7 / 30 day windows.
+- Simple table UI, no charts.
 
-**5. Annual price anchor with real savings.**
-Today: $5/mo or $60/yr (identical). Make annual cheaper: **$50/yr (save $10)** or **$48/yr (2 months free)**. Without a discount, "yearly" does nothing.
+## Out of scope
 
-**6. Exit-intent modal (desktop).**
-On mouse-to-close-tab: "Wait — your plan finishes 16 months sooner with Plus. Want me to email it?" Capture email if not already + offer 1-click upgrade link.
+- No third-party analytics (PostHog/GA) — can be layered later by also calling `track()` inside `trackUpgradeEvent`.
+- No first-touch attribution.
+- No A/B test framework.
 
-**7. Second inline nudge near the Pro-locked section.**
-You have one mid-report Plus nudge. Add a second one introducing the AI coach with a sample exchange ("Ask anything — *Can I really afford this?* *What if rates drop?*"). Show, don't tell.
+## Files touched
 
-**8. "Last 7 days" peer pressure (if data allows).**
-"**12 buyers in {their_zip}** started Plus this week." Or "**47 plans** built in {city} this month." Localized social proof outperforms global. Needs aggregate count from `leads` or `plans` table.
-
-### Tier C — bigger bets
-
-**9. Free 7-day trial, no card.**
-Removes the only real friction. You're using Paddle so this is configurable. Conversion lift typically 30–80% vs. pay-to-start, at the cost of some freeloaders. Worth A/B testing.
-
-## Smaller copy fixes worth doing alongside
-
-- "Less than one coffee" → "**Less than $0.17 a day**" or "**Less than 1 day of rent**" — coffee is consumed, rent is the pain you're solving.
-- "Pays for itself if it saves one month" — strong, keep it.
-- "The market won't wait. Neither should your plan." — strong, keep it.
-- "Every month you wait is compounding you don't get back." — strong, keep it.
-- All Plus CTAs → standardize on **"Start Plus — $5/mo"**.
-- All Pro CTAs → standardize on **"Add your AI coach — $11/mo"**.
-
-## My recommendation
-
-Ship **Tier A (#1–#4) in one batch.** That's the social proof strip, money-back badge, personalized sticky bar, and collapsing the dual-CTA. ~30 min of work, biggest expected lift. Then look at trial/exit-intent.
-
-## Which to build?
-
-Pick a number or set:
-- **A1–A4** (recommended starting point)
-- **All of A + #5 annual discount**
-- **All of A + #7 second nudge for Pro**
-- Custom — tell me which ones
+- migration: create `upgrade_events`, `log_upgrade_event` RPC, add `attribution_source` to `subscriptions`
+- new: `src/lib/upgrade-tracking.ts`, `src/lib/upgrade-funnel.functions.ts`, `src/routes/_authenticated/admin/upgrade-funnel.tsx`
+- edit: `src/hooks/useUpgradeGate.tsx`, `src/hooks/usePaddleCheckout.ts`, `src/components/UpgradeModal.tsx`, `src/routes/index.tsx`, `src/routes/api/public/payments/webhook.ts`, `src/routes/welcome.tsx`
