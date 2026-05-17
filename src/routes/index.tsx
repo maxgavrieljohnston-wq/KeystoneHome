@@ -2249,11 +2249,11 @@ function Welcome({ onStart }: { onStart: () => void }) {
             {[
               {
                 q: "How is this different from a savings account?",
-                a: "A savings account earns ~4%. Keystone builds a structured plan around your real timeline, target market prices, and risk tolerance — so you arrive at closing with the right number, not just a balance.",
+                a: "The average savings account earns ~0.38%. Keystone builds a structured plan around your real timeline, target market prices, and risk tolerance — so you arrive at closing with the right number, not just a balance.",
               },
               {
-                q: "Can I use Keystone with my partner?",
-                a: "Yes. The plan supports joint households — shared income, shared down payment goals, and combined credit considerations.",
+                q: "Isn't investing my down payment risky?",
+                a: "We match your portfolio to your timeline — the closer you get to buying, the more we shift toward stability. You're not gambling your down payment; you're putting it to work appropriately.",
               },
               {
                 q: "What if home prices in my area go up?",
