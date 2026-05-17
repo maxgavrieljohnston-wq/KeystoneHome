@@ -1590,7 +1590,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 color: C.ink,
               }}
             >
-              An investment account for your future home.
+              Your down payment, working harder.
             </h1>
 
             <p
