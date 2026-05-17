@@ -3082,7 +3082,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
             Need the AI coach too?{" "}
             <button
               type="button"
-              onClick={() => gate.openUpgrade("pro", "Pro")}
+              onClick={() => gate.openUpgrade("pro", "Pro", "paywall_pro_link")}
               style={{
                 background: "transparent",
                 border: "none",
