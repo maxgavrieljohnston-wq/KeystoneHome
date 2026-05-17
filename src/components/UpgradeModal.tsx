@@ -423,10 +423,10 @@ export function UpgradeModal({
               </div>
             );
             return (
-              <>
+              <Fragment key={tier.id}>
                 {socialStrip}
                 {card}
-              </>
+              </Fragment>
             );
           })}
         </div>
