@@ -389,9 +389,15 @@ function KeystoneApp() {
     setScreenIdx(Math.max(0, prevIdx));
   };
 
+  // The welcome screen is a full-bleed editorial landing page, not a wizard step.
+  // Render it outside the narrow Shell so it can stretch to the viewport.
+  if (screen === "welcome") {
+    return <Welcome onStart={next} />;
+  }
+
   return (
     <Shell>
-      {screen !== "welcome" && screen !== "dashboard" && screen !== "calculating" && (
+      {screen !== "dashboard" && screen !== "calculating" && (
         <TopBar
           screen={screen}
           onBack={screenIdx > 0 ? back : undefined}
