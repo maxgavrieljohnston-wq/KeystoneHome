@@ -313,8 +313,12 @@ export function UpgradeModal({
                   {tier.priceFrame}
                 </div>
 
-                <ul style={{ listStyle: "none", padding: 0, margin: "14px 0", flex: 1, fontSize: 15 }}>
-                  {tier.features.map((f) => {
+                {(() => {
+                  const highlightIds = isPro ? PRO_HIGHLIGHT_IDS : PLUS_HIGHLIGHT_IDS;
+                  const { highlights, rest } = splitFeatures(tier.features, highlightIds);
+                  const isOpen = expanded[tier.id] ?? false;
+                  const visibleFeatures = isOpen ? [...highlights, ...rest] : highlights;
+                  const renderItem = (f: TierFeature) => {
                     const isSoon = "comingSoon" in f && f.comingSoon;
                     const label = isSoon ? cleanLabel(f.short) : f.short;
                     return (
@@ -351,8 +355,40 @@ export function UpgradeModal({
                         )}
                       </li>
                     );
-                  })}
-                </ul>
+                  };
+                  return (
+                    <div style={{ margin: "14px 0", flex: 1 }}>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 15 }}>
+                        {visibleFeatures.map(renderItem)}
+                      </ul>
+                      {rest.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpanded((s) => ({ ...s, [tier.id]: !isOpen }))
+                          }
+                          style={{
+                            marginTop: 8,
+                            background: "transparent",
+                            border: "none",
+                            padding: "6px 0",
+                            cursor: "pointer",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 10,
+                            letterSpacing: "0.16em",
+                            textTransform: "uppercase",
+                            color: tier.highlight ? C.paper : C.ink,
+                            opacity: 0.75,
+                            textDecoration: "underline",
+                            textUnderlineOffset: 3,
+                          }}
+                        >
+                          {isOpen ? "Show less ↑" : `Show ${rest.length} more ↓`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <p
                   style={{
