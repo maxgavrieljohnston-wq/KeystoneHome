@@ -28,7 +28,7 @@ export function UpgradeGateProvider({ children }: { children: ReactNode }) {
   const sub = useSubscription();
 
   const openUpgrade = useCallback(
-    (tier: RequiredTier, featureName: string, source: UpgradeSource | string) => {
+    (tier: RequiredTier, featureName: string, source: UpgradeSource | string = `feature_gate:${featureName}`) => {
       trackUpgradeEvent({ event_type: "cta_click", source, tier });
       setState({ open: true, tier, feature: featureName, source });
     },
@@ -36,7 +36,7 @@ export function UpgradeGateProvider({ children }: { children: ReactNode }) {
   );
 
   const requireTier = useCallback(
-    (tier: RequiredTier, featureName: string, source: UpgradeSource | string) => {
+    (tier: RequiredTier, featureName: string, source: UpgradeSource | string = `feature_gate:${featureName}`) => {
       const ok = tier === "plus" ? sub.isPlus : sub.isPro;
       if (!ok) {
         trackUpgradeEvent({ event_type: "cta_click", source, tier });
