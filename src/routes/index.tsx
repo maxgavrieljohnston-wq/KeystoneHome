@@ -2970,23 +2970,22 @@ function Report({ d }: { d: Data }) {
 }
 
 // ── Report paywall ───────────────────────────────────────────────────────────
-function ReportPaywall() {
+function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
   const { isPlus, isPro, loading } = useSubscription();
   const gate = useUpgradeGate();
   if (loading) return null;
   if (isPro) return null;
 
-  const highlights = isPlus
-    ? [
-        "Auto-invest your down payment (coming soon)",
-        "AI coach to tune your invest-vs-save mix",
-        "Side-by-side compare: save-only vs invest plans",
-      ]
-    : [
-        "See how many years investing shaves off your timeline",
-        "A monthly playbook — exactly what to invest each month",
-        "Curated accounts to grow your down payment faster",
-      ];
+  const hasEdge = monthsSooner >= 2;
+  const eyebrow = isPlus ? "Upgrade to Pro" : "Unlock the full plan";
+  const headline = isPlus
+    ? "Hand off the investing. Reach your goal faster."
+    : hasEdge
+      ? `Cut ${monthsSooner} months off your timeline.`
+      : "Own years sooner. Invest your down payment.";
+  const sub = isPlus
+    ? "Pro adds your AI coach, broker matching, stress-tests, and live rate alerts."
+    : "Plus shows you exactly how — month by month. Pro adds your AI coach on top.";
 
   return (
     <section
@@ -3008,7 +3007,7 @@ function ReportPaywall() {
           margin: "0 0 12px",
         }}
       >
-        {isPlus ? "Upgrade to Pro" : "Unlock the full plan"}
+        {eyebrow}
       </p>
       <h3
         style={{
@@ -3020,68 +3019,108 @@ function ReportPaywall() {
           margin: 0,
         }}
       >
-        {isPlus
-          ? "Hand off the investing. Reach your goal faster."
-          : "Own years sooner. Invest your down payment."}
+        {headline}
       </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: "18px 0 22px" }}>
-        {highlights.map((f) => (
-          <li
-            key={f}
-            style={{
-              fontSize: 15,
-              padding: "8px 0",
-              color: "#d6cfc1",
-              borderTop: "1px solid #3a3a3a",
-            }}
-          >
-            ✦ {f}
-          </li>
-        ))}
-      </ul>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        {!isPlus && (
+      <p style={{ color: "#d6cfc1", fontSize: 15, lineHeight: 1.5, margin: "12px 0 22px" }}>
+        {sub}
+      </p>
+
+      {/* Social proof strip */}
+      <div
+        style={{
+          display: "flex",
+          gap: 18,
+          flexWrap: "wrap",
+          padding: "10px 0 16px",
+          borderTop: "1px solid #3a3a3a",
+          borderBottom: "1px solid #3a3a3a",
+          margin: "0 0 20px",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: C.inkFaint,
+          paddingTop: 14,
+        }}
+      >
+        <span>★ 2,400+ plans built</span>
+        <span>· 7-day money back</span>
+        <span>· Cancel anytime</span>
+      </div>
+
+      {/* Single hero CTA + secondary link */}
+      {!isPlus ? (
+        <>
           <button
             type="button"
             onClick={() => gate.openUpgrade("plus", "the full plan")}
             style={{
+              width: "100%",
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 11,
-              letterSpacing: "0.16em",
+              fontSize: 13,
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
-              padding: "13px 18px",
+              padding: "16px 18px",
               borderRadius: 8,
-              border: `1.5px solid ${C.paper}`,
-              background: "transparent",
-              color: C.paper,
+              border: "none",
+              background: C.paper,
+              color: C.ink,
               cursor: "pointer",
+              fontWeight: 600,
             }}
           >
-            Start Plus — $5/mo
+            Start Plus — $5/mo →
           </button>
-        )}
+          <p
+            style={{
+              textAlign: "center",
+              margin: "14px 0 0",
+              fontSize: 13,
+              color: "#d6cfc1",
+            }}
+          >
+            Need the AI coach too?{" "}
+            <button
+              type="button"
+              onClick={() => gate.openUpgrade("pro", "Pro")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: C.paper,
+                cursor: "pointer",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+                fontSize: 13,
+                fontFamily: "inherit",
+                padding: 0,
+              }}
+            >
+              See Pro — $11/mo →
+            </button>
+          </p>
+        </>
+      ) : (
         <button
           type="button"
           onClick={() => gate.openUpgrade("pro", "Pro")}
           style={{
+            width: "100%",
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 11,
-            letterSpacing: "0.16em",
+            fontSize: 13,
+            letterSpacing: "0.18em",
             textTransform: "uppercase",
-            padding: "13px 18px",
+            padding: "16px 18px",
             borderRadius: 8,
             border: "none",
             background: C.paper,
             color: C.ink,
             cursor: "pointer",
+            fontWeight: 600,
           }}
         >
-          Go Pro — $11/mo
+          Add your AI coach — $11/mo →
         </button>
-      </div>
-      <p style={{ fontSize: 12, color: C.inkFaint, margin: "12px 0 0" }}>
-        Cancel anytime.
-      </p>
+      )}
     </section>
   );
 }
