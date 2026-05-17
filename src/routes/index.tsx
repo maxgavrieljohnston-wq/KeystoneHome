@@ -2943,8 +2943,8 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
-      <ReportPaywall />
-      <StickyUpgradeBar />
+      <ReportPaywall monthsSooner={paywallMonthsSooner} />
+      <StickyUpgradeBar monthsSooner={paywallMonthsSooner} />
 
       {/* Footer */}
       <div
