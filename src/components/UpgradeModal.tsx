@@ -327,16 +327,6 @@ export function UpgradeModal({
                   >
                     /mo
                   </span>
-                  <span
-                    style={{
-                      marginLeft: 6,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 10,
-                      opacity: 0.55,
-                    }}
-                  >
-                    · ${tier.yearly}/yr
-                  </span>
                 </div>
                 <div
                   style={{
