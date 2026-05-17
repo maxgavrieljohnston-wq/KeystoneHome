@@ -25,8 +25,8 @@ export const PLUS_FEATURES: TierFeature[] = [
   },
   {
     id: "action",
-    short: "Monthly action plan (PDF)",
-    long: "Savings & investing action plan (PDF) — what to do each month",
+    short: "Monthly action plan",
+    long: "Savings & investing action plan — what to do each month",
   },
   {
     id: "pdf",

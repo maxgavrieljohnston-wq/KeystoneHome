@@ -42,9 +42,29 @@ function orderProFeatures(features: readonly TierFeature[]): TierFeature[] {
       byId.delete(id);
     }
   }
-  // Append any features not in the explicit order (defensive).
   for (const f of byId.values()) ordered.push(f);
   return ordered;
+}
+
+// Featured highlights shown above the fold; the rest is collapsed behind
+// "Show all features". Order matters — these render top-to-bottom.
+const PLUS_HIGHLIGHT_IDS = ["action", "assumptions", "accounts", "tags"];
+const PRO_HIGHLIGHT_IDS = ["_plus", "stress", "market", "broker", "investing"];
+
+function splitFeatures(
+  features: readonly TierFeature[],
+  highlightIds: readonly string[],
+): { highlights: TierFeature[]; rest: TierFeature[] } {
+  const byId = new Map(features.map((f) => [f.id, f]));
+  const highlights: TierFeature[] = [];
+  for (const id of highlightIds) {
+    const f = byId.get(id);
+    if (f) {
+      highlights.push(f);
+      byId.delete(id);
+    }
+  }
+  return { highlights, rest: Array.from(byId.values()) };
 }
 
 export function UpgradeModal({
@@ -60,6 +80,7 @@ export function UpgradeModal({
 }) {
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { openCheckout, loading } = usePaddleCheckout();
 
   useEffect(() => {
@@ -292,8 +313,12 @@ export function UpgradeModal({
                   {tier.priceFrame}
                 </div>
 
-                <ul style={{ listStyle: "none", padding: 0, margin: "14px 0", flex: 1, fontSize: 15 }}>
-                  {tier.features.map((f) => {
+                {(() => {
+                  const highlightIds = isPro ? PRO_HIGHLIGHT_IDS : PLUS_HIGHLIGHT_IDS;
+                  const { highlights, rest } = splitFeatures(tier.features, highlightIds);
+                  const isOpen = expanded[tier.id] ?? false;
+                  const visibleFeatures = isOpen ? [...highlights, ...rest] : highlights;
+                  const renderItem = (f: TierFeature) => {
                     const isSoon = "comingSoon" in f && f.comingSoon;
                     const label = isSoon ? cleanLabel(f.short) : f.short;
                     return (
@@ -330,8 +355,40 @@ export function UpgradeModal({
                         )}
                       </li>
                     );
-                  })}
-                </ul>
+                  };
+                  return (
+                    <div style={{ margin: "14px 0", flex: 1 }}>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 15 }}>
+                        {visibleFeatures.map(renderItem)}
+                      </ul>
+                      {rest.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpanded((s) => ({ ...s, [tier.id]: !isOpen }))
+                          }
+                          style={{
+                            marginTop: 8,
+                            background: "transparent",
+                            border: "none",
+                            padding: "6px 0",
+                            cursor: "pointer",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 10,
+                            letterSpacing: "0.16em",
+                            textTransform: "uppercase",
+                            color: tier.highlight ? C.paper : C.ink,
+                            opacity: 0.75,
+                            textDecoration: "underline",
+                            textUnderlineOffset: 3,
+                          }}
+                        >
+                          {isOpen ? "Show less ↑" : `Show ${rest.length} more ↓`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <p
                   style={{
