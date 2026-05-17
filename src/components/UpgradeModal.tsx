@@ -101,7 +101,7 @@ export function UpgradeModal({
         name: "Plus",
         priceId: "plus_monthly",
         monthly: 5,
-        yearly: 60,
+        
         priceFrame: "Less than $0.17 a day",
         urgency: "Every month you wait is compounding you don't get back.",
         cta: "Start Plus",
@@ -113,7 +113,7 @@ export function UpgradeModal({
         name: "Pro",
         priceId: "pro_monthly",
         monthly: 11,
-        yearly: 132,
+        
         priceFrame: "Pays for itself if it saves one month",
         urgency: "The market won't wait. Neither should your plan.",
         cta: "Add your AI coach",
@@ -326,16 +326,6 @@ export function UpgradeModal({
                     }}
                   >
                     /mo
-                  </span>
-                  <span
-                    style={{
-                      marginLeft: 6,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 10,
-                      opacity: 0.55,
-                    }}
-                  >
-                    · ${tier.yearly}/yr
                   </span>
                 </div>
                 <div
