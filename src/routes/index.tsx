@@ -2479,35 +2479,6 @@ function Report({ d }: { d: Data }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleExportPdf = async () => {
-    if (!sub.isPlus) {
-      gate.openUpgrade("plus", "PDF export");
-      return;
-    }
-    if (!planId) {
-      alert("Hang on — your plan is still saving. Try again in a moment.");
-      return;
-    }
-    setExporting(true);
-    try {
-      const res = await exportFn({
-        data: { planId, environment: getPaddleEnvironment() },
-      });
-      const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Couldn't export PDF.");
-    } finally {
-      setExporting(false);
-    }
-  };
   if (limitState) {
     return <LimitReachedGate used={limitState.used} limit={limitState.limit} />;
   }
