@@ -3363,7 +3363,8 @@ function StickyUpgradeBar({ monthsSooner }: { monthsSooner: number }) {
   const gate = useUpgradeGate();
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("keystone_upsell_dismissed") === "1";
+    const until = Number(localStorage.getItem("keystone_upsell_dismissed_until") || 0);
+    return until > Date.now();
   });
   const [scrolled, setScrolled] = useState(false);
 
@@ -3433,7 +3434,8 @@ function StickyUpgradeBar({ monthsSooner }: { monthsSooner: number }) {
       <button
         type="button"
         onClick={() => {
-          sessionStorage.setItem("keystone_upsell_dismissed", "1");
+          const until = Date.now() + 24 * 60 * 60 * 1000;
+          localStorage.setItem("keystone_upsell_dismissed_until", String(until));
           setDismissed(true);
         }}
         aria-label="Dismiss"
