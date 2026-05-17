@@ -569,30 +569,49 @@ function LoginPage() {
                 {busy ? "Verifying…" : "Verify code"}
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("email");
-                  setOtp("");
-                  setError(null);
-                }}
-                style={{
-                  marginTop: 20,
-                  background: "transparent",
-                  border: "none",
-                  padding: 0,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: C.inkMute,
-                  cursor: "pointer",
-                  width: "100%",
-                  textAlign: "center",
-                }}
-              >
-                ← Back to email
-              </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("email");
+                    setOtp("");
+                    setError(null);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: C.inkMute,
+                    cursor: "pointer",
+                  }}
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={busy || resendCooldown > 0}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: resendCooldown > 0 ? C.inkFaint : C.ink,
+                    cursor: resendCooldown > 0 ? "default" : "pointer",
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                  }}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+                </button>
+              </div>
 
               {error && (
                 <div style={{ marginTop: 16, color: C.ember, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, textAlign: "center" }}>
