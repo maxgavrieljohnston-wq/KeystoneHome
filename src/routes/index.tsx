@@ -3848,7 +3848,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
         }}
       >
         <span>★ 2,400+ plans built</span>
-        <span>· 7-day money back</span>
+        <span>· 7-day free trial</span>
         <span>· Cancel anytime</span>
       </div>
 
@@ -3883,7 +3883,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
               color: "#d6cfc1",
             }}
           >
-            Need the AI coach too?{" "}
+            Want it on autopilot?{" "}
             <button
               type="button"
               onClick={() => gate.openUpgrade("pro", "Pro", "paywall_pro_link")}
@@ -3922,7 +3922,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
             fontWeight: 600,
           }}
         >
-          Add your AI coach — $11/mo →
+          Go on autopilot — $11/mo →
         </button>
       )}
     </section>
