@@ -80,6 +80,7 @@ export function UpgradeModal({
 }) {
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { openCheckout, loading } = usePaddleCheckout();
 
   useEffect(() => {
