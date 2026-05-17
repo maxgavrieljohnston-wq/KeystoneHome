@@ -2181,9 +2181,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
         >
           <div style={{ ...monoLabel }}>Keystone Plus</div>
           <div style={{ fontFamily: serif, fontSize: 64, lineHeight: 1 }}>
-            $19
+            $5
             <span style={{ fontSize: 22, color: "rgba(26,26,26,0.4)" }}>/mo</span>
           </div>
+          <p style={{ fontSize: 14, color: "rgba(26,26,26,0.6)", margin: 0 }}>
+            Pro plan with the AI coach is $11/mo.
+          </p>
           <button
             onClick={onStart}
             style={{
@@ -2204,6 +2207,17 @@ function Welcome({ onStart }: { onStart: () => void }) {
           >
             Unlock everything
           </button>
+          <Link
+            to="/pricing"
+            style={{
+              ...monoLabel,
+              color: C.ember,
+              textDecoration: "none",
+              textAlign: "center",
+            }}
+          >
+            Compare plans →
+          </Link>
         </div>
       </section>
 
