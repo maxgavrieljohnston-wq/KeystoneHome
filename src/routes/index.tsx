@@ -3750,7 +3750,7 @@ function Report({ d }: { d: Data }) {
       })()}
 
       <ReportPaywall monthsSooner={paywallMonthsSooner} />
-      <StickyUpgradeBar monthsSooner={paywallMonthsSooner} />
+      
 
       {/* Footer */}
       <div
