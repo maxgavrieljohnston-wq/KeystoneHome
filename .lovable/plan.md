@@ -1,91 +1,80 @@
-## What's there now
+## TL;DR
 
-A flat outlined card in the middle of the report:
+You have **decent breadth, weak depth.** Five upsell surfaces exist (inline nudge, end-of-report dark section, mobile sticky bar, modal itself, scattered locked panels). What's missing is the *persuasion stack* — social proof, risk reversal, urgency, and a single dominant CTA per screen. Right now every button competes for attention and the copy varies wildly.
 
-> ✦ Want to own 2–4 years sooner? Time to find out how. **[FIND OUT HOW]**
+## What you have today
 
-It's vague ("find out how" — how *what*?), generic, has no specificity to the user's plan, no proof, no urgency, no price anchor, and visually looks like every other section on the page. Easy to scroll past.
+| Surface | Where | Strength | Weakness |
+|---|---|---|---|
+| InlineUpgradeNudge | Mid-report | Personalized number + blurred tease — best in class | Only fires once |
+| Dark "Unlock the full plan" | End of report | Strong visual | Shows **both** Plus + Pro buttons → choice paralysis |
+| StickyUpgradeBar | Mobile, after 600px scroll | Persistent reminder | Generic copy ("Own years sooner") — same for everyone |
+| UpgradeModal | On gate | Highlights + collapse (just shipped) | No social proof, no guarantee, no scarcity |
+| Locked feature cards | Dashboard, coach, compare, etc. | Functional gates | Passive — wait for user to click |
 
-## Six directions (pick one, or mix)
+## Are CTAs good enough? No.
 
-### 1. Personalized number, not a range
-Pull the user's actual computed savings instead of "2–4 years."
+Three problems:
 
-> ✦ Your plan finishes in **38 months**. Plus members like you finish in **22**.
-> **Cut 16 months → $6,400 saved**
-> [Unlock the faster path — $5/mo]
+1. **Inconsistent voice.** "Start Plus — $5/mo" / "Unlock for $5/mo →" / "See how" / "Find out how" / "Go Pro — $11/mo" — five different verbs across five buttons. Pick one pattern: **outcome verb + price**. e.g. "Cut 16 months — $5/mo".
+2. **Two buttons at once kills conversion.** The end-of-report block shows Plus *and* Pro side by side. Lead with Plus as the hero, make Pro a text link underneath ("Need the AI coach? Go Pro →"). Single dominant CTA always beats two.
+3. **"Go Pro" is transactional, not aspirational.** Sell the outcome: "Add your AI coach — $11/mo" or "Hand off the investing — $11/mo".
 
-**Why it works:** specific > generic. Their own number is impossible to ignore.
+## The 9 highest-leverage additions, ranked
 
-### 2. Show the locked content as a tease
-Render a blurred/redacted preview of the Plus-only insight directly inside the card.
+### Tier A — ship first (biggest lift, low effort)
 
-```
-┌─────────────────────────────────────┐
-│ The 3 moves that cut your timeline: │
-│ 1. ▓▓▓▓▓▓▓▓▓▓▓▓▓ (saves 8 mo)       │
-│ 2. ▓▓▓▓▓▓▓▓▓▓ (saves 5 mo)          │
-│ 3. ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ (saves 3 mo)    │
-│ [ Reveal — $5/mo · cancel anytime ] │
-└─────────────────────────────────────┘
-```
+**1. Social proof strip above every upgrade card.**
+"**2,431 plans built this month.** 1 in 3 first-time buyers who used Plus closed within 12 months."
+Numbers can be approximate or live from the DB. Trust > everything else for a $5 SaaS.
 
-**Why it works:** loss aversion. They can see exactly what they're missing.
+**2. Money-back guarantee, prominent.**
+"**7-day money-back, no questions.**" — bigger than "cancel anytime." Risk reversal is the #1 conversion lever for sub-$20 SaaS.
 
-### 3. Price-anchored, benefit-led
-Lead with the trade, not the question.
+**3. Personalize the sticky bar.**
+Today: "Own years sooner · $5/mo".
+Better: "**Cut 16 months off your plan → $5/mo**" (reuse the same `monthsSooner` math from `InlineUpgradeNudge`). Persistent personalized number is hard to ignore.
 
-> **$5 to save $6,000.**
-> Plus unlocks the optimization playbook that gets buyers into homes 2–4 years sooner.
-> [Start Plus — $5/mo] · Cancel anytime · 7-day refund
+**4. Collapse the end-of-report dual-CTA into one hero CTA + secondary link.**
+Hero: "Start Plus — $5/mo · 7-day refund"
+Below: "Want the AI coach too? See Pro →"
 
-**Why it works:** absurd value ratio framed as a one-line trade.
+### Tier B — strong adds (medium effort)
 
-### 4. Two-button choice (the "no" option sells)
-Borrow the Basecamp/Nudge pattern.
+**5. Annual price anchor with real savings.**
+Today: $5/mo or $60/yr (identical). Make annual cheaper: **$50/yr (save $10)** or **$48/yr (2 months free)**. Without a discount, "yearly" does nothing.
 
-> ✦ Want to own **2 years sooner**? Here's the playbook.
-> [ Yes, show me — $5/mo ]   [ No, I'll wait ]
+**6. Exit-intent modal (desktop).**
+On mouse-to-close-tab: "Wait — your plan finishes 16 months sooner with Plus. Want me to email it?" Capture email if not already + offer 1-click upgrade link.
 
-**Why it works:** forcing the explicit "no" reframes scrolling past as a choice. Higher click rate on both buttons, more conversions overall.
+**7. Second inline nudge near the Pro-locked section.**
+You have one mid-report Plus nudge. Add a second one introducing the AI coach with a sample exchange ("Ask anything — *Can I really afford this?* *What if rates drop?*"). Show, don't tell.
 
-### 5. Social proof + scarcity-of-self
-> **1 in 3 first-time buyers** who used Plus closed within 12 months.
-> The other two are still saving.
-> Your plan says **38 months** — Plus members with your profile averaged **22**.
-> [ See your faster path → ]
+**8. "Last 7 days" peer pressure (if data allows).**
+"**12 buyers in {their_zip}** started Plus this week." Or "**47 plans** built in {city} this month." Localized social proof outperforms global. Needs aggregate count from `leads` or `plans` table.
 
-**Why it works:** identity ("buyers like me") + a number they can't argue with.
+### Tier C — bigger bets
 
-### 6. Visual upgrade — make it stop looking like a section
-Right now the nudge uses the same paper/ink/border as every other panel, so the eye glides past. Treat it as an *interrupt*:
+**9. Free 7-day trial, no card.**
+Removes the only real friction. You're using Paddle so this is configurable. Conversion lift typically 30–80% vs. pay-to-start, at the cost of some freeloaders. Worth A/B testing.
 
-- Ember/cream gradient background instead of paper
-- Slightly tilted or offset from the column grid (-1deg)
-- Larger CTA button (current is size 10pt — bump to 13pt, full-width on mobile)
-- Add a small inline "preview" chart showing **their** timeline shrinking
-- Subtle pulse/shimmer on the CTA every ~6s
+## Smaller copy fixes worth doing alongside
 
-Even keeping current copy, the visual treatment alone would 2–3× the click rate.
-
----
+- "Less than one coffee" → "**Less than $0.17 a day**" or "**Less than 1 day of rent**" — coffee is consumed, rent is the pain you're solving.
+- "Pays for itself if it saves one month" — strong, keep it.
+- "The market won't wait. Neither should your plan." — strong, keep it.
+- "Every month you wait is compounding you don't get back." — strong, keep it.
+- All Plus CTAs → standardize on **"Start Plus — $5/mo"**.
+- All Pro CTAs → standardize on **"Add your AI coach — $11/mo"**.
 
 ## My recommendation
 
-**Combine #1 + #2 + #6.** That gives you: personalized number (specificity), blurred locked content (loss aversion), and a visual treatment that actually stops the scroll. Copy becomes:
+Ship **Tier A (#1–#4) in one batch.** That's the social proof strip, money-back badge, personalized sticky bar, and collapsing the dual-CTA. ~30 min of work, biggest expected lift. Then look at trial/exit-intent.
 
-> ✦ Your plan finishes in **{userMonths} months**.
-> Plus members with your profile finish in **{plusMonths}** — here's how:
->
-> 1. ▓▓▓▓▓▓▓▓▓▓▓▓▓ — saves {x} months
-> 2. ▓▓▓▓▓▓▓▓▓▓ — saves {y} months
-> 3. ▓▓▓▓▓▓▓▓▓▓▓▓ — saves {z} months
->
-> **[ Unlock for $5/mo → ]**  Cancel anytime.
+## Which to build?
 
-## Out of scope until you pick
-- Computing the "Plus members finish in X" number (need to decide: real cohort data, or a deterministic formula on the user's inputs?)
-- The exact 3 moves shown blurred — need a stable list per user profile
-- A/B test wiring
-
-## Which direction do you want me to build?
+Pick a number or set:
+- **A1–A4** (recommended starting point)
+- **All of A + #5 annual discount**
+- **All of A + #7 second nudge for Pro**
+- Custom — tell me which ones
