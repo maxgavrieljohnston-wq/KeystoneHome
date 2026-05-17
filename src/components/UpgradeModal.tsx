@@ -146,18 +146,7 @@ export function UpgradeModal({
     });
   };
 
-  const headline =
-    requiredTier === "pro"
-      ? {
-          eyebrow: "Your personal homebuying coach",
-          title: "Stop guessing. Get a plan that adapts.",
-          sub: `${featureName} is part of Pro — AI coach, stress-tests, and live market data working for you.`,
-        }
-      : {
-          eyebrow: "Your plan, accelerated",
-          title: "Reach your home 2–4 years sooner.",
-          sub: `${featureName} is part of Plus — plus the tools to actually shave years off your timeline.`,
-        };
+
 
   return (
     <div
