@@ -422,6 +422,12 @@ export function UpgradeModal({
                 </button>
               </div>
             );
+            return (
+              <>
+                {socialStrip}
+                {card}
+              </>
+            );
           })}
         </div>
 
