@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSubscription } from "@/hooks/useSubscription";
+import { trackUpgradeEvent } from "@/lib/upgrade-tracking";
 
 export const Route = createFileRoute("/welcome")({
   head: () => ({
