@@ -498,6 +498,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          attribution_source: string | null
           cancel_at_period_end: boolean | null
           created_at: string | null
           current_period_end: string | null
@@ -513,6 +514,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attribution_source?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
@@ -528,6 +530,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attribution_source?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string | null
           current_period_end?: string | null
@@ -568,6 +571,45 @@ export type Database = {
         }
         Relationships: []
       }
+      upgrade_events: {
+        Row: {
+          created_at: string
+          email: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          plan_id: string | null
+          session_id: string | null
+          source: string
+          tier: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          plan_id?: string | null
+          session_id?: string | null
+          source: string
+          tier: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          plan_id?: string | null
+          session_id?: string | null
+          source?: string
+          tier?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -603,11 +645,33 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_upgrade_funnel: {
+        Args: { p_since: string }
+        Returns: {
+          checkout_opens: number
+          clicks: number
+          signups: number
+          source: string
+          tier: string
+        }[]
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
       join_broker_waitlist: { Args: { p_notes?: string }; Returns: Json }
+      log_upgrade_event: {
+        Args: {
+          p_email?: string
+          p_event_type: string
+          p_metadata?: Json
+          p_plan_id?: string
+          p_session_id?: string
+          p_source: string
+          p_tier: string
+        }
+        Returns: string
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
