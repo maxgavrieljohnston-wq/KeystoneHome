@@ -898,9 +898,9 @@ function ScreenSwitch({
     const takeHomeMonthly = (householdIncome * 0.78) / 12;
     const monthlyExpenses = householdExpenses + householdDebt;
     const headroom = Math.max(0, takeHomeMonthly - monthlyExpenses);
-    // Cap at 50% of take-home OR available headroom, whichever is lower. $100 increments.
-    const halfTakeHome = takeHomeMonthly * 0.5;
-    const rawMax = Math.min(halfTakeHome, headroom);
+    // Cap at 25% of take-home OR available headroom, whichever is lower. $100 increments.
+    const quarterTakeHome = takeHomeMonthly * 0.25;
+    const rawMax = Math.min(quarterTakeHome, headroom);
     const maxSave = Math.max(100, Math.floor(rawMax / 100) * 100);
 
     const remaining = Math.max(0, target - householdSaved);
@@ -931,7 +931,7 @@ function ScreenSwitch({
           step={100}
           format={(v) => fmt(v)}
           unit={`per month toward ${fmt(target)}`}
-          maxNote={`Capped at ${fmt(sliderMax)}/mo — about half your take-home pay after expenses and debt. Pushing higher than this rarely sticks month after month.`}
+          maxNote={`Capped at ${fmt(sliderMax)}/mo — about 25% of your take-home pay after expenses and debt. Pushing higher than this rarely sticks month after month.`}
           onChange={(v) => {
             const yrs = v > 0 ? Math.max(1, Math.round(remaining / v / 12)) : 99;
             set("timelineBucket", `$${v}`);
