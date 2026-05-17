@@ -1,5 +1,5 @@
 project_id = "iwbgvrqjkkdclqilbjfi"
 
 [auth.email]
-otp_length = 6
+otp_length = 8
 otp_expiry = 3600

@@ -420,14 +420,14 @@ function LoginPage() {
               Verify your email.
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
-              We sent a 6-digit code to <strong>{email}</strong>.
+              We sent an 8-digit code to <strong>{email}</strong>.
             </p>
 
             <form onSubmit={handleVerifyOtp}>
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="6-digit code"
+                placeholder="8-digit code"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 style={{ ...inputStyle, marginBottom: 32, letterSpacing: "0.2em" }}
@@ -505,7 +505,7 @@ function LoginPage() {
               — Email verified
             </div>
             <h1 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
-              Secure your account.
+              Create password.
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.45, color: C.inkSoft, margin: "0 0 28px" }}>
               Create a password so you can sign in easily next time.
@@ -540,7 +540,7 @@ function LoginPage() {
                   opacity: busy || !password ? 0.5 : 1,
                 }}
               >
-                {busy ? "Saving…" : "Save password"}
+                {busy ? "Creating…" : "Create password"}
               </button>
 
               {error && (
