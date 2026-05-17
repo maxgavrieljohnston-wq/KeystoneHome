@@ -3401,8 +3401,14 @@ function StickyUpgradeBar({ monthsSooner }: { monthsSooner: number }) {
       className="md:hidden"
     >
       <span style={{ fontSize: 13, lineHeight: 1.3, flex: 1, minWidth: 0 }}>
-        Own years sooner
-        <span style={{ color: C.inkFaint, marginLeft: 6, fontSize: 12 }}>· from $5/mo</span>
+        {monthsSooner >= 2 ? (
+          <>
+            <strong style={{ fontWeight: 600 }}>Cut {monthsSooner} mo</strong> off your plan
+          </>
+        ) : (
+          <>Own years sooner</>
+        )}
+        <span style={{ color: C.inkFaint, marginLeft: 6, fontSize: 12 }}>· $5/mo · 7-day refund</span>
       </span>
       <button
         type="button"
