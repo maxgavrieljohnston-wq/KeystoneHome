@@ -101,7 +101,7 @@ export function UpgradeModal({
         name: "Plus",
         priceId: "plus_monthly",
         monthly: 5,
-        yearly: 60,
+        
         priceFrame: "Less than $0.17 a day",
         urgency: "Every month you wait is compounding you don't get back.",
         cta: "Start Plus",
