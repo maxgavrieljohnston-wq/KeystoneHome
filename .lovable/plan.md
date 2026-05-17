@@ -1,54 +1,44 @@
-## Quick-win conversion pack (~30 min)
+# Reposition homepage messaging — investing first, AI coach as bonus
 
-Focused on driving more paid signups by removing friction in the funnel and adding trust/urgency where users hesitate. All small, surgical edits.
+Goal: the landing page should pitch Keystone as a way to **invest your down payment so you can buy years sooner**. The AI coach is no longer a headline feature — it stays in the product, but on the homepage it's mentioned only as a small bonus.
 
-### 1. Auth friction (signup drop-off)
+Scope: copy + section emphasis in `src/routes/index.tsx` only. No business logic, no pricing changes, no removed features.
 
-- **Google sign-in** on `/login` (top of both Sign In and Sign Up tabs) via the Lovable broker. Also enable provider with `configure_social_auth(["google"])`. Removes the OTP+password gauntlet for ~40% of users.
-- **Resend code** link on the OTP step (60s cooldown) — currently no way to recover from a lost code except restarting.
-- **Show/hide password** toggle on the Create Password step.
-- **Auto-focus** the OTP input on step change, and accept paste of "12345678" with auto-strip of spaces/dashes.
-- **Error copy**: replace `auth/invalid-credentials` style messages with "That email or password didn't match. Try again or reset." (already partially done; sweep the rest).
+## Edits
 
-### 2. Paywall / pricing trust signals
+### 1. Hero (lines ~1567–1676)
+- Eyebrow chip: "A homebuying plan for everyone" → **"Invest your way home"**.
+- Subhead under the H1 currently says "Built for first-time home buyers who want a plan, not just another savings account." Tighten to lead with the speed payoff, e.g. **"Stop parking your down payment in a savings account. Invest it the right way and reach your goal years sooner."**
+- Keep the H1 ("An investment account for your future home.") — already on-message.
+- CTAs unchanged.
 
-- **Social proof line** above the Plus/Pro buttons in `UpgradeModal` and on `/pricing`: "Join 1,200+ buyers planning with Keystone" (use a real number once we have one; placeholder fine for now).
-- **Money-back guarantee chip** on both tier cards: "Cancel anytime · 14-day refund". This is the single highest-leverage paywall change.
-- **Annual savings badge** on the Pro yearly toggle: "Save 2 months" with the actual % calculated from prices.
-- **"Most popular" ribbon** on Pro (if not already present) — visual anchor that pulls eyes off Plus.
+### 2. Process / How it works (lines ~1902–1917)
+Rewrite the three steps so the middle step is the investing pitch, not just a generic projection:
+- 01. **The Audit** — keep, light edit: "See exactly where you stand today across cash, savings, and brokerage accounts."
+- 02. **The Plan** — "Pick a target home and we model save-vs-invest side by side, so you can see how many years investing shaves off."
+- 03. **The Purchase** — keep.
 
-### 3. Sticky bar & inline nudge urgency
+### 3. Dashboard moment (lines ~2076–2129)
+- Section H2 stays ("Watch your timeline shrink.").
+- Subcopy: rewrite to emphasize the investment angle, e.g. "Invest your down payment in a portfolio matched to your timeline. As markets move and you contribute, your buy date updates in real time."
+- Feature bullets — replace the current three with investing-led ones:
+  - "Save vs. invest, side by side"
+  - "Risk matched to your timeline"
+  - "Live buy-date forecasting"
+- Remove "Smart mortgage forecasting" and "Tax-advantaged savings tips" from this list (they're not the headline story anymore). "Market volatility alerts" can stay folded into "Live buy-date forecasting".
 
-- Add a **dynamic value line** to the sticky bar based on what the user is looking at: e.g. on `/dashboard` show "Unlock your full plan + lender match — $X/mo"; on `/coach` show "Ask unlimited questions with Pro".
-- Show the sticky bar **only after 8s of scroll or 30% scroll depth** (instead of immediately) — reduces dismissal rate.
-- After dismissal, suppress for 24h via `localStorage`, not session-only.
+### 4. Pricing teaser (lines ~2169–2189)
+- Subcopy: drop "and the AI coach" from the main sentence. New copy: "Build your entire roadmap at no cost. Upgrade only when you want unlimited scenarios and plan exports."
+- Replace the standalone "Pro plan with the AI coach is $11/mo." line with a smaller, lighter footnote-style line under the CTA: **"Bonus: Pro ($11/mo) adds an AI coach."** Use the existing faint-ink style, smaller font.
 
-### 4. Post-checkout activation
+### 5. FAQ (lines ~2224+)
+Quick pass: if any FAQ entry centers the AI coach, rephrase so the coach is mentioned in passing rather than as a headline feature. No structural changes.
 
-- On `/welcome`, if the user has no password set (came in via checkout email), surface a single **"Set a password to sign in next time"** card with inline form. Today they have to discover this through the login flow.
+### 6. Anything else not touched
+- Wizard/Section 01 ("Save, or invest?") and downstream sections are already investing-led — leave as-is.
+- The deeper upgrade-funnel screens (lines ~3824+) still reference the AI coach. That's the in-app upgrade prompt, not the homepage — out of scope for this redesign pass.
 
-### 5. Admin funnel polish
-
-- Add **conversion-rate columns** (click→open %, open→signup %, click→signup %) to `/admin/upgrade-funnel` — currently only raw counts.
-- Add **"Top source"** stat at the top: "Sticky bar drives 47% of paid signups."
-- Sort rows by signups desc by default (already does, confirm).
-
-### Out of scope (will propose separately if you want)
-
-- Testimonials section, exit-intent modal, A/B testing framework, email re-engagement sequences, FAQ rewrite. All bigger than 30 min.
-
-### Files touched
-
-- `src/routes/login.tsx` (Google button, resend, show/hide, paste handling)
-- `src/components/UpgradeModal.tsx` (guarantee, social proof, savings badge)
-- `src/routes/pricing.tsx` (same trust signals)
-- `src/routes/index.tsx` + sticky bar component (scroll-trigger, 24h dismiss, dynamic copy)
-- `src/routes/welcome.tsx` (set-password card)
-- `src/routes/admin.upgrade-funnel.tsx` (rate columns + top-source stat)
-- `supabase--configure_social_auth(["google"])`
-
-### Recommended priority if you only ship 3 things
-
-1. **Google sign-in** — biggest funnel impact
-2. **Money-back guarantee + social proof on paywall** — biggest checkout impact
-3. **Sticky bar scroll trigger + 24h dismiss** — biggest "don't annoy" impact
+## Technical notes
+- Pure copy + minor style tweaks. No new components, no new dependencies.
+- All edits in `src/routes/index.tsx` inside the `Welcome` component.
+- Verify mobile layout after edits with a screenshot at 390px since some strings get longer.

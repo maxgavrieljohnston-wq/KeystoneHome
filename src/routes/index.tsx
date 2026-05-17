@@ -1575,7 +1575,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 marginBottom: 28,
               }}
             >
-              A homebuying plan for everyone
+              Invest your way home
             </div>
 
             <h1
@@ -1604,8 +1604,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 margin: "0 0 32px",
               }}
             >
-              Built for first-time home buyers who want a plan, not just another
-              savings account.
+              Stop parking your down payment in a savings account. Invest it the
+              right way and reach your goal years sooner.
             </p>
 
             <div
@@ -1903,12 +1903,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
             {
               n: "01.",
               t: "The Audit",
-              p: "We connect your current accounts to see exactly where you stand today. No spreadsheets required.",
+              p: "See exactly where you stand today across cash, savings, and brokerage accounts. No spreadsheets required.",
             },
             {
               n: "02.",
-              t: "The Projection",
-              p: "Calculate your timeline based on real local market data and your actual saving capacity.",
+              t: "The Plan",
+              p: "Pick a target home and we model save-vs-invest side by side, so you see how many years investing shaves off your timeline.",
             },
             {
               n: "03.",
@@ -2095,8 +2095,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 maxWidth: 460,
               }}
             >
-              Keystone dynamically updates your plan as you save. See the literal
-              date you'll be able to afford your dream home shift in real-time.
+              Invest your down payment in a portfolio matched to your timeline.
+              As markets move and you contribute, your buy date updates in real
+              time.
             </p>
             <ul
               style={{
@@ -2109,9 +2110,9 @@ function Welcome({ onStart }: { onStart: () => void }) {
               }}
             >
               {[
-                "Smart mortgage forecasting",
-                "Market volatility alerts",
-                "Tax-advantaged savings tips",
+                "Save vs. invest, side by side",
+                "Risk matched to your timeline",
+                "Live buy-date forecasting",
               ].map((t) => (
                 <li
                   key={t}
@@ -2166,8 +2167,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
             maxWidth: 520,
           }}
         >
-          Build your entire roadmap at no cost. Only upgrade when you want
-          unlimited scenarios, plan exports, and the AI coach.
+          Build your entire roadmap at no cost. Upgrade only when you want
+          unlimited scenarios and plan exports.
         </p>
         <div
           style={{
@@ -2184,9 +2185,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
             $5
             <span style={{ fontSize: 22, color: "rgba(26,26,26,0.4)" }}>/mo</span>
           </div>
-          <p style={{ fontSize: 14, color: "rgba(26,26,26,0.6)", margin: 0 }}>
-            Pro plan with the AI coach is $11/mo.
-          </p>
           <button
             onClick={onStart}
             style={{
@@ -2207,6 +2205,16 @@ function Welcome({ onStart }: { onStart: () => void }) {
           >
             Unlock everything
           </button>
+          <p
+            style={{
+              fontSize: 12,
+              color: "rgba(26,26,26,0.45)",
+              margin: 0,
+              textAlign: "center",
+            }}
+          >
+            Bonus: Pro ($11/mo) adds an AI coach.
+          </p>
           <Link
             to="/pricing"
             style={{
