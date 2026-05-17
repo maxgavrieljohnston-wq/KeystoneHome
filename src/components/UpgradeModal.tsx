@@ -233,9 +233,35 @@ export function UpgradeModal({
           </button>
         </div>
 
-        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 18px", lineHeight: 1.55 }}>
+        <p style={{ color: C.inkSoft, fontSize: 16, margin: "12px 0 14px", lineHeight: 1.55 }}>
           {headline.sub}
         </p>
+
+        {/* Social proof + risk reversal strip */}
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            flexWrap: "wrap",
+            alignItems: "center",
+            padding: "10px 12px",
+            margin: "0 0 18px",
+            border: `1px solid ${C.ember}33`,
+            background: `${C.ember}11`,
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: C.inkSoft,
+          }}
+        >
+          <span>★ 2,400+ plans built</span>
+          <span style={{ color: C.inkFaint }}>·</span>
+          <span style={{ color: C.ember, fontWeight: 600 }}>7-day money back</span>
+          <span style={{ color: C.inkFaint }}>·</span>
+          <span>Cancel anytime</span>
+        </div>
 
         <div className={`km-upgrade-tiers ${visible.length > 1 ? "km-two" : ""}`}>
           {visible.map((tier) => {
