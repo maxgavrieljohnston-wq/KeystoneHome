@@ -3412,7 +3412,7 @@ function StickyUpgradeBar({ monthsSooner }: { monthsSooner: number }) {
       </span>
       <button
         type="button"
-        onClick={() => gate.openUpgrade("plus", "saving your plan")}
+        onClick={() => gate.openUpgrade("plus", "saving your plan", "sticky_bar")}
         style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: 10,
