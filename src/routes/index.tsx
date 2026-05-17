@@ -2772,7 +2772,12 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
-      <InlineUpgradeNudge />
+      <InlineUpgradeNudge
+        saved={d.saved}
+        target={downPayment}
+        monthly={savedOnlyMonthly}
+        timelineMonths={months}
+      />
 
       {/* Section 2 — Affordability */}
       <Section number="02" title="What it costs to live there.">
@@ -3081,46 +3086,211 @@ function ReportPaywall() {
 }
 
 // ── Mid-report inline nudge ──────────────────────────────────────────────────
-function InlineUpgradeNudge() {
+function InlineUpgradeNudge({
+  saved,
+  target,
+  monthly,
+  timelineMonths,
+}: {
+  saved: number;
+  target: number;
+  monthly: number;
+  timelineMonths: number;
+}) {
   const { isPlus, loading } = useSubscription();
   const gate = useUpgradeGate();
+
+  // Personalized math: at their current monthly pace, how much sooner could
+  // they finish if they invested (~7%) vs. parked in savings (~0.5%)?
+  const { yourMonths, plusMonths, monthsSooner, dollarsSaved } = useMemo(() => {
+    const monthsAt = (rate: number) => {
+      if (saved >= target) return 0;
+      if (monthly <= 0 && rate <= 0) return timelineMonths;
+      const r = rate / 12;
+      if (r === 0) return Math.ceil((target - saved) / Math.max(monthly, 1));
+      const num = target * r + monthly;
+      const den = saved * r + monthly;
+      if (den <= 0 || num / den <= 0) return timelineMonths;
+      const n = Math.log(num / den) / Math.log(1 + r);
+      return isFinite(n) && n > 0 ? Math.ceil(n) : timelineMonths;
+    };
+    const mSave = monthsAt(0.005);
+    const mInv = monthsAt(0.07);
+    const sooner = Math.max(0, mSave - mInv);
+    return {
+      yourMonths: mSave,
+      plusMonths: mInv,
+      monthsSooner: sooner,
+      dollarsSaved: Math.round(sooner * monthly),
+    };
+  }, [saved, target, monthly, timelineMonths]);
+
   if (loading || isPlus) return null;
+
+  const hasEdge = monthsSooner >= 2;
+  const headline = hasEdge
+    ? `Your plan finishes in ${yourMonths} months. Plus members like you finish in ${plusMonths}.`
+    : `Plus shows you the 3 levers to cut months off your plan.`;
+  const subline = hasEdge
+    ? `That's ${monthsSooner} months sooner — about ${fmt(dollarsSaved)} less out of pocket.`
+    : `Personalized to your income, credit, and timeline.`;
+
   return (
     <div
       style={{
-        margin: "28px 0 32px",
-        padding: "14px 16px",
-        border: `1px solid ${C.ink}`,
-        borderRadius: 10,
-        background: C.paper,
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        flexWrap: "wrap",
+        margin: "32px 0 36px",
+        padding: "22px 22px 20px",
+        borderRadius: 14,
+        background: `linear-gradient(135deg, ${C.cream} 0%, ${C.paperDeep} 100%)`,
+        border: `1.5px solid ${C.ink}`,
+        boxShadow: `6px 6px 0 0 ${C.ink}`,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <span style={{ fontSize: 14, color: C.inkSoft, flex: "1 1 200px", lineHeight: 1.4 }}>
-        <span style={{ color: C.ember, marginRight: 6 }}>✦</span>
-        Want to own 2–4 years sooner? Time to find out how.
-      </span>
-      <button
-        type="button"
-        onClick={() => gate.openUpgrade("plus", "saving your plan")}
+      {/* Eyebrow */}
+      <div
         style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: 10,
-          letterSpacing: "0.16em",
+          letterSpacing: "0.22em",
           textTransform: "uppercase",
-          padding: "10px 14px",
-          borderRadius: 6,
+          color: C.ember,
+          marginBottom: 10,
+        }}
+      >
+        ✦ Keystone Plus
+      </div>
+
+      {/* Headline */}
+      <p
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 24,
+          lineHeight: 1.2,
+          letterSpacing: "-0.01em",
+          color: C.ink,
+          margin: "0 0 6px",
+          fontWeight: 500,
+        }}
+      >
+        {headline}
+      </p>
+      <p style={{ fontSize: 14, color: C.inkSoft, margin: "0 0 18px", lineHeight: 1.45 }}>
+        {subline}
+      </p>
+
+      {/* Locked tease */}
+      <div
+        style={{
+          background: `${C.paper}cc`,
+          border: `1px dashed ${C.inkMute}66`,
+          borderRadius: 10,
+          padding: "14px 16px",
+          marginBottom: 18,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+            marginBottom: 10,
+          }}
+        >
+          The 3 moves that cut your timeline
+        </div>
+        {[
+          { label: "Where to park your down payment", save: `~${Math.max(4, Math.round(monthsSooner * 0.5))} mo` },
+          { label: "Credit lift before pre-approval", save: `~${Math.max(3, Math.round(monthsSooner * 0.3))} mo` },
+          { label: "Loan program you likely qualify for", save: `~${Math.max(2, Math.round(monthsSooner * 0.2))} mo` },
+        ].map((row, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "8px 0",
+              borderTop: i === 0 ? "none" : `1px solid ${C.inkMute}22`,
+              gap: 12,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  color: C.ember,
+                  width: 18,
+                }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span
+                style={{
+                  fontSize: 14,
+                  color: C.ink,
+                  filter: "blur(5px)",
+                  userSelect: "none",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                aria-hidden
+              >
+                {row.label}
+              </span>
+            </div>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                color: C.inkMute,
+                whiteSpace: "nowrap",
+              }}
+            >
+              saves {row.save}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <button
+        type="button"
+        onClick={() => gate.openUpgrade("plus", "the faster-path playbook")}
+        style={{
+          width: "100%",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 13,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          padding: "15px 18px",
+          borderRadius: 8,
           border: "none",
           background: C.ink,
           color: C.paper,
           cursor: "pointer",
+          fontWeight: 600,
         }}
       >
-        Find out how
+        Unlock for $5/mo →
       </button>
+      <p
+        style={{
+          textAlign: "center",
+          fontSize: 11,
+          color: C.inkMute,
+          margin: "10px 0 0",
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.08em",
+        }}
+      >
+        Cancel anytime · 7-day refund
+      </p>
     </div>
   );
 }
