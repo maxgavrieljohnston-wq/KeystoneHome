@@ -113,7 +113,7 @@ export function UpgradeModal({
         name: "Pro",
         priceId: "pro_monthly",
         monthly: 11,
-        yearly: 132,
+        
         priceFrame: "Pays for itself if it saves one month",
         urgency: "The market won't wait. Neither should your plan.",
         cta: "Add your AI coach",
