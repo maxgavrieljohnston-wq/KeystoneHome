@@ -1825,43 +1825,6 @@ function Welcome({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      {/* ── PROOF STRIP ─────────────────────────────────────── */}
-      <section style={{ background: C.paperDeep, padding: "44px 24px" }}>
-        <div
-          className="ks-proof"
-          style={{
-            maxWidth: 1200,
-            margin: "0 auto",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 24,
-            opacity: 0.7,
-          }}
-        >
-          <div style={{ ...monoLabel, color: C.ink }}>
-            Trusted by future homeowners at
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              gap: 36,
-              fontFamily: serif,
-              fontStyle: "italic",
-              fontSize: 24,
-            }}
-          >
-            <span>Vanguard</span>
-            <span>Zillow</span>
-            <span>NerdWallet</span>
-            <span>Fidelity</span>
-          </div>
-        </div>
-      </section>
-
       {/* ── HOW IT WORKS ────────────────────────────────────── */}
       <section
         id="how-it-works"
