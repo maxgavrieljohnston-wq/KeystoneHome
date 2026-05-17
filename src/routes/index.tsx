@@ -3358,7 +3358,7 @@ function InlineUpgradeNudge({
 }
 
 // ── Sticky mobile upgrade bar ────────────────────────────────────────────────
-function StickyUpgradeBar() {
+function StickyUpgradeBar({ monthsSooner }: { monthsSooner: number }) {
   const { isPro, loading } = useSubscription();
   const gate = useUpgradeGate();
   const [dismissed, setDismissed] = useState(() => {
