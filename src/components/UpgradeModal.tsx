@@ -72,7 +72,7 @@ export function UpgradeModal({
   open,
   onClose,
   requiredTier,
-  featureName,
+  featureName: _featureName,
   openedFrom,
 }: {
   open: boolean;
