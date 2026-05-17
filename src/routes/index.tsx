@@ -3053,7 +3053,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
         <>
           <button
             type="button"
-            onClick={() => gate.openUpgrade("plus", "the full plan")}
+            onClick={() => gate.openUpgrade("plus", "the full plan", "paywall_plus")}
             style={{
               width: "100%",
               fontFamily: "'JetBrains Mono', monospace",
