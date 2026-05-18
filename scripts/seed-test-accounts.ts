@@ -134,6 +134,7 @@ const personas: Persona[] = [
     firstName: "Priya",
     lastName: "Shah",
     blurb: "38, high-income single in Seattle — ~1 yr from a 2BR condo (~$680k)",
+    tier: "pro",
     answers: {
       age: 38,
       firstName: "Priya",
