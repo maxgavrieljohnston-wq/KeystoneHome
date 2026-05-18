@@ -366,8 +366,8 @@ async function seed() {
   console.log(`   ${PASSWORD}`);
   console.log("========================================");
   for (const p of personas) {
-    console.log(`  ${p.email}  —  ${p.displayName}`);
-    console.log(`    ${p.blurb}`);
+    console.log(`  [${p.tier.toUpperCase().padEnd(4)}] ${p.email}  —  ${p.displayName}`);
+    console.log(`         ${p.blurb}`);
   }
 }
 
