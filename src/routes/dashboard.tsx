@@ -1060,7 +1060,8 @@ function PlanDetails({ answers }: { answers: Record<string, unknown> }) {
   push("Total debt", answers.debt, money);
   push("Saved so far", answers.saved, money);
   push("Credit score", answers.credit);
-  push("Timeline", answers.timelineBucket);
+  push("Monthly savings", answers.timelineBucket, (v) => `${v}/mo`);
+  push("Time to buy", answers.timelineYears, (v) => `${v} ${v === 1 ? "year" : "years"}`);
   push("Down payment goal", answers.downGoalPct, (v) => `${v}%`);
 
   if (rows.length === 0) return null;
