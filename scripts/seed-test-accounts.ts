@@ -21,12 +21,15 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
 
 const PASSWORD = "KeystoneTest!2026";
 
+type Tier = "free" | "plus" | "pro";
+
 type Persona = {
   email: string;
   displayName: string;
   firstName: string;
   lastName: string;
   blurb: string;
+  tier: Tier;
   answers: Record<string, unknown>;
 };
 
