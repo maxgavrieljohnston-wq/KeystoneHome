@@ -981,6 +981,10 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
               key={id}
               type="button"
               onClick={() => handleTheme(id)}
+              onMouseEnter={() => sub.isPlus && setPreviewTheme(id)}
+              onMouseLeave={() => setPreviewTheme(null)}
+              onFocus={() => sub.isPlus && setPreviewTheme(id)}
+              onBlur={() => setPreviewTheme(null)}
               title={th.label}
               aria-label={`Use ${th.label} theme`}
               style={{
@@ -997,6 +1001,83 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
             </button>
           );
         })}
+      </div>
+
+      {sub.isPlus && (
+        <ThemePreviewFrame
+          plan={plan}
+          themeId={effectivePreviewTheme}
+          isHovering={previewTheme !== null}
+          isMobile={isMobile}
+        />
+      )}
+    </div>
+  );
+}
+
+function ThemePreviewFrame({
+  plan,
+  themeId,
+  isHovering,
+  isMobile,
+}: {
+  plan: PlanRow;
+  themeId: PlanThemeId;
+  isHovering: boolean;
+  isMobile: boolean;
+}) {
+  const themeLabel = PLAN_THEMES[themeId].label;
+  const scale = isMobile ? 0.4 : 0.45;
+  const frameHeight = isMobile ? 420 : 480;
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "#6b6b6b",
+          marginBottom: 6,
+        }}
+      >
+        Live preview — {themeLabel}
+        {isHovering ? " (hover)" : ""}
+      </div>
+      <div
+        aria-hidden="true"
+        style={{
+          width: "100%",
+          maxWidth: 360,
+          height: frameHeight,
+          overflow: "hidden",
+          border: "1px dashed #d9d2c0",
+          borderRadius: 8,
+          position: "relative",
+          background: PLAN_THEMES[themeId].paper,
+        }}
+      >
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            width: `${100 / scale}%`,
+            pointerEvents: "none",
+          }}
+        >
+          <PlanView
+            plan={{
+              title: plan.title,
+              theme: themeId,
+              answers: plan.answers,
+              assumptions: plan.assumptions,
+              current_savings: plan.current_savings,
+              target_move_in: plan.target_move_in,
+              created_at: plan.created_at,
+            }}
+            kicker="— Preview"
+          />
+        </div>
       </div>
     </div>
   );
