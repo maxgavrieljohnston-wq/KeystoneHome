@@ -26,6 +26,8 @@ import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel"
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
 import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 import { PLAN_THEMES, THEME_IDS, getPlanTheme, type PlanThemeId } from "@/lib/plan-themes";
+import { PlanView } from "@/routes/p.$slug";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -792,6 +794,9 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     metaM.mutate({ planId: plan.id, theme, environment: env });
   };
   const activeTheme = getPlanTheme(plan.theme);
+  const [previewTheme, setPreviewTheme] = useState<PlanThemeId | null>(null);
+  const isMobile = useIsMobile();
+  const effectivePreviewTheme = (previewTheme ?? (plan.theme as PlanThemeId | null) ?? "light") as PlanThemeId;
 
   const shareUrl = plan.share_slug
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${plan.share_slug}`
@@ -976,6 +981,10 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
               key={id}
               type="button"
               onClick={() => handleTheme(id)}
+              onMouseEnter={() => sub.isPlus && setPreviewTheme(id)}
+              onMouseLeave={() => setPreviewTheme(null)}
+              onFocus={() => sub.isPlus && setPreviewTheme(id)}
+              onBlur={() => setPreviewTheme(null)}
               title={th.label}
               aria-label={`Use ${th.label} theme`}
               style={{
@@ -992,6 +1001,83 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
             </button>
           );
         })}
+      </div>
+
+      {sub.isPlus && (
+        <ThemePreviewFrame
+          plan={plan}
+          themeId={effectivePreviewTheme}
+          isHovering={previewTheme !== null}
+          isMobile={isMobile}
+        />
+      )}
+    </div>
+  );
+}
+
+function ThemePreviewFrame({
+  plan,
+  themeId,
+  isHovering,
+  isMobile,
+}: {
+  plan: PlanRow;
+  themeId: PlanThemeId;
+  isHovering: boolean;
+  isMobile: boolean;
+}) {
+  const themeLabel = PLAN_THEMES[themeId].label;
+  const scale = isMobile ? 0.4 : 0.45;
+  const frameHeight = isMobile ? 420 : 480;
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "#6b6b6b",
+          marginBottom: 6,
+        }}
+      >
+        Live preview — {themeLabel}
+        {isHovering ? " (hover)" : ""}
+      </div>
+      <div
+        aria-hidden="true"
+        style={{
+          width: "100%",
+          maxWidth: 360,
+          height: frameHeight,
+          overflow: "hidden",
+          border: "1px dashed #d9d2c0",
+          borderRadius: 8,
+          position: "relative",
+          background: PLAN_THEMES[themeId].paper,
+        }}
+      >
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            width: `${100 / scale}%`,
+            pointerEvents: "none",
+          }}
+        >
+          <PlanView
+            plan={{
+              title: plan.title,
+              theme: themeId,
+              answers: plan.answers,
+              assumptions: plan.assumptions,
+              current_savings: plan.current_savings,
+              target_move_in: plan.target_move_in,
+              created_at: plan.created_at,
+            }}
+            kicker="— Preview"
+          />
+        </div>
       </div>
     </div>
   );

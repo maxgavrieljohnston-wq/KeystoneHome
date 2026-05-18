@@ -1,36 +1,42 @@
 ## Goal
-Create 5 ready-to-use test logins. Each has a fake name, full financial profile (income, expenses, debt, savings), and a home target (location + style) — so when you sign in, a real plan is already built.
 
-## The 5 personas
+When a user clicks a theme swatch on the dashboard, show a live miniature preview of how their plan's share page (and, by proxy, the PDF) will look in that theme — updating instantly as they hover/click, before any save round-trip.
 
-| # | Name | Age | Location | Home target | Income | Expenses | Debt | Saved | Timeline |
-|---|------|-----|----------|-------------|--------|----------|------|-------|----------|
-| 1 | Maya Chen | 26, single | Austin, TX | 1BR condo (~$340k) | $72k | $2,400/mo | $5,200 | $4,800 | 4 yrs |
-| 2 | Marcus & Tina Rivera | 31 + 30, couple | Charlotte, NC | 3BR townhouse (~$410k) | $145k joint | $4,100/mo | $18,000 | $32,000 | 2.5 yrs |
-| 3 | Priya Shah | 38, single | Seattle, WA | 2BR condo (~$680k) | $215k | $5,800/mo | $0 | $95,000 | ~1 yr |
-| 4 | David & Amara Okafor | 41 + 39, family of 4 | Phoenix, AZ | 4BR single-family (~$465k) | $118k joint | $5,400/mo | $11,000 | $22,000 | 5 yrs (stretched) |
-| 5 | Jordan Bailey | 29, freelancer | Denver, CO | 2BR townhouse (~$525k) | $98k | $3,200/mo | $3,500 | $68,000 | 9 mo (near-ready) |
+## Approach
 
-Coverage: early-career renter, mid-career couple, high-income single, tight-budget family, and a near-ready buyer — different metros, home styles, and timeline pressure.
+Reuse the existing `PlanView` component from `src/routes/p.$slug.tsx` — it already renders the full themed share page from a `PlanViewPlan` shape, and `plan.theme` flows straight through to `getPlanTheme()`. No new rendering logic needed.
 
-## Login credentials
-- Emails: `test1@keystone.test` … `test5@keystone.test`
-- Shared password: `KeystoneTest!2026`
-- I'll print the full list (name + email + password) when seeding completes so you can log in.
+### What changes
 
-## How it's built
+**One file: `src/routes/dashboard.tsx`**
 
-1. **One-off seed script** (`scripts/seed-test-accounts.ts`, run locally via `bun`) using the Supabase service-role key to:
-   - Call `auth.admin.createUser()` for each persona (email-confirmed, no email sent)
-   - The existing `handle_new_user` trigger auto-creates each `profiles` row; the script then updates `display_name` to the persona's full name
-   - Insert one row into `public.plans` per user with a complete `answers` JSON matching the questionnaire shape (age, zip, income, expenses, debt, saved, credit, homeStyle, beds/baths, timelineYears, partner fields, lifestyle/neighborhood prefs, riskAnswers, downGoalPct, zipData with metro + avg price)
-2. **Idempotent**: re-running deletes & recreates the 5 test users + their plans so you always get a clean slate.
-3. **Script is NOT shipped to production** — it lives in `scripts/`, never imported by the app, and uses env vars from `.env`.
+1. Import `PlanView` from `@/routes/p.$slug`.
+2. Add local state `previewTheme` inside `PlanCard` (defaults to `plan.theme`).
+3. Modify the theme swatches:
+   - `onMouseEnter` / `onFocus` → `setPreviewTheme(id)` (instant visual feedback, no save)
+   - `onMouseLeave` / `onBlur` → reset to `plan.theme`
+   - `onClick` → still calls `handleTheme(id)` to persist (existing behavior)
+4. Render a new `<ThemePreviewFrame>` directly under the theme picker row, only when the plan card is expanded. It contains:
+   - A small caption: "Live preview — {themeLabel}"
+   - A fixed-size box (e.g. `width: 100%, maxWidth: 360, height: 480, overflow: hidden, border: 1px dashed inkFaint, borderRadius: 8`)
+   - Inside: a `<div>` containing `<PlanView plan={{...plan, theme: previewTheme}} kicker="— Preview" />` with CSS `transform: scale(0.45); transform-origin: top left; width: 222%;` so the full 640px-wide share layout fits visually.
+   - `pointer-events: none` on the inner wrapper so the preview is non-interactive.
+5. Mobile (390px viewport): the preview frame collapses to full card width and uses `scale(0.4)`. Same component, just responsive sizing via a `useIsMobile` hook (already in the repo at `src/hooks/use-mobile`).
 
-## Files touched
-- `scripts/seed-test-accounts.ts` — new, runnable with `bun scripts/seed-test-accounts.ts`
-- No app code or database schema changes
-- No new RLS policies (existing service-role policies cover the inserts)
+### Why this works
 
-## After approval
-I'll write the script, run it once, and report back with the 5 logins + which dashboard each one lands on (so you know what to expect when you sign in as each).
+- `PlanView` already accepts the plan + theme and is a pure function of props — no auth, no data fetching, no router dependencies beyond the `<Link to="/">` footer (which still works inside an authenticated route).
+- The PDF and share page share the same palette tokens via `getPlanTheme`, so the share-page preview is a faithful proxy for the PDF appearance. We don't need to render an actual PDF in the browser.
+- No backend/schema changes. No new server fn. No new dependencies.
+
+### Out of scope
+
+- Rendering an actual PDF preview (would require shipping pdf-lib + a viewer to the client; share-page preview gives the same visual confidence).
+- Persisting the hover-preview theme.
+- Changing the swatch UI itself beyond adding hover handlers.
+
+## Technical notes
+
+- `PlanView` is already exported from `src/routes/p.$slug.tsx` alongside the route — safe to import.
+- The footer's `<Link to="/">` inside `PlanView` renders fine in the dashboard tree (TanStack Router context is available app-wide).
+- Wrap the preview in a div with `aria-hidden="true"` and `pointer-events: none` so it doesn't trap focus or get picked up by screen readers (the picker itself is the accessible control).
