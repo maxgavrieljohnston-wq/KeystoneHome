@@ -21,12 +21,15 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
 
 const PASSWORD = "KeystoneTest!2026";
 
+type Tier = "free" | "plus" | "pro";
+
 type Persona = {
   email: string;
   displayName: string;
   firstName: string;
   lastName: string;
   blurb: string;
+  tier: Tier;
   answers: Record<string, unknown>;
 };
 
@@ -37,6 +40,7 @@ const personas: Persona[] = [
     firstName: "Maya",
     lastName: "Chen",
     blurb: "26, single renter in Austin — 4-yr runway to a 1BR condo (~$340k)",
+    tier: "free",
     answers: {
       age: 26,
       firstName: "Maya",
@@ -83,6 +87,7 @@ const personas: Persona[] = [
     firstName: "Marcus",
     lastName: "Rivera",
     blurb: "31 + 30 couple in Charlotte — 2.5-yr push for a 3BR townhouse (~$410k)",
+    tier: "plus",
     answers: {
       age: 31,
       firstName: "Marcus",
@@ -129,6 +134,7 @@ const personas: Persona[] = [
     firstName: "Priya",
     lastName: "Shah",
     blurb: "38, high-income single in Seattle — ~1 yr from a 2BR condo (~$680k)",
+    tier: "pro",
     answers: {
       age: 38,
       firstName: "Priya",
@@ -175,6 +181,7 @@ const personas: Persona[] = [
     firstName: "David",
     lastName: "Okafor",
     blurb: "41 + 39 family of 4 in Phoenix — 5-yr stretch for a 4BR single-family (~$465k)",
+    tier: "plus",
     answers: {
       age: 41,
       firstName: "David",
@@ -221,6 +228,7 @@ const personas: Persona[] = [
     firstName: "Jordan",
     lastName: "Bailey",
     blurb: "29, freelancer in Denver — 9 mo from a 2BR townhouse (~$525k)",
+    tier: "pro",
     answers: {
       age: 29,
       firstName: "Jordan",
@@ -285,6 +293,7 @@ async function seed() {
     const existingId = await findUserByEmail(p.email);
     if (existingId) {
       await admin.from("plans").delete().eq("user_id", existingId);
+      await admin.from("subscriptions").delete().eq("user_id", existingId);
       await admin.auth.admin.deleteUser(existingId);
       console.log("  ✓ removed prior account");
     }
@@ -325,6 +334,31 @@ async function seed() {
     });
     if (planErr) throw planErr;
     console.log("  ✓ plan seeded");
+
+    // Seed a fake active subscription for plus/pro personas (live environment).
+    if (p.tier !== "free") {
+      const priceId = p.tier === "pro" ? "pro_monthly" : "plus_monthly";
+      const productId = p.tier === "pro" ? "pro_product" : "plus_product";
+      const periodEnd = new Date();
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      const { error: subErr } = await admin.from("subscriptions").insert({
+        user_id: userId,
+        environment: "live",
+        status: "active",
+        price_id: priceId,
+        product_id: productId,
+        paddle_customer_id: `test_cus_${userId.slice(0, 8)}`,
+        paddle_subscription_id: `test_sub_${userId.slice(0, 8)}`,
+        current_period_start: new Date().toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        cancel_at_period_end: false,
+        attribution_source: "test_seed",
+      });
+      if (subErr) throw subErr;
+      console.log(`  ✓ ${p.tier.toUpperCase()} subscription seeded`);
+    } else {
+      console.log("  · free tier (no subscription)");
+    }
   }
 
   console.log("\n========================================");
@@ -332,8 +366,8 @@ async function seed() {
   console.log(`   ${PASSWORD}`);
   console.log("========================================");
   for (const p of personas) {
-    console.log(`  ${p.email}  —  ${p.displayName}`);
-    console.log(`    ${p.blurb}`);
+    console.log(`  [${p.tier.toUpperCase().padEnd(4)}] ${p.email}  —  ${p.displayName}`);
+    console.log(`         ${p.blurb}`);
   }
 }
 
