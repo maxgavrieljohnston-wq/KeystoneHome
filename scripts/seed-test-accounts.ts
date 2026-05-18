@@ -293,6 +293,7 @@ async function seed() {
     const existingId = await findUserByEmail(p.email);
     if (existingId) {
       await admin.from("plans").delete().eq("user_id", existingId);
+      await admin.from("subscriptions").delete().eq("user_id", existingId);
       await admin.auth.admin.deleteUser(existingId);
       console.log("  ✓ removed prior account");
     }
