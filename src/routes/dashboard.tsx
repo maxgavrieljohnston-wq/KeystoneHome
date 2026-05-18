@@ -1,4 +1,4 @@
-import { type MouseEvent, useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1027,8 +1027,30 @@ function ThemePreviewFrame({
   isMobile: boolean;
 }) {
   const themeLabel = PLAN_THEMES[themeId].label;
-  const scale = isMobile ? 0.4 : 0.45;
-  const frameHeight = isMobile ? 420 : 480;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // PlanView renders within a 640px max column plus 24px horizontal page padding.
+  const CONTENT_WIDTH = 688;
+  const minScale = isMobile ? 0.3 : 0.4;
+  const maxScale = isMobile ? 0.52 : 0.5;
+  const rawScale = containerWidth > 0 ? containerWidth / CONTENT_WIDTH : minScale;
+  const scale = Math.max(minScale, Math.min(maxScale, rawScale));
+  // Scale frame height with scale so the same vertical slice of the plan is shown
+  // regardless of screen size — prevents clipping mid-row on narrow viewports.
+  const VISIBLE_CONTENT_HEIGHT = 980;
+  const frameHeight = Math.max(300, Math.min(540, Math.round(VISIBLE_CONTENT_HEIGHT * scale)));
+
   return (
     <div style={{ marginTop: 14 }}>
       <div
@@ -1045,10 +1067,11 @@ function ThemePreviewFrame({
         {isHovering ? " (hover)" : ""}
       </div>
       <div
+        ref={containerRef}
         aria-hidden="true"
         style={{
           width: "100%",
-          maxWidth: 360,
+          maxWidth: isMobile ? "100%" : 360,
           height: frameHeight,
           overflow: "hidden",
           border: "1px dashed #d9d2c0",
@@ -1061,7 +1084,7 @@ function ThemePreviewFrame({
           style={{
             transform: `scale(${scale})`,
             transformOrigin: "top left",
-            width: `${100 / scale}%`,
+            width: `${CONTENT_WIDTH}px`,
             pointerEvents: "none",
           }}
         >
