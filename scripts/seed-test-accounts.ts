@@ -334,6 +334,31 @@ async function seed() {
     });
     if (planErr) throw planErr;
     console.log("  ✓ plan seeded");
+
+    // Seed a fake active subscription for plus/pro personas (live environment).
+    if (p.tier !== "free") {
+      const priceId = p.tier === "pro" ? "pro_monthly" : "plus_monthly";
+      const productId = p.tier === "pro" ? "pro_product" : "plus_product";
+      const periodEnd = new Date();
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      const { error: subErr } = await admin.from("subscriptions").insert({
+        user_id: userId,
+        environment: "live",
+        status: "active",
+        price_id: priceId,
+        product_id: productId,
+        paddle_customer_id: `test_cus_${userId.slice(0, 8)}`,
+        paddle_subscription_id: `test_sub_${userId.slice(0, 8)}`,
+        current_period_start: new Date().toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        cancel_at_period_end: false,
+        attribution_source: "test_seed",
+      });
+      if (subErr) throw subErr;
+      console.log(`  ✓ ${p.tier.toUpperCase()} subscription seeded`);
+    } else {
+      console.log("  · free tier (no subscription)");
+    }
   }
 
   console.log("\n========================================");
