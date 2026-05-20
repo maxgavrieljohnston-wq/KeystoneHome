@@ -1,4 +1,4 @@
-import { type MouseEvent, useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,8 +26,6 @@ import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel"
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
 import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 import { PLAN_THEMES, THEME_IDS, getPlanTheme, type PlanThemeId } from "@/lib/plan-themes";
-import { PlanView } from "@/routes/p.$slug";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -794,16 +792,22 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     metaM.mutate({ planId: plan.id, theme, environment: env });
   };
   const activeTheme = getPlanTheme(plan.theme);
-  const [previewTheme, setPreviewTheme] = useState<PlanThemeId | null>(null);
-  const isMobile = useIsMobile();
-  const effectivePreviewTheme = (previewTheme ?? (plan.theme as PlanThemeId | null) ?? "light") as PlanThemeId;
+  const C = {
+    paper: activeTheme.paper,
+    ink: activeTheme.ink,
+    inkSoft: activeTheme.inkSoft,
+    inkMute: activeTheme.inkMute,
+    inkFaint: activeTheme.faint,
+    ember: activeTheme.ember,
+    rule: activeTheme.ink,
+  };
 
   const shareUrl = plan.share_slug
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${plan.share_slug}`
     : "";
 
   return (
-    <div style={{ padding: 20, border: `1.5px solid ${C.ink}`, borderRadius: 10, background: "#fff" }}>
+    <div style={{ padding: 20, border: `1.5px solid ${C.ink}`, borderRadius: 10, background: C.paper, color: C.ink, transition: "background 200ms ease, border-color 200ms ease, color 200ms ease" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         {editing ? (
           <input
@@ -981,10 +985,6 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
               key={id}
               type="button"
               onClick={() => handleTheme(id)}
-              onMouseEnter={() => sub.isPlus && setPreviewTheme(id)}
-              onMouseLeave={() => setPreviewTheme(null)}
-              onFocus={() => sub.isPlus && setPreviewTheme(id)}
-              onBlur={() => setPreviewTheme(null)}
               title={th.label}
               aria-label={`Use ${th.label} theme`}
               style={{
@@ -1002,109 +1002,10 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
           );
         })}
       </div>
-
-      {sub.isPlus && (
-        <ThemePreviewFrame
-          plan={plan}
-          themeId={effectivePreviewTheme}
-          isHovering={previewTheme !== null}
-          isMobile={isMobile}
-        />
-      )}
     </div>
   );
 }
 
-function ThemePreviewFrame({
-  plan,
-  themeId,
-  isHovering,
-  isMobile,
-}: {
-  plan: PlanRow;
-  themeId: PlanThemeId;
-  isHovering: boolean;
-  isMobile: boolean;
-}) {
-  const themeLabel = PLAN_THEMES[themeId].label;
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const update = () => setContainerWidth(el.clientWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // PlanView renders within a 640px max column plus 24px horizontal page padding.
-  const CONTENT_WIDTH = 688;
-  const minScale = isMobile ? 0.3 : 0.4;
-  const maxScale = isMobile ? 0.52 : 0.5;
-  const rawScale = containerWidth > 0 ? containerWidth / CONTENT_WIDTH : minScale;
-  const scale = Math.max(minScale, Math.min(maxScale, rawScale));
-  // Scale frame height with scale so the same vertical slice of the plan is shown
-  // regardless of screen size — prevents clipping mid-row on narrow viewports.
-  const VISIBLE_CONTENT_HEIGHT = 980;
-  const frameHeight = Math.max(300, Math.min(540, Math.round(VISIBLE_CONTENT_HEIGHT * scale)));
-
-  return (
-    <div style={{ marginTop: 14 }}>
-      <div
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 9,
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: "#6b6b6b",
-          marginBottom: 6,
-        }}
-      >
-        Live preview — {themeLabel}
-        {isHovering ? " (hover)" : ""}
-      </div>
-      <div
-        ref={containerRef}
-        aria-hidden="true"
-        style={{
-          width: "100%",
-          maxWidth: isMobile ? "100%" : 360,
-          height: frameHeight,
-          overflow: "hidden",
-          border: "1px dashed #d9d2c0",
-          borderRadius: 8,
-          position: "relative",
-          background: PLAN_THEMES[themeId].paper,
-        }}
-      >
-        <div
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            width: `${CONTENT_WIDTH}px`,
-            pointerEvents: "none",
-          }}
-        >
-          <PlanView
-            plan={{
-              title: plan.title,
-              theme: themeId,
-              answers: plan.answers,
-              assumptions: plan.assumptions,
-              current_savings: plan.current_savings,
-              target_move_in: plan.target_move_in,
-              created_at: plan.created_at,
-            }}
-            kicker="— Preview"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function downloadBase64(base64: string, filename: string, mime: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
