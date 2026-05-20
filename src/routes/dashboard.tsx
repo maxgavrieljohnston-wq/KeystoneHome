@@ -985,10 +985,6 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
               key={id}
               type="button"
               onClick={() => handleTheme(id)}
-              onMouseEnter={() => sub.isPlus && setPreviewTheme(id)}
-              onMouseLeave={() => setPreviewTheme(null)}
-              onFocus={() => sub.isPlus && setPreviewTheme(id)}
-              onBlur={() => setPreviewTheme(null)}
               title={th.label}
               aria-label={`Use ${th.label} theme`}
               style={{
@@ -1006,15 +1002,6 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
           );
         })}
       </div>
-
-      {sub.isPlus && (
-        <ThemePreviewFrame
-          plan={plan}
-          themeId={effectivePreviewTheme}
-          isHovering={previewTheme !== null}
-          isMobile={isMobile}
-        />
-      )}
     </div>
   );
 }
