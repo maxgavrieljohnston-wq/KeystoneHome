@@ -807,7 +807,7 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     : "";
 
   return (
-    <div style={{ padding: 20, border: `1.5px solid ${C.ink}`, borderRadius: 10, background: "#fff" }}>
+    <div style={{ padding: 20, border: `1.5px solid ${C.ink}`, borderRadius: 10, background: C.paper, color: C.ink, transition: "background 200ms ease, border-color 200ms ease, color 200ms ease" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         {editing ? (
           <input
