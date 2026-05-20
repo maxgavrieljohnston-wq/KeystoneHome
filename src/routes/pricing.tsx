@@ -52,7 +52,7 @@ const PLANS: Plan[] = [
     name: "Pro",
     priceId: "pro_monthly",
     monthly: 11,
-    tagline: "Your personal homebuying coach.",
+    tagline: "Plan, invest, and close with confidence.",
     features: [
       { id: "_plus", short: "Everything in Plus", long: "Everything in Plus" },
       ...PRO_FEATURES,
