@@ -792,9 +792,15 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     metaM.mutate({ planId: plan.id, theme, environment: env });
   };
   const activeTheme = getPlanTheme(plan.theme);
-  const [previewTheme, setPreviewTheme] = useState<PlanThemeId | null>(null);
-  const isMobile = useIsMobile();
-  const effectivePreviewTheme = (previewTheme ?? (plan.theme as PlanThemeId | null) ?? "light") as PlanThemeId;
+  const C = {
+    paper: activeTheme.paper,
+    ink: activeTheme.ink,
+    inkSoft: activeTheme.inkSoft,
+    inkMute: activeTheme.inkMute,
+    inkFaint: activeTheme.faint,
+    ember: activeTheme.ember,
+    rule: activeTheme.ink,
+  };
 
   const shareUrl = plan.share_slug
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${plan.share_slug}`
