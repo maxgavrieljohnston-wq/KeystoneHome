@@ -309,6 +309,24 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
     if (data.currentSavings !== undefined) patch.current_savings = data.currentSavings;
     if (data.assumptions !== undefined) patch.assumptions = data.assumptions;
 
+    if (data.answersPatch !== undefined) {
+      const { data: existing, error: readErr } = await supabaseAdmin
+        .from("plans")
+        .select("answers")
+        .eq("id", data.planId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (readErr) throw new Error(readErr.message);
+      if (!existing) throw new Response("Not found", { status: 404 });
+      const current = (existing.answers ?? {}) as Record<string, unknown>;
+      const merged: Record<string, unknown> = { ...current };
+      for (const [k, v] of Object.entries(data.answersPatch)) {
+        if (v === null) delete merged[k];
+        else if (v !== undefined) merged[k] = v;
+      }
+      patch.answers = merged;
+    }
+
     if (Object.keys(patch).length === 0) return { ok: true as const };
 
     const { error } = await supabaseAdmin
