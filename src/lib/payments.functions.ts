@@ -68,7 +68,6 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       ui_mode: "embedded_page",
       return_url: data.returnUrl,
       ...(customerId && { customer: customerId }),
-      managed_payments: { enabled: true },
       ...(data.userId && {
         metadata: {
           userId: data.userId,
@@ -84,7 +83,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           },
         }),
       }),
-    });
+      // managed_payments is supported by the API/dahlia but not yet in the SDK types.
+      managed_payments: { enabled: true },
+    } as any);
 
     return session.client_secret;
   });
