@@ -184,11 +184,13 @@ function DashboardPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 <EditablePlanPanel
                   planId={plans[0].id}
+                  planTitle={plans[0].title}
+                  shareSlug={plans[0].share_slug}
+                  shareEnabled={plans[0].share_enabled}
                   answers={plans[0].answers}
                   assumptions={plans[0].assumptions}
                   currentSavings={plans[0].current_savings}
                 />
-                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} hideNewPlanButton />
               </div>
               <div id="premium-features" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <InvestmentSection
