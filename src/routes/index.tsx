@@ -1464,6 +1464,42 @@ function ScreenSwitch({
 // ── Welcome ──────────────────────────────────────────────────────────────────
 function Welcome({ onStart }: { onStart: () => void }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [homePrice, setHomePrice] = useState(540000);
+  const [currentSavings, setCurrentSavings] = useState(22680);
+  const [monthlyContribution, setMonthlyContribution] = useState(1200);
+
+  const downPaymentTarget = Math.max(1, Math.round(homePrice * 0.1));
+  const progressPct = Math.min(
+    100,
+    Math.max(0, Math.round((currentSavings / downPaymentTarget) * 100)),
+  );
+  const remainingToGoal = Math.max(0, downPaymentTarget - currentSavings);
+  const monthsRemaining =
+    remainingToGoal === 0
+      ? 0
+      : monthlyContribution > 0
+        ? Math.ceil(remainingToGoal / monthlyContribution)
+        : Infinity;
+  // Use a stable "now" computed once per render. To avoid SSR/CSR hydration
+  // mismatch we derive the month label deterministically from a date that
+  // only changes once per month (anchored to UTC, day 1).
+  const targetDateLabel = useMemo(() => {
+    if (remainingToGoal === 0) return "Today";
+    if (!isFinite(monthsRemaining)) return "—";
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + monthsRemaining, 1));
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }, [remainingToGoal, monthsRemaining]);
+  const bumpMonthsSaved = (() => {
+    if (remainingToGoal === 0 || !isFinite(monthsRemaining)) return 0;
+    const bumped = Math.ceil(remainingToGoal / (monthlyContribution + 250));
+    return Math.max(0, monthsRemaining - bumped);
+  })();
+
 
   const serif = "'Instrument Serif', 'Cormorant Garamond', Georgia, serif";
   const sans = "'Work Sans', 'Inter', system-ui, sans-serif";
