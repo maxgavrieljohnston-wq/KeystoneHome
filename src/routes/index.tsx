@@ -1756,107 +1756,184 @@ function Welcome({ onStart }: { onStart: () => void }) {
                 Your projection
               </div>
 
-              <div
-                style={{
+              {(() => {
+                const numInputStyle: React.CSSProperties = {
+                  fontFamily: serif,
+                  fontSize: 32,
+                  lineHeight: 1,
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: `1px dashed ${C.inkFaint}`,
+                  outline: "none",
+                  padding: "2px 0",
+                  width: "100%",
+                  color: C.ink,
+                  WebkitAppearance: "none",
+                  MozAppearance: "textfield",
+                };
+                const labelStyle: React.CSSProperties = {
+                  fontSize: 13,
+                  color: "rgba(26,26,26,0.5)",
+                  marginBottom: 4,
+                };
+                const fieldRow: React.CSSProperties = {
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-end",
-                  borderBottom: `1px solid ${C.paper}`,
-                  paddingBottom: 18,
-                  marginBottom: 24,
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "rgba(26,26,26,0.5)",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Estimated home price
-                  </div>
-                  <div style={{ fontFamily: serif, fontSize: 32, lineHeight: 1 }}>
-                    $540,000
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: "rgba(26,26,26,0.5)",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Target date
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: serif,
-                      fontStyle: "italic",
-                      fontSize: 32,
-                      lineHeight: 1,
-                    }}
-                  >
-                    Oct 2026
-                  </div>
-                </div>
-              </div>
+                  alignItems: "baseline",
+                  gap: 4,
+                };
+                return (
+                  <>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        borderBottom: `1px solid ${C.paper}`,
+                        paddingBottom: 18,
+                        marginBottom: 24,
+                        gap: 16,
+                      }}
+                    >
+                      <div>
+                        <label htmlFor="ks-demo-price" style={labelStyle}>
+                          Estimated home price
+                        </label>
+                        <div style={fieldRow}>
+                          <span style={{ fontFamily: serif, fontSize: 32, lineHeight: 1 }}>$</span>
+                          <input
+                            id="ks-demo-price"
+                            type="number"
+                            min={50000}
+                            step={5000}
+                            value={homePrice}
+                            onChange={(e) => setHomePrice(Math.max(0, Number(e.target.value) || 0))}
+                            style={numInputStyle}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ ...labelStyle, textAlign: "right" }}>Target date</div>
+                        <div
+                          style={{
+                            fontFamily: serif,
+                            fontStyle: "italic",
+                            fontSize: 32,
+                            lineHeight: 1,
+                            textAlign: "right",
+                          }}
+                        >
+                          {targetDateLabel}
+                        </div>
+                      </div>
+                    </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    ...monoLabel,
-                    marginBottom: 10,
-                  }}
-                >
-                  <span>Savings progress</span>
-                  <span>42%</span>
-                </div>
-                <div
-                  style={{
-                    height: 8,
-                    background: C.paper,
-                    width: "100%",
-                  }}
-                >
-                  <div
-                    style={{
-                      height: "100%",
-                      width: "42%",
-                      background: C.ember,
-                    }}
-                  />
-                </div>
-              </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          ...monoLabel,
+                          marginBottom: 10,
+                        }}
+                      >
+                        <span>Savings progress</span>
+                        <span>{progressPct}%</span>
+                      </div>
+                      <div style={{ height: 8, background: C.paper, width: "100%" }}>
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${progressPct}%`,
+                            background: C.ember,
+                            transition: "width 0.25s ease",
+                          }}
+                        />
+                      </div>
+                    </div>
 
-              <div style={{ background: C.paper, padding: 20 }}>
-                <div
-                  style={{
-                    fontFamily: serif,
-                    fontStyle: "italic",
-                    fontSize: 15,
-                    color: "rgba(26,26,26,0.65)",
-                    marginBottom: 6,
-                  }}
-                >
-                  Note from Keystone:
-                </div>
-                <p
-                  style={{
-                    fontSize: 14,
-                    lineHeight: 1.55,
-                    margin: 0,
-                    color: C.ink,
-                  }}
-                >
-                  Increasing your monthly contribution by $250 moves your purchase
-                  date forward by 4 months.
-                </p>
-              </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 16,
+                        marginBottom: 24,
+                      }}
+                    >
+                      <div>
+                        <label htmlFor="ks-demo-saved" style={labelStyle}>
+                          Saved so far
+                        </label>
+                        <div style={fieldRow}>
+                          <span style={{ fontFamily: serif, fontSize: 22, lineHeight: 1 }}>$</span>
+                          <input
+                            id="ks-demo-saved"
+                            type="number"
+                            min={0}
+                            step={500}
+                            value={currentSavings}
+                            onChange={(e) =>
+                              setCurrentSavings(Math.max(0, Number(e.target.value) || 0))
+                            }
+                            style={{ ...numInputStyle, fontSize: 22 }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="ks-demo-monthly"
+                          style={{ ...labelStyle, textAlign: "right", display: "block" }}
+                        >
+                          Monthly contribution
+                        </label>
+                        <div style={{ ...fieldRow, justifyContent: "flex-end" }}>
+                          <span style={{ fontFamily: serif, fontSize: 22, lineHeight: 1 }}>$</span>
+                          <input
+                            id="ks-demo-monthly"
+                            type="number"
+                            min={0}
+                            step={50}
+                            value={monthlyContribution}
+                            onChange={(e) =>
+                              setMonthlyContribution(Math.max(0, Number(e.target.value) || 0))
+                            }
+                            style={{ ...numInputStyle, fontSize: 22, textAlign: "right" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ background: C.paper, padding: 20 }}>
+                      <div
+                        style={{
+                          fontFamily: serif,
+                          fontStyle: "italic",
+                          fontSize: 15,
+                          color: "rgba(26,26,26,0.65)",
+                          marginBottom: 6,
+                        }}
+                      >
+                        Note from Keystone:
+                      </div>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          lineHeight: 1.55,
+                          margin: 0,
+                          color: C.ink,
+                        }}
+                      >
+                        {remainingToGoal === 0
+                          ? "You've already hit a 10% down payment on this price. Time to start touring."
+                          : !isFinite(monthsRemaining)
+                            ? "Add a monthly contribution to see how fast you'll reach your goal."
+                            : bumpMonthsSaved > 0
+                              ? `At this pace you'll have a 10% down payment in ${monthsRemaining} month${monthsRemaining === 1 ? "" : "s"}. Adding $250/month moves your purchase date up by ${bumpMonthsSaved} month${bumpMonthsSaved === 1 ? "" : "s"}.`
+                              : `At this pace you'll have a 10% down payment in ${monthsRemaining} month${monthsRemaining === 1 ? "" : "s"}.`}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
+
             </div>
           </div>
         </div>
