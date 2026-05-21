@@ -337,6 +337,11 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
         if (v === null) delete merged[k];
         else if (v !== undefined) merged[k] = v;
       }
+      // If zip changed, refresh zipData so downstream metrics use the right metro.
+      if (typeof data.answersPatch.zip === "string" && data.answersPatch.zip.length >= 3) {
+        const { getPriceByZip } = await import("@/lib/keystone");
+        merged.zipData = getPriceByZip(data.answersPatch.zip);
+      }
       patch.answers = merged;
     }
 
