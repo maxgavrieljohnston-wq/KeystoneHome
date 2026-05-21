@@ -181,7 +181,13 @@ function DashboardPage() {
             `}</style>
             <div className="ks-dash-grid" style={{ display: "grid", gap: 28, gridTemplateColumns: "minmax(0, 1fr)", alignItems: "start" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+                <EditablePlanPanel
+                  planId={plans[0].id}
+                  answers={plans[0].answers}
+                  assumptions={plans[0].assumptions}
+                  currentSavings={plans[0].current_savings}
+                />
+                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} hideNewPlanButton />
               </div>
               <div id="premium-features" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <InvestmentSection
