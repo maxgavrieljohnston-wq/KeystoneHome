@@ -24,6 +24,7 @@ import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
+import { EditablePlanPanel } from "@/components/dashboard/EditablePlanPanel";
 import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 import { PLAN_THEMES, THEME_IDS, getPlanTheme, type PlanThemeId } from "@/lib/plan-themes";
 
@@ -181,7 +182,13 @@ function DashboardPage() {
             `}</style>
             <div className="ks-dash-grid" style={{ display: "grid", gap: 28, gridTemplateColumns: "minmax(0, 1fr)", alignItems: "start" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+                <EditablePlanPanel
+                  planId={plans[0].id}
+                  answers={plans[0].answers}
+                  assumptions={plans[0].assumptions}
+                  currentSavings={plans[0].current_savings}
+                />
+                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} hideNewPlanButton />
               </div>
               <div id="premium-features" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <InvestmentSection
@@ -253,7 +260,7 @@ function DashboardNav({ isPlus, isPro, onSignOut }: { isPlus: boolean; isPro: bo
       </Link>
       <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
         <Link to="/coach" style={link(isPro)}>Coach</Link>
-        <Link to="/compare" style={link(isPro)}>Compare</Link>
+        
         <Link to="/rate-alerts" style={link(isPro)}>Rates</Link>
         <Link to="/stress-test" style={link(isPro)}>Stress</Link>
         <Link to="/accounts" style={link(isPlus)}>Accounts</Link>
@@ -599,10 +606,12 @@ function PlansList({
   plans,
   isPlus,
   onNewPlan,
+  hideNewPlanButton = false,
 }: {
   plans: PlanRow[];
   isPlus: boolean;
   onNewPlan: () => void;
+  hideNewPlanButton?: boolean;
 }) {
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const allTags = Array.from(new Set(plans.flatMap((p) => p.tags ?? []))).sort();
@@ -641,26 +650,28 @@ function PlansList({
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={onNewPlan}
-        style={{
-          display: "inline-block",
-          padding: "12px 22px",
-          background: C.ink,
-          color: C.paper,
-          textDecoration: "none",
-          border: "none",
-          borderRadius: 8,
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 12,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          cursor: "pointer",
-        }}
-      >
-        + Build new plan
-      </button>
+      {!hideNewPlanButton && (
+        <button
+          type="button"
+          onClick={onNewPlan}
+          style={{
+            display: "inline-block",
+            padding: "12px 22px",
+            background: C.ink,
+            color: C.paper,
+            textDecoration: "none",
+            border: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
+        >
+          + Build new plan
+        </button>
+      )}
     </>
   );
 }

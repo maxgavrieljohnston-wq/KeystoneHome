@@ -25,7 +25,6 @@ function cleanLabel(label: string): string {
 const PRO_DISPLAY_ORDER = [
   "coach",
   "stress",
-  "compare",
   "market",
   "alerts",
   "docs",

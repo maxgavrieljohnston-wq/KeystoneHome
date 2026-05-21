@@ -286,6 +286,10 @@ const updateMetaSchema = z.object({
   targetMoveIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   currentSavings: z.number().min(0).max(1e9).nullable().optional(),
   assumptions: assumptionsSchema.optional(),
+  answersPatch: z.object({
+    monthlySavings: z.number().min(0).max(1e7).optional(),
+    targetPriceOverride: z.number().min(0).max(1e9).nullable().optional(),
+  }).strict().optional(),
   environment: z.enum(["sandbox", "live"]).default("live"),
 });
 
@@ -304,6 +308,24 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
     if (data.targetMoveIn !== undefined) patch.target_move_in = data.targetMoveIn;
     if (data.currentSavings !== undefined) patch.current_savings = data.currentSavings;
     if (data.assumptions !== undefined) patch.assumptions = data.assumptions;
+
+    if (data.answersPatch !== undefined) {
+      const { data: existing, error: readErr } = await supabaseAdmin
+        .from("plans")
+        .select("answers")
+        .eq("id", data.planId)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (readErr) throw new Error(readErr.message);
+      if (!existing) throw new Response("Not found", { status: 404 });
+      const current = (existing.answers ?? {}) as Record<string, unknown>;
+      const merged: Record<string, unknown> = { ...current };
+      for (const [k, v] of Object.entries(data.answersPatch)) {
+        if (v === null) delete merged[k];
+        else if (v !== undefined) merged[k] = v;
+      }
+      patch.answers = merged;
+    }
 
     if (Object.keys(patch).length === 0) return { ok: true as const };
 

@@ -141,7 +141,12 @@ export function computePlanMetrics(
     (v) => (mult += w(v)),
   );
 
-  const targetPrice = Math.round(zipData.avg * mult);
+  const overrideRaw = a.targetPriceOverride;
+  const targetPriceOverride =
+    typeof overrideRaw === "number" && isFinite(overrideRaw) && overrideRaw > 0
+      ? Math.round(overrideRaw)
+      : null;
+  const targetPrice = targetPriceOverride ?? Math.round(zipData.avg * mult);
   const downGoalPct = num("downGoalPct", 9);
   const effectiveDownPct = Math.max(downGoalPct, styleAdj.minDown);
   const downPayment = Math.round((targetPrice * effectiveDownPct) / 100);
