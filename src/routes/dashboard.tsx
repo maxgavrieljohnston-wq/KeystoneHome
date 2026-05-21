@@ -318,8 +318,21 @@ function PaidHero({
         kpis.push({ k: "Need / month", v: `${fmt(goal.requiredMonthly)}` });
       }
     } else {
-      kpis.push({ k: "Monthly income", v: fmt(metrics.monthlyIncome) });
-      kpis.push({ k: "Timeline", v: `${metrics.timelineYears} yr` });
+      const monthlySavings = metrics.monthlySavings;
+      kpis.push({
+        k: "Monthly savings",
+        v: monthlySavings > 0 ? fmt(monthlySavings) : "—",
+      });
+      const ttg = computeTimeToGoal({
+        cashToClose: metrics.cashToClose,
+        currentSavings: firstPlan?.current_savings ?? 0,
+        monthlySavings,
+        annualReturnRate: 0, // saving-only: no investment growth
+      });
+      kpis.push({
+        k: "Timeline (saving only)",
+        v: ttg.monthsSaveOnly != null ? formatMonths(ttg.monthsSaveOnly) : "—",
+      });
     }
   }
 
