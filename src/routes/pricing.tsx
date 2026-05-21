@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
 
@@ -76,7 +76,7 @@ function PricingPage() {
   const [expanded, setExpanded] = useState<Record<PlanId, boolean>>({ plus: false, pro: false });
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
-  const { openCheckout, loading } = usePaddleCheckout();
+  const { openCheckout, loading, checkoutElement } = useStripeCheckout();
   const sub = useSubscription();
 
   useEffect(() => {
@@ -350,6 +350,7 @@ function PricingPage() {
           .
         </p>
       </div>
+      {checkoutElement}
     </div>
   );
 }

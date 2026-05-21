@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { lovable } from "@/integrations/lovable";
 
 type LoginSearch = {
@@ -50,7 +50,7 @@ function LoginPage() {
   const [tab, setTab] = useState<"signin" | "signup">(search.signup ? "signup" : "signin");
   const [email, setEmail] = useState(search.email ?? "");
   const [password, setPassword] = useState("");
-  const { openCheckout } = usePaddleCheckout();
+  const { openCheckout, checkoutElement } = useStripeCheckout();
   
   // Signup flow steps
   const [step, setStep] = useState<"email" | "otp" | "password">("email");
@@ -712,6 +712,7 @@ function LoginPage() {
           </div>
         )}
       </div>
+      {checkoutElement}
     </div>
   );
 }
