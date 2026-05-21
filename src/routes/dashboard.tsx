@@ -107,6 +107,9 @@ function DashboardPage() {
     navigate({ to: "/", search: { new: true } });
   };
 
+  const isPaid = sub.isPlus || sub.isPro;
+  const containerMaxWidth = isPaid ? 1180 : 560;
+
   return (
     <div
       style={{
@@ -117,180 +120,43 @@ function DashboardPage() {
         color: C.ink,
       }}
     >
-      <div style={{ maxWidth: 560, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingBottom: 14,
-            borderBottom: `1px solid ${C.rule}`,
-            marginBottom: 32,
-          }}
-        >
-          <Link
-            to="/"
-            style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontSize: 22,
-              letterSpacing: "-0.01em",
-              color: C.ink,
-              textDecoration: "none",
-            }}
-          >
-            Keystone
-          </Link>
-          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <Link
-              to="/coach"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Coach
-            </Link>
-            <Link
-              to="/compare"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Compare
-            </Link>
-            <Link
-              to="/rate-alerts"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Rates
-            </Link>
-            <Link
-              to="/stress-test"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Stress
-            </Link>
-            <Link
-              to="/accounts"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPlus ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Accounts
-            </Link>
-            <Link
-              to="/market"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Market
-            </Link>
-            <Link
-              to="/documents"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Docs
-            </Link>
-            <Link
-              to="/broker-match"
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: sub.isPlus || sub.isPro ? C.ember : C.inkMute,
-                textDecoration: "none",
-              }}
-            >
-              Match
-            </Link>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              style={{
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: C.inkMute,
-                cursor: "pointer",
-              }}
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
+      <div style={{ maxWidth: containerMaxWidth, margin: "0 auto" }}>
+        <DashboardNav isPlus={sub.isPlus} isPro={sub.isPro} onSignOut={handleSignOut} />
 
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.22em",
-            textTransform: "uppercase",
-            color: C.ember,
-            marginBottom: 14,
-          }}
-        >
-          — Your dashboard
-        </div>
-
-        <h1
-          style={{
-            fontWeight: 400,
-            fontSize: 40,
-            lineHeight: 1.04,
-            letterSpacing: "-0.02em",
-            margin: "0 0 24px",
-          }}
-        >
-          {greeting}
-        </h1>
-
-        <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} hasPlan={plans.length > 0} />
+        {isPaid ? (
+          <PaidHero
+            greeting={greeting}
+            tierLabel={sub.isPro ? "Pro" : "Plus"}
+            firstPlan={plans[0] ?? null}
+          />
+        ) : (
+          <>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: C.ember,
+                marginBottom: 14,
+              }}
+            >
+              — Your dashboard
+            </div>
+            <h1
+              style={{
+                fontWeight: 400,
+                fontSize: 40,
+                lineHeight: 1.04,
+                letterSpacing: "-0.02em",
+                margin: "0 0 24px",
+              }}
+            >
+              {greeting}
+            </h1>
+            <TierBanner isPlus={sub.isPlus} isPro={sub.isPro} loading={sub.loading} hasPlan={plans.length > 0} />
+          </>
+        )}
 
         {!auth.ready || (auth.ready && !auth.user) || isLoading ? (
           <p style={{ color: C.inkSoft, fontSize: 18 }}>Loading your plans…</p>
@@ -300,27 +166,368 @@ function DashboardPage() {
           </p>
         ) : plans.length === 0 ? (
           <EmptyState isPlus={sub.isPlus} />
+        ) : isPaid ? (
+          <div
+            style={{
+              display: "grid",
+              gap: 28,
+              gridTemplateColumns: "minmax(0, 1fr)",
+            }}
+          >
+            <style>{`
+              @media (min-width: 960px) {
+                .ks-dash-grid { grid-template-columns: minmax(0, 420px) minmax(0, 1fr) !important; }
+              }
+            `}</style>
+            <div className="ks-dash-grid" style={{ display: "grid", gap: 28, gridTemplateColumns: "minmax(0, 1fr)", alignItems: "start" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <RemindersToggle hasPlans={plans.length > 0} />
+                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+              </div>
+              <div id="premium-features" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <InvestmentSection
+                  answers={plans[0].answers}
+                  assumptions={plans[0].assumptions}
+                  planId={plans[0].id}
+                  isPlus={sub.isPlus}
+                  isPro={sub.isPro}
+                />
+              </div>
+            </div>
+            <UnlockedFeaturesGrid isPlus={sub.isPlus} isPro={sub.isPro} />
+          </div>
         ) : (
           <>
             <RemindersToggle hasPlans={plans.length > 0} />
             <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+            <div id="premium-features">
+              {plans.length > 0 && (
+                <InvestmentSection
+                  answers={plans[0].answers}
+                  assumptions={plans[0].assumptions}
+                  planId={plans[0].id}
+                  isPlus={sub.isPlus}
+                  isPro={sub.isPro}
+                />
+              )}
+              <PremiumPanel isPlus={sub.isPlus} isPro={sub.isPro} />
+            </div>
           </>
         )}
-
-        <div id="premium-features">
-          {plans.length > 0 && (
-            <InvestmentSection
-              answers={plans[0].answers}
-              assumptions={plans[0].assumptions}
-              planId={plans[0].id}
-              isPlus={sub.isPlus}
-              isPro={sub.isPro}
-            />
-          )}
-
-          <PremiumPanel isPlus={sub.isPlus} isPro={sub.isPro} />
-        </div>
       </div>
+    </div>
+  );
+}
+
+function DashboardNav({ isPlus, isPro, onSignOut }: { isPlus: boolean; isPro: boolean; onSignOut: () => void }) {
+  const link = (highlight: boolean) => ({
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 11,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase" as const,
+    color: highlight ? C.ember : C.inkMute,
+    textDecoration: "none" as const,
+  });
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingBottom: 14,
+        borderBottom: `1px solid ${C.rule}`,
+        marginBottom: 32,
+        gap: 16,
+        flexWrap: "wrap",
+      }}
+    >
+      <Link
+        to="/"
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 22,
+          letterSpacing: "-0.01em",
+          color: C.ink,
+          textDecoration: "none",
+        }}
+      >
+        Keystone
+      </Link>
+      <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <Link to="/coach" style={link(isPro)}>Coach</Link>
+        <Link to="/compare" style={link(isPro)}>Compare</Link>
+        <Link to="/rate-alerts" style={link(isPro)}>Rates</Link>
+        <Link to="/stress-test" style={link(isPro)}>Stress</Link>
+        <Link to="/accounts" style={link(isPlus)}>Accounts</Link>
+        <Link to="/market" style={link(isPro)}>Market</Link>
+        <Link to="/documents" style={link(isPro)}>Docs</Link>
+        <Link to="/broker-match" style={link(isPlus || isPro)}>Match</Link>
+        <button
+          type="button"
+          onClick={onSignOut}
+          style={{
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+            cursor: "pointer",
+          }}
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PaidHero({
+  greeting,
+  tierLabel,
+  firstPlan,
+}: {
+  greeting: string;
+  tierLabel: "Plus" | "Pro";
+  firstPlan: PlanRow | null;
+}) {
+  const metrics = firstPlan ? computePlanMetrics(firstPlan.answers, firstPlan.assumptions) : null;
+  const goal = metrics && firstPlan ? computeGoalProgress(metrics, firstPlan.current_savings, firstPlan.target_move_in) : null;
+  const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
+  const kpis: Array<{ k: string; v: string; sub?: string }> = [];
+  if (metrics) {
+    kpis.push({ k: "Target price", v: fmt(metrics.targetPrice) });
+    kpis.push({ k: "Cash to close", v: fmt(metrics.cashToClose) });
+    if (goal?.hasGoal) {
+      kpis.push({
+        k: "Saved",
+        v: fmt(firstPlan?.current_savings ?? 0),
+        sub: `${goal.pctToGoal.toFixed(0)}% of goal`,
+      });
+      if (goal.requiredMonthly != null) {
+        kpis.push({ k: "Need / month", v: `${fmt(goal.requiredMonthly)}` });
+      }
+    } else {
+      kpis.push({ k: "Monthly income", v: fmt(metrics.monthlyIncome) });
+      kpis.push({ k: "Timeline", v: `${metrics.timelineYears} yr` });
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: C.ember,
+          }}
+        >
+          — Your dashboard
+        </span>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "3px 10px 4px",
+            borderRadius: 999,
+            background: C.ink,
+            color: C.paper,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+          }}
+        >
+          <span style={{ width: 6, height: 6, borderRadius: 999, background: "#f0a890" }} />
+          {tierLabel} unlocked
+        </span>
+      </div>
+
+      <h1
+        style={{
+          fontWeight: 400,
+          fontSize: 48,
+          lineHeight: 1.02,
+          letterSpacing: "-0.025em",
+          margin: "0 0 22px",
+        }}
+      >
+        {greeting}
+      </h1>
+
+      {kpis.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 0,
+            border: `1px solid ${C.ink}`,
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "#fff",
+          }}
+        >
+          {kpis.map((kpi, i) => (
+            <div
+              key={kpi.k}
+              style={{
+                padding: "16px 18px",
+                borderLeft: i === 0 ? "none" : `1px solid ${C.inkFaint}`,
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: C.inkMute,
+                }}
+              >
+                {kpi.k}
+              </div>
+              <div
+                style={{
+                  fontSize: 24,
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.01em",
+                  fontVariantNumeric: "tabular-nums",
+                  color: C.ink,
+                }}
+              >
+                {kpi.v}
+              </div>
+              {kpi.sub && (
+                <div
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.1em",
+                    color: C.ember,
+                  }}
+                >
+                  {kpi.sub}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnlockedFeaturesGrid({ isPlus, isPro }: { isPlus: boolean; isPro: boolean }) {
+  const gate = useUpgradeGate();
+  const tierLabel = isPro ? "Pro" : "Plus";
+  return (
+    <div
+      style={{
+        padding: 24,
+        border: `1.5px solid ${C.ink}`,
+        borderRadius: 12,
+        background: "#fff",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: C.ember,
+          }}
+        >
+          All your features
+        </div>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            padding: "4px 10px",
+            borderRadius: 999,
+            border: `1px solid ${C.ink}`,
+            color: C.ink,
+          }}
+        >
+          {tierLabel} plan
+        </span>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+          gap: 10,
+        }}
+      >
+        {PREMIUM_FEATURES.map((f) => {
+          const unlocked = f.tier === "plus" ? isPlus : isPro;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => {
+                if (!unlocked) gate.openUpgrade(f.tier, f.label);
+              }}
+              disabled={unlocked}
+              style={{
+                textAlign: "left",
+                padding: "10px 12px",
+                border: `1px solid ${unlocked ? C.inkFaint : C.inkFaint}`,
+                background: unlocked ? C.paper : "transparent",
+                borderRadius: 8,
+                cursor: unlocked ? "default" : "pointer",
+                fontFamily: "inherit",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                minHeight: 44,
+              }}
+            >
+              <span style={{ fontSize: 13, color: unlocked ? "#2d7a4f" : C.ember, fontFamily: "'JetBrains Mono', monospace" }}>
+                {unlocked ? "✓" : "🔒"}
+              </span>
+              <span style={{ fontSize: 14, lineHeight: 1.25, color: unlocked ? C.ink : C.inkMute }}>
+                {f.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {!isPro && (
+        <Link
+          to="/pricing"
+          style={{
+            display: "inline-block",
+            marginTop: 18,
+            padding: "10px 18px",
+            background: C.ink,
+            color: C.paper,
+            textDecoration: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+          }}
+        >
+          {isPlus ? "Upgrade to Pro →" : "See all plans →"}
+        </Link>
+      )}
     </div>
   );
 }
