@@ -1,5 +1,5 @@
-import { getPaddleEnvironment } from "@/lib/paddle";
 import { useState, useEffect } from "react";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 export function PaymentTestModeBanner() {
   const [devBypass, setDevBypass] = useState(false);
@@ -15,7 +15,7 @@ export function PaymentTestModeBanner() {
     window.dispatchEvent(new Event("dev_bypass_changed"));
   };
 
-  if (getPaddleEnvironment() !== "sandbox") return null;
+  if (getStripeEnvironment() !== "sandbox") return null;
   return (
     <div className="w-full bg-orange-100 border-b border-orange-300 px-4 py-2 flex items-center justify-between text-sm text-orange-800">
       <div className="flex-1 text-center">
