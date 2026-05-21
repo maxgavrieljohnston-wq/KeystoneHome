@@ -13,7 +13,7 @@ import {
   updatePlanMeta,
   togglePlanShare,
 } from "@/lib/plans.functions";
-import { getReminderPrefs, setReminderPrefs } from "@/lib/reminders.functions";
+
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { getStripeEnvironment } from "@/lib/stripe";
