@@ -253,7 +253,7 @@ function DashboardNav({ isPlus, isPro, onSignOut }: { isPlus: boolean; isPro: bo
       </Link>
       <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
         <Link to="/coach" style={link(isPro)}>Coach</Link>
-        <Link to="/compare" style={link(isPro)}>Compare</Link>
+        
         <Link to="/rate-alerts" style={link(isPro)}>Rates</Link>
         <Link to="/stress-test" style={link(isPro)}>Stress</Link>
         <Link to="/accounts" style={link(isPlus)}>Accounts</Link>
