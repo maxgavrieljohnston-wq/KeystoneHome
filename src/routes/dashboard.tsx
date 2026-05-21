@@ -650,26 +650,28 @@ function PlansList({
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={onNewPlan}
-        style={{
-          display: "inline-block",
-          padding: "12px 22px",
-          background: C.ink,
-          color: C.paper,
-          textDecoration: "none",
-          border: "none",
-          borderRadius: 8,
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 12,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          cursor: "pointer",
-        }}
-      >
-        + Build new plan
-      </button>
+      {!hideNewPlanButton && (
+        <button
+          type="button"
+          onClick={onNewPlan}
+          style={{
+            display: "inline-block",
+            padding: "12px 22px",
+            background: C.ink,
+            color: C.paper,
+            textDecoration: "none",
+            border: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
+        >
+          + Build new plan
+        </button>
+      )}
     </>
   );
 }
