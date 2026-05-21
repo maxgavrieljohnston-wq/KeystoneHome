@@ -69,7 +69,72 @@ export function computeGoalProgress(
       const months = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.4375)));
       monthsToGoal = months;
       requiredMonthly = months > 0 ? Math.ceil(remaining / months) : remaining > 0 ? remaining : 0;
+}
+
+/**
+ * Time to reach a cash-to-close goal:
+ *  - monthsSaveOnly: months at the stated monthly contribution with NO return.
+ *  - monthsInvested: months investing at annualReturnRate (compounded monthly).
+ *  - timeSavedMonths: difference (positive = investing is faster).
+ * Returns nulls when the inputs make the calculation meaningless.
+ */
+export function computeTimeToGoal(args: {
+  cashToClose: number;
+  currentSavings: number;
+  monthlySavings: number;
+  annualReturnRate: number;
+}): {
+  monthsSaveOnly: number | null;
+  monthsInvested: number | null;
+  timeSavedMonths: number | null;
+} {
+  const { cashToClose, currentSavings, monthlySavings, annualReturnRate } = args;
+  if (!isFinite(cashToClose) || cashToClose <= 0) {
+    return { monthsSaveOnly: null, monthsInvested: null, timeSavedMonths: null };
+  }
+  if (currentSavings >= cashToClose) {
+    return { monthsSaveOnly: 0, monthsInvested: 0, timeSavedMonths: 0 };
+  }
+  if (monthlySavings <= 0) {
+    return { monthsSaveOnly: null, monthsInvested: null, timeSavedMonths: null };
+  }
+  const remaining = cashToClose - currentSavings;
+  const monthsSaveOnly = Math.ceil(remaining / monthlySavings);
+
+  // FV(n) = currentSavings*(1+r)^n + monthlySavings * ((1+r)^n - 1)/r
+  const r = annualReturnRate / 12;
+  let monthsInvested: number;
+  if (r <= 0) {
+    monthsInvested = monthsSaveOnly;
+  } else {
+    // Closed form: solve for n such that FV(n) = cashToClose.
+    // currentSavings*g + monthlySavings*(g-1)/r = cashToClose, where g = (1+r)^n
+    // => g (currentSavings + monthlySavings/r) = cashToClose + monthlySavings/r
+    // => g = (cashToClose + m/r) / (currentSavings + m/r)
+    const num = cashToClose + monthlySavings / r;
+    const den = currentSavings + monthlySavings / r;
+    if (den <= 0 || num <= 0) {
+      monthsInvested = monthsSaveOnly;
+    } else {
+      const g = num / den;
+      monthsInvested = Math.max(0, Math.ceil(Math.log(g) / Math.log(1 + r)));
     }
+  }
+  return {
+    monthsSaveOnly,
+    monthsInvested,
+    timeSavedMonths: monthsSaveOnly - monthsInvested,
+  };
+}
+
+export function formatMonths(m: number | null | undefined): string {
+  if (m == null || !isFinite(m)) return "—";
+  if (m <= 0) return "0 mo";
+  const yrs = Math.floor(m / 12);
+  const mo = m % 12;
+  if (yrs === 0) return `${mo} mo`;
+  if (mo === 0) return `${yrs} yr`;
+  return `${yrs} yr ${mo} mo`;
   }
 
   const statedMonthly = m.monthlySavings;
