@@ -16,7 +16,7 @@ import {
 import { getReminderPrefs, setReminderPrefs } from "@/lib/reminders.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
@@ -675,7 +675,7 @@ function PlanCard({ plan, suggestions = [] }: { plan: PlanRow; suggestions?: str
     plan.current_savings != null ? String(plan.current_savings) : "",
   );
 
-  const env = getPaddleEnvironment();
+  const env = getStripeEnvironment();
   const tags = plan.tags ?? [];
 
   const renameM = useMutation({

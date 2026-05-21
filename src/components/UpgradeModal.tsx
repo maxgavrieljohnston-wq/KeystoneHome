@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
 import { trackUpgradeEvent } from "@/lib/upgrade-tracking";
 
@@ -84,7 +84,7 @@ export function UpgradeModal({
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const { openCheckout, loading } = usePaddleCheckout();
+  const { openCheckout, loading, checkoutElement } = useStripeCheckout();
 
   useEffect(() => {
     if (!open) return;
@@ -445,6 +445,7 @@ export function UpgradeModal({
           Cancel anytime · Secure checkout · Instant access
         </p>
       </div>
+      {checkoutElement}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { useAuthReady } from "@/hooks/useAuthReady";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import {
   getCoachMessages,
   sendCoachMessage,
@@ -221,7 +221,7 @@ function CoachPage() {
       const stream = await sendMsg({
         data: {
           content,
-          environment: getPaddleEnvironment(),
+          environment: getStripeEnvironment(),
           planId: activePlanId,
         },
       });

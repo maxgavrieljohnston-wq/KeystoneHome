@@ -4,7 +4,7 @@ import { upsertLead } from "@/lib/leads.functions";
 import { getMyPlan } from "@/lib/account.functions";
 import { submitPlan } from "@/lib/plans.functions";
 import { deriveAssumptions } from "@/lib/plan-assumptions";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 import { HOMEOWNERSHIP_FACTS } from "@/lib/homeownership-facts";
 import { getMyPlans } from "@/lib/plans.functions";
@@ -3266,7 +3266,7 @@ function Report({ d }: { d: Data }) {
         lastName: d.lastName.trim() || undefined,
         phone: d.phone.trim() || undefined,
         answers: d as unknown as Record<string, unknown>,
-        environment: getPaddleEnvironment(),
+        environment: getStripeEnvironment(),
       },
     })
       .then((res) => {

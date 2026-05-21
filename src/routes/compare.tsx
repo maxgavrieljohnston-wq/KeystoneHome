@@ -8,7 +8,7 @@ import { getComparePlans } from "@/lib/compare.functions";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { useAuthReady } from "@/hooks/useAuthReady";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { computePlanMetrics, type PlanMetrics } from "@/lib/plan-metrics";
 
 export const Route = createFileRoute("/compare")({
@@ -59,7 +59,7 @@ function ComparePage() {
 
   const compareQ = useQuery({
     queryKey: ["compare", auth.user?.id, selected],
-    queryFn: () => fetchCompare({ data: { planIds: selected, environment: getPaddleEnvironment() } }),
+    queryFn: () => fetchCompare({ data: { planIds: selected, environment: getStripeEnvironment() } }),
     enabled: auth.ready && !!auth.user && !proLocked && selected.length >= 2,
   });
 

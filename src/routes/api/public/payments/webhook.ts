@@ -1,204 +1,146 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { createClient } from '@supabase/supabase-js';
-import { verifyWebhook, EventName, type PaddleEnv } from '@/lib/paddle.server';
+import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
+import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase) {
-    _supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    _supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
   }
   return _supabase;
 }
 
-async function resolveUserId(data: any): Promise<string | null> {
-  // 1. Preferred: customData.userId set at checkout when the user was logged in.
-  const fromCustom = data.customData?.userId;
-  if (fromCustom) return fromCustom as string;
-
-  // 2. Fallback: look up an existing auth user by the Paddle customer's email.
-  //    Covers plan-first purchases where the buyer pays before creating an account.
-  try {
-    const customerId = data.customerId;
-    if (!customerId) return null;
-    const sb = getSupabase() as any;
-    // Hit Paddle via the existing service role to fetch the customer email.
-    // (Avoid pulling in paddle-node-sdk here — keep webhook lean.)
-    return null;
-  } catch {
-    return null;
-  }
+function tierFromPriceId(priceId: string | null | undefined): "plus" | "pro" {
+  return priceId?.startsWith("pro_") ? "pro" : "plus";
 }
 
 async function logCheckoutSuccess(
   userId: string,
-  data: any,
-  tier: 'plus' | 'pro',
+  source: string | undefined,
+  tier: "plus" | "pro",
+  stripeId: string,
 ) {
-  const source = data.customData?.source as string | undefined;
   if (!source) return;
   try {
-    await (getSupabase() as any).from('upgrade_events').insert({
-      event_type: 'checkout_success',
+    await (getSupabase() as any).from("upgrade_events").insert({
+      event_type: "checkout_success",
       source,
       tier,
       user_id: userId,
-      metadata: { paddle_id: data.id },
+      metadata: { stripe_id: stripeId },
     });
   } catch (err) {
-    console.warn('[webhook] failed to log upgrade attribution', err);
+    console.warn("[webhook] failed to log upgrade attribution", err);
   }
 }
 
-async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
-  const { id, customerId, items, status, currentBillingPeriod } = data;
-  const userId = await resolveUserId(data);
+async function handleSubscriptionCreated(subscription: any, env: StripeEnv) {
+  const userId = subscription.metadata?.userId;
   if (!userId) {
-    console.error('[webhook] subscription.created with no resolvable userId', {
-      customerId, subId: id,
-    });
+    console.error("[webhook] subscription.created with no userId in metadata");
     return;
   }
-  const item = items[0];
-  const priceId = item.price.importMeta?.externalId;
-  const productId = item.product.importMeta?.externalId;
-  if (!priceId || !productId) {
-    console.warn('Skipping subscription: missing importMeta.externalId', {
-      rawPriceId: item.price.id,
-      rawProductId: item.product.id,
-    });
-    return;
-  }
-  const attributionSource = (data.customData?.source as string | undefined) ?? null;
-  await (getSupabase() as any).from('subscriptions').upsert(
+
+  const item = subscription.items?.data?.[0];
+  const priceId = item?.price?.lookup_key
+    || item?.price?.metadata?.lovable_external_id
+    || item?.price?.id;
+  const productId = item?.price?.product;
+  const periodStart = item?.current_period_start ?? subscription.current_period_start;
+  const periodEnd = item?.current_period_end ?? subscription.current_period_end;
+  const source = (subscription.metadata?.source as string | undefined) ?? null;
+
+  await (getSupabase() as any).from("subscriptions").upsert(
     {
       user_id: userId,
-      paddle_subscription_id: id,
-      paddle_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      stripe_customer_id: subscription.customer,
       product_id: productId,
       price_id: priceId,
-      status,
-      current_period_start: currentBillingPeriod?.startsAt,
-      current_period_end: currentBillingPeriod?.endsAt,
+      status: subscription.status,
+      current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
       environment: env,
-      attribution_source: attributionSource,
+      attribution_source: source,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'paddle_subscription_id' },
+    { onConflict: "stripe_subscription_id" },
   );
 
-  const tier: 'plus' | 'pro' =
-    priceId.startsWith('pro_') || productId === 'pro_plan' ? 'pro' : 'plus';
-  await logCheckoutSuccess(userId, data, tier);
+  await logCheckoutSuccess(userId, source || undefined, tierFromPriceId(priceId), subscription.id);
 }
 
-async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
-  const { id, status, currentBillingPeriod, scheduledChange, items } = data;
-  const item = items?.[0];
-  const priceId = item?.price?.importMeta?.externalId;
-  const productId = item?.product?.importMeta?.externalId;
-  const update: Record<string, unknown> = {
-    status,
-    current_period_start: currentBillingPeriod?.startsAt,
-    current_period_end: currentBillingPeriod?.endsAt,
-    cancel_at_period_end: scheduledChange?.action === 'cancel',
-    updated_at: new Date().toISOString(),
-  };
-  if (priceId) update.price_id = priceId;
-  if (productId) update.product_id = productId;
-  await (getSupabase() as any).from('subscriptions').update(update)
-    .eq('paddle_subscription_id', id).eq('environment', env);
-}
+async function handleSubscriptionUpdated(subscription: any, env: StripeEnv) {
+  const item = subscription.items?.data?.[0];
+  const priceId = item?.price?.lookup_key
+    || item?.price?.metadata?.lovable_external_id
+    || item?.price?.id;
+  const productId = item?.price?.product;
+  const periodStart = item?.current_period_start ?? subscription.current_period_start;
+  const periodEnd = item?.current_period_end ?? subscription.current_period_end;
 
-async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
-  await (getSupabase() as any).from('subscriptions').update({
-    status: 'canceled',
-    updated_at: new Date().toISOString(),
-  }).eq('paddle_subscription_id', data.id).eq('environment', env);
-}
-
-async function handleTransactionCompleted(data: any, env: PaddleEnv) {
-  // For one-time purchases (no subscriptionId), upsert a lifetime row.
-  // Recurring transactions also fire this event but already get rows from
-  // subscription.created — skip them here.
-  if (data.subscriptionId) return;
-
-  const userId = await resolveUserId(data);
-  if (!userId) {
-    console.error('[webhook] transaction.completed with no resolvable userId', {
-      txId: data.id,
-    });
-    return;
-  }
-  const item = data.items?.[0];
-  const priceExtId = item?.price?.importMeta?.externalId;
-  // Transaction events don't include the product object. Map known one-time
-  // price IDs to their product IDs explicitly.
-  const ONE_TIME_PRODUCTS: Record<string, string> = {
-    plus_lifetime: 'plus_plan',
-  };
-  const productExtId = priceExtId ? ONE_TIME_PRODUCTS[priceExtId] : undefined;
-  if (!priceExtId || !productExtId) {
-    console.warn('[webhook] transaction.completed: unknown one-time price', {
-      priceExtId, rawPriceId: item?.price?.id,
-    });
-    return;
-  }
-  const attributionSource = (data.customData?.source as string | undefined) ?? null;
-  await (getSupabase() as any).from('subscriptions').upsert(
-    {
-      user_id: userId,
-      paddle_subscription_id: `txn_${data.id}`,
-      paddle_customer_id: data.customerId,
-      product_id: productExtId,
-      price_id: priceExtId,
-      status: 'active',
-      current_period_start: new Date().toISOString(),
-      current_period_end: null, // null = never expires (lifetime)
-      cancel_at_period_end: false,
-      environment: env,
-      attribution_source: attributionSource,
+  await (getSupabase() as any)
+    .from("subscriptions")
+    .update({
+      status: subscription.status,
+      product_id: productId,
+      price_id: priceId,
+      current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+      current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'paddle_subscription_id' },
-  );
-
-  const tier: 'plus' | 'pro' =
-    priceExtId.startsWith('pro_') || productExtId === 'pro_plan' ? 'pro' : 'plus';
-  await logCheckoutSuccess(userId, data, tier);
+    })
+    .eq("stripe_subscription_id", subscription.id)
+    .eq("environment", env);
 }
 
-async function handleWebhook(req: Request, env: PaddleEnv) {
+async function handleSubscriptionDeleted(subscription: any, env: StripeEnv) {
+  await (getSupabase() as any)
+    .from("subscriptions")
+    .update({
+      status: "canceled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("stripe_subscription_id", subscription.id)
+    .eq("environment", env);
+}
+
+async function handleWebhook(req: Request, env: StripeEnv) {
   const event = await verifyWebhook(req, env);
-  switch (event.eventType) {
-    case EventName.SubscriptionCreated:
-      await handleSubscriptionCreated(event.data, env);
+  switch (event.type) {
+    case "customer.subscription.created":
+      await handleSubscriptionCreated(event.data.object, env);
       break;
-    case EventName.SubscriptionUpdated:
-      await handleSubscriptionUpdated(event.data, env);
+    case "customer.subscription.updated":
+      await handleSubscriptionUpdated(event.data.object, env);
       break;
-    case EventName.SubscriptionCanceled:
-      await handleSubscriptionCanceled(event.data, env);
-      break;
-    case EventName.TransactionCompleted:
-      await handleTransactionCompleted(event.data, env);
+    case "customer.subscription.deleted":
+      await handleSubscriptionDeleted(event.data.object, env);
       break;
     default:
-      console.log('Unhandled event:', event.eventType);
+      console.log("Unhandled event:", event.type);
   }
 }
 
-export const Route = createFileRoute('/api/public/payments/webhook')({
+export const Route = createFileRoute("/api/public/payments/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const url = new URL(request.url);
-        const env = (url.searchParams.get('env') || 'sandbox') as PaddleEnv;
+        const rawEnv = new URL(request.url).searchParams.get("env");
+        if (rawEnv !== "sandbox" && rawEnv !== "live") {
+          console.error("[webhook] invalid env param:", rawEnv);
+          return Response.json({ received: true, ignored: "invalid env" });
+        }
         try {
-          await handleWebhook(request, env);
+          await handleWebhook(request, rawEnv);
           return Response.json({ received: true });
         } catch (e) {
-          console.error('Webhook error:', e);
-          return new Response('Webhook error', { status: 400 });
+          console.error("Webhook error:", e);
+          return new Response("Webhook error", { status: 400 });
         }
       },
     },
