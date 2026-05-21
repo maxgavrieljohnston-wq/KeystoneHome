@@ -1,74 +1,60 @@
 
-## 1) Remove the Compare feature entirely
+## 1) Expand the "Your numbers" panel (Plus/Pro)
 
-Compare is unused by your new dashboard direction and adds maintenance. Full removal:
+Today `EditablePlanPanel` exposes only 3 fields. Replace it with a full editable view of every input the wizard collected that materially drives the math, pre-populated from the saved plan's `answers` / `current_savings`. Each field debounce-autosaves through the existing `updatePlanMeta` server fn (extending `answersPatch` to accept the additional keys — no schema change, all live in the `answers` JSONB).
 
-- Delete `src/routes/compare.tsx` (the page) and `src/lib/compare.functions.ts` (the server fn). The router plugin will regenerate `routeTree.gen.ts` automatically.
-- Remove the `<Link to="/compare">Compare</Link>` entry from `DashboardNav` in `src/routes/dashboard.tsx` (line 256).
-- Search-and-remove any other `/compare` references (currently only `dashboard.tsx`, `UpgradeModal.tsx`, and `tier-features.ts`):
-  - `src/lib/tier-features.ts` — drop the "Scenario compare" Pro feature entry so it no longer appears in `UnlockedFeaturesGrid` / `PremiumPanel`.
-  - `src/components/UpgradeModal.tsx` — drop any compare-related bullet/label.
+Fields, grouped:
 
-No DB or migration changes — `plans` already supports everything else.
+- **Home target** — Target home price, ZIP, Home style, Beds, Baths, Down payment goal %
+- **Your finances** — Annual income, Monthly debt payments, Credit score, Current savings, Monthly contribution
+- **Partner finances** (only if `hasPartner === true`) — Partner annual income, Partner monthly debt, Partner credit score
+- **Timeline** — Target timeline (years)
 
-## 2) Replace "Build new plan" with a live-editable plan on the dashboard
+Numeric inputs match the existing `Field` component; the few enums (Home style, Credit bracket) become small `<select>`s seeded from `HOME_STYLES` and the wizard's credit options. ZIP is a text input that revalidates against `getPriceByZip`.
 
-### What the user sees (Plus/Pro only)
+### New bottom metric — "Time saved by investing"
 
-In the left column of the paid dashboard, replace `PlansList` with a new **"Your numbers"** card on top of the existing plan card. It contains three editable inputs:
+Beneath the inputs, a single highlighted result row computed live from `computePlanMetrics`:
 
-- **Target home price** — currency input
-- **Current savings** — currency input
-- **Monthly contribution** — currency input
+```
+Time saved by investing ……… 1 yr 4 mo
+Saving alone: 5 yr 2 mo → Investing at 7%: 3 yr 10 mo
+```
 
-As the user types, every dependent number on the page updates immediately:
-- KPI strip in `PaidHero` (Target price, Cash to close, Saved / % of goal, Need / month)
-- `GoalTracker` progress bar inside the plan card
-- `InvestVsSavePanel`, `RecommendedAccountsPanel`, `AssumptionsPanel`, `RiskScenariosPanel` (all already read from `answers`/`assumptions`)
+Math (added as a small helper in `plan-metrics.ts`, no new state):
+- `monthsSaveOnly  = ceil((cashToClose - currentSavings) / monthlySavings)`
+- `monthsInvested  = solve for n such that FV(currentSavings, monthlySavings, r/12, n) = cashToClose` (closed-form using the existing `calcRequiredMonthly` inverse, or numeric bisection)
+- `timeSavedMonths = monthsSaveOnly - monthsInvested`
 
-Two controls live next to the inputs:
-- **Revert to original** — restores the snapshot captured when the dashboard first loaded (disabled when nothing changed).
-- A subtle "Saved" / "Saving…" status indicator.
-
-The standalone **"+ Build new plan"** button and the "1 of 1 free scenarios used" copy are removed for paid users. (Free users keep the existing flow unchanged — they only have 1 plan and still go through the wizard to create it.)
-
-### How it stays in sync everywhere
-
-Inputs are the source of truth in a local state object, debounced (~500ms) and autosaved through a single server fn. We persist them so PDF/CSV exports (which re-read the row server-side) always see the latest values.
-
-Storage mapping (no schema migration needed):
-
-| UI field | Stored as |
-|---|---|
-| Current savings | `plans.current_savings` (already exists, already used by metrics) |
-| Monthly contribution | `plans.answers.monthlySavings` (already read by `plan-metrics.ts`) |
-| Target home price | `plans.answers.targetPriceOverride` (new key inside the existing `answers` JSONB) |
-
-`computePlanMetrics` is updated so that when `answers.targetPriceOverride` is a positive number, it is used as `targetPrice` directly (bypassing the zip × style × lifestyle multiplier). Everything downstream (down payment, cash-to-close, PMI, monthly mortgage, invest-vs-save) already derives from `targetPrice`, so this single change propagates through the dashboard, PDF, and CSV without further edits.
-
-### Server-side changes (small, focused)
-
-In `src/lib/plans.functions.ts`:
-
-- Extend `updateMetaSchema` to accept an optional `answersPatch: { monthlySavings?: number; targetPriceOverride?: number | null }`. In the handler, when present, fetch the existing `answers` JSONB, shallow-merge the patch, and update.
-- Keep the existing `currentSavings` field — it already writes to `plans.current_savings`.
-
-No changes needed to `exportPlanPdf` / `exportPlanCsv` / `buildPlanPdfBytes`: they already re-read `answers` + `assumptions` + `current_savings` and call `computePlanMetrics`, which will now honor the override.
+Edge cases: when `monthlySavings <= 0` or `currentSavings >= cashToClose`, show "—" with helper copy ("Add a monthly contribution to see the boost").
 
 ### Revert behavior
 
-On dashboard mount, snapshot the first plan's `{ targetPrice (computed if no override), monthlySavings, currentSavings, targetPriceOverride }`. "Revert" writes the snapshot back via the same `updatePlanMeta` call, clearing `targetPriceOverride` to `null` so the computed price returns.
+Snapshot now captures every editable field on first mount; "Revert to original" restores all of them in one `updatePlanMeta` call.
+
+## 2) Fix the top KPI strip in `PaidHero`
+
+In `src/routes/dashboard.tsx` (lines 305–322), the "no goal" branch currently shows **Monthly income** + **Timeline**. Change to:
+
+- **Monthly savings** — `metrics.monthlySavings` (the user's chosen contribution, pre-investing). If 0, show "—".
+- **Timeline (saving only)** — months/years it would take to hit `cashToClose` at `monthlySavings` with **no** investment return, formatted like `4 yr 2 mo`. Uses the same `monthsSaveOnly` helper from §1.
+
+The "has goal" branch is unchanged.
+
+## 3) Remove the panel underneath
+
+In the paid layout (lines 184–192), delete the `<PlansList … hideNewPlanButton />` block so the left column is just `<EditablePlanPanel />`. Plan actions that lived there (PDF, CSV, share, rename, theme, delete) move into a compact action row at the bottom of `EditablePlanPanel` so paid users don't lose them — same handlers (`exportPlanPdf`, `exportPlanCsv`, `togglePlanShare`, `renamePlan`, `deletePlan`, `updatePlanMeta` for theme) already imported in `dashboard.tsx` get passed in or re-imported in the panel.
+
+`PlansList`, `hideNewPlanButton`, `handleNewPlan`, and `FREE_LIMIT` stay intact for the free-user branch.
 
 ## Technical notes
 
-- `PlansList` is only used in two spots in `dashboard.tsx` (paid hero column + free flow). For paid users we render the new `<EditablePlanPanel>` plus a slimmed `<PlanCard>` (still gives PDF/CSV/share/settings actions). Free users keep `PlansList` as-is.
-- New component file: `src/components/dashboard/EditablePlanPanel.tsx` — purely presentational + debounced mutation, uses `useMutation` against `updatePlanMeta`. Invalidates `["my-plans"]` on success so all dashboard panels re-render with fresh values.
-- `computePlanMetrics` change is one early branch:
-  ```ts
-  const overrideRaw = a.targetPriceOverride;
-  const override = typeof overrideRaw === "number" && overrideRaw > 0 ? overrideRaw : null;
-  const targetPrice = override ?? Math.round(zipData.avg * mult);
-  ```
-- No DB migration. `answers` is already `jsonb` and accepts arbitrary keys.
-- `handleNewPlan` and the `FREE_LIMIT` copy stay in the free-user branch only.
-- Files touched: `src/routes/dashboard.tsx`, `src/lib/plans.functions.ts`, `src/lib/plan-metrics.ts`, `src/lib/tier-features.ts`, `src/components/UpgradeModal.tsx`, new `src/components/dashboard/EditablePlanPanel.tsx`. Files deleted: `src/routes/compare.tsx`, `src/lib/compare.functions.ts`.
+- **Files touched:**
+  - `src/components/dashboard/EditablePlanPanel.tsx` — full rewrite of the form; add select inputs, partner section, timeline, and the time-saved result row; embed plan action buttons.
+  - `src/lib/plan-metrics.ts` — add `computeTimeToGoal({ cashToClose, currentSavings, monthlySavings, annualReturnRate })` returning `{ monthsSaveOnly, monthsInvested, timeSavedMonths }`. Pure function, no side effects.
+  - `src/lib/plans.functions.ts` — extend `updateMetaSchema.answersPatch` to accept the new keys: `timelineYears`, `downGoalPct`, `income`, `partnerIncome`, `debt`, `partnerDebt`, `credit`, `partnerCredit`, `zip`, `homeStyle`, `beds`, `baths`, `hasPartner`. When `zip` changes, also refresh `answers.zipData` via `getPriceByZip` so downstream metrics use the right metro.
+  - `src/routes/dashboard.tsx` — swap the "Monthly income / Timeline" KPIs for "Monthly savings / Timeline (saving only)"; delete the second `<PlansList>` in the paid left column.
+
+- **No DB migration.** All new fields already live in the `answers` JSONB.
+- **No change to `exportPlanPdf` / `exportPlanCsv`.** They already re-read `answers` + `assumptions` + `current_savings`.
+- The wizard's free flow is untouched — free users still see the old `PlansList` and `+ Build new plan` button.
