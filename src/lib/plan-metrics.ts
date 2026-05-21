@@ -69,6 +69,24 @@ export function computeGoalProgress(
       const months = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.4375)));
       monthsToGoal = months;
       requiredMonthly = months > 0 ? Math.ceil(remaining / months) : remaining > 0 ? remaining : 0;
+    }
+  }
+
+  const statedMonthly = m.monthlySavings;
+  const paceDeltaMonthly =
+    requiredMonthly != null && statedMonthly > 0
+      ? statedMonthly - requiredMonthly
+      : null;
+
+  return {
+    hasGoal: !!targetMoveIn || (currentSavings != null && currentSavings > 0),
+    pctToGoal,
+    remaining,
+    monthsToGoal,
+    requiredMonthly,
+    statedMonthly,
+    paceDeltaMonthly,
+  };
 }
 
 /**
@@ -101,16 +119,12 @@ export function computeTimeToGoal(args: {
   const remaining = cashToClose - currentSavings;
   const monthsSaveOnly = Math.ceil(remaining / monthlySavings);
 
-  // FV(n) = currentSavings*(1+r)^n + monthlySavings * ((1+r)^n - 1)/r
   const r = annualReturnRate / 12;
   let monthsInvested: number;
   if (r <= 0) {
     monthsInvested = monthsSaveOnly;
   } else {
-    // Closed form: solve for n such that FV(n) = cashToClose.
-    // currentSavings*g + monthlySavings*(g-1)/r = cashToClose, where g = (1+r)^n
-    // => g (currentSavings + monthlySavings/r) = cashToClose + monthlySavings/r
-    // => g = (cashToClose + m/r) / (currentSavings + m/r)
+    // Solve currentSavings*g + monthlySavings*(g-1)/r = cashToClose, g=(1+r)^n
     const num = cashToClose + monthlySavings / r;
     const den = currentSavings + monthlySavings / r;
     if (den <= 0 || num <= 0) {
@@ -135,23 +149,6 @@ export function formatMonths(m: number | null | undefined): string {
   if (yrs === 0) return `${mo} mo`;
   if (mo === 0) return `${yrs} yr`;
   return `${yrs} yr ${mo} mo`;
-  }
-
-  const statedMonthly = m.monthlySavings;
-  const paceDeltaMonthly =
-    requiredMonthly != null && statedMonthly > 0
-      ? statedMonthly - requiredMonthly
-      : null;
-
-  return {
-    hasGoal: !!targetMoveIn || (currentSavings != null && currentSavings > 0),
-    pctToGoal,
-    remaining,
-    monthsToGoal,
-    requiredMonthly,
-    statedMonthly,
-    paceDeltaMonthly,
-  };
 }
 
 export function computePlanMetrics(
