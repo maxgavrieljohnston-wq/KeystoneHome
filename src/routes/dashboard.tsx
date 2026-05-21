@@ -13,7 +13,7 @@ import {
   updatePlanMeta,
   togglePlanShare,
 } from "@/lib/plans.functions";
-import { getReminderPrefs, setReminderPrefs } from "@/lib/reminders.functions";
+
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { getStripeEnvironment } from "@/lib/stripe";
@@ -181,7 +181,6 @@ function DashboardPage() {
             `}</style>
             <div className="ks-dash-grid" style={{ display: "grid", gap: 28, gridTemplateColumns: "minmax(0, 1fr)", alignItems: "start" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <RemindersToggle hasPlans={plans.length > 0} />
                 <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
               </div>
               <div id="premium-features" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -198,8 +197,7 @@ function DashboardPage() {
           </div>
         ) : (
           <>
-            <RemindersToggle hasPlans={plans.length > 0} />
-            <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
+          <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} />
             <div id="premium-features">
               {plans.length > 0 && (
                 <InvestmentSection
@@ -596,89 +594,6 @@ function TierBanner({
   );
 }
 
-function RemindersToggle({ hasPlans }: { hasPlans: boolean }) {
-  const sub = useSubscription();
-  const gate = useUpgradeGate();
-  const qc = useQueryClient();
-  const fetchPrefs = useServerFn(getReminderPrefs);
-  const updatePrefs = useServerFn(setReminderPrefs);
-
-  const { data: prefs } = useQuery({
-    queryKey: ["reminder-prefs"],
-    queryFn: () => fetchPrefs(),
-    enabled: sub.isPlus,
-  });
-
-  const toggleM = useMutation({
-    mutationFn: (enabled: boolean) => updatePrefs({ data: { enabled } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["reminder-prefs"] }),
-  });
-
-  const enabled = Boolean(prefs?.enabled);
-
-  const onClick = () => {
-    if (!sub.isPlus) {
-      gate.openUpgrade("plus", "Email reminders");
-      return;
-    }
-    toggleM.mutate(!enabled);
-  };
-
-  if (!hasPlans) return null;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "12px 14px",
-        border: `1px solid ${C.ink}`,
-        borderRadius: 8,
-        marginBottom: 14,
-        background: enabled ? C.ink : "transparent",
-        color: enabled ? C.paper : C.ink,
-      }}
-    >
-      <div>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: enabled ? C.inkFaint : C.ember, marginBottom: 4 }}>
-          Monthly check-in{sub.isPlus ? "" : " · Plus"}
-        </div>
-        <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 16 }}>
-          {enabled ? "On — we'll email you a digest each month." : "Get a monthly recap of your plans by email."}
-        </div>
-        {enabled && (prefs?.lastAt || prefs?.nextAt) && (
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: enabled ? C.inkFaint : C.ember, marginTop: 6, opacity: 0.85 }}>
-            {prefs?.lastAt ? `Last sent ${new Date(prefs.lastAt).toLocaleDateString()}` : "No sends yet"}
-            {prefs?.nextAt ? ` · Next ${new Date(prefs.nextAt).toLocaleDateString()}` : ""}
-          </div>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={toggleM.isPending}
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-          padding: "8px 14px",
-          borderRadius: 6,
-          border: `1px solid ${enabled ? C.paper : C.ink}`,
-          background: enabled ? C.paper : "transparent",
-          color: C.ink,
-          cursor: toggleM.isPending ? "default" : "pointer",
-          opacity: toggleM.isPending ? 0.5 : 1,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {toggleM.isPending ? "…" : enabled ? "Turn off" : "Turn on"}
-      </button>
-    </div>
-  );
-}
 
 function PlansList({
   plans,
