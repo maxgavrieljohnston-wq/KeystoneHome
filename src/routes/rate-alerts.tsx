@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { useAuthReady } from "@/hooks/useAuthReady";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import {
   getRateAlert,
   upsertRateAlert,
@@ -81,7 +81,7 @@ function RateAlertsPage() {
       emailNotifications: boolean;
     }) =>
       saveAlert({
-        data: { ...vars, environment: getPaddleEnvironment() },
+        data: { ...vars, environment: getStripeEnvironment() },
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rate-alert"] }),
   });

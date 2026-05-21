@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
 
 const SITE_NAME = "Keystone";
@@ -179,7 +179,7 @@ export const Route = createFileRoute("/api/public/reminders/dispatch")({
           });
         }
 
-        const env = getPaddleEnvironment();
+        const env = getStripeEnvironment();
         const now = new Date().toISOString();
 
         // Find profiles with reminders due

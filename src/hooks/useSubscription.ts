@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
 const PLUS_PRICES = new Set(["plus_lifetime", "plus_monthly", "plus_yearly"]);
@@ -34,7 +34,7 @@ export function useSubscription(): SubscriptionState {
     return () => window.removeEventListener("dev_bypass_changed", checkBypass);
   }, []);
 
-  const env = getPaddleEnvironment();
+  const env = getStripeEnvironment();
   const userId = user?.id ?? null;
 
   const fetchSub = async () => {
