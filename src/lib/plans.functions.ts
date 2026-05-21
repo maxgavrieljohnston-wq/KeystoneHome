@@ -289,6 +289,19 @@ const updateMetaSchema = z.object({
   answersPatch: z.object({
     monthlySavings: z.number().min(0).max(1e7).optional(),
     targetPriceOverride: z.number().min(0).max(1e9).nullable().optional(),
+    timelineYears: z.number().min(0).max(50).optional(),
+    downGoalPct: z.number().min(0).max(100).nullable().optional(),
+    income: z.number().min(0).max(1e8).optional(),
+    partnerIncome: z.number().min(0).max(1e8).optional(),
+    debt: z.number().min(0).max(1e7).optional(),
+    partnerDebt: z.number().min(0).max(1e7).optional(),
+    credit: z.number().min(300).max(850).nullable().optional(),
+    partnerCredit: z.number().min(300).max(850).nullable().optional(),
+    zip: z.string().max(10).optional(),
+    homeStyle: z.string().max(40).nullable().optional(),
+    beds: z.number().min(0).max(20).optional(),
+    baths: z.number().min(0).max(20).optional(),
+    hasPartner: z.boolean().optional(),
   }).strict().optional(),
   environment: z.enum(["sandbox", "live"]).default("live"),
 });
@@ -323,6 +336,11 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
       for (const [k, v] of Object.entries(data.answersPatch)) {
         if (v === null) delete merged[k];
         else if (v !== undefined) merged[k] = v;
+      }
+      // If zip changed, refresh zipData so downstream metrics use the right metro.
+      if (typeof data.answersPatch.zip === "string" && data.answersPatch.zip.length >= 3) {
+        const { getPriceByZip } = await import("@/lib/keystone");
+        merged.zipData = getPriceByZip(data.answersPatch.zip);
       }
       patch.answers = merged;
     }

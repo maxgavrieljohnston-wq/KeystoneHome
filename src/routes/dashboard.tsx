@@ -25,7 +25,7 @@ import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { generateInvestmentPlanPdf } from "@/lib/investment-pdf.functions";
 import { EditablePlanPanel } from "@/components/dashboard/EditablePlanPanel";
-import { computePlanMetrics, computeGoalProgress } from "@/lib/plan-metrics";
+import { computePlanMetrics, computeGoalProgress, computeTimeToGoal, formatMonths } from "@/lib/plan-metrics";
 import { PLAN_THEMES, THEME_IDS, getPlanTheme, type PlanThemeId } from "@/lib/plan-themes";
 
 export const Route = createFileRoute("/dashboard")({
@@ -184,11 +184,13 @@ function DashboardPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 <EditablePlanPanel
                   planId={plans[0].id}
+                  planTitle={plans[0].title}
+                  shareSlug={plans[0].share_slug}
+                  shareEnabled={plans[0].share_enabled}
                   answers={plans[0].answers}
                   assumptions={plans[0].assumptions}
                   currentSavings={plans[0].current_savings}
                 />
-                <PlansList plans={plans} isPlus={sub.isPlus} onNewPlan={handleNewPlan} hideNewPlanButton />
               </div>
               <div id="premium-features" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <InvestmentSection
@@ -316,8 +318,21 @@ function PaidHero({
         kpis.push({ k: "Need / month", v: `${fmt(goal.requiredMonthly)}` });
       }
     } else {
-      kpis.push({ k: "Monthly income", v: fmt(metrics.monthlyIncome) });
-      kpis.push({ k: "Timeline", v: `${metrics.timelineYears} yr` });
+      const monthlySavings = metrics.monthlySavings;
+      kpis.push({
+        k: "Monthly savings",
+        v: monthlySavings > 0 ? fmt(monthlySavings) : "—",
+      });
+      const ttg = computeTimeToGoal({
+        cashToClose: metrics.cashToClose,
+        currentSavings: firstPlan?.current_savings ?? 0,
+        monthlySavings,
+        annualReturnRate: 0, // saving-only: no investment growth
+      });
+      kpis.push({
+        k: "Timeline (saving only)",
+        v: ttg.monthsSaveOnly != null ? formatMonths(ttg.monthsSaveOnly) : "—",
+      });
     }
   }
 
