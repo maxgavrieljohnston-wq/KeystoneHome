@@ -1480,10 +1480,12 @@ function Welcome({ onStart }: { onStart: () => void }) {
       : monthlyContribution > 0
         ? Math.ceil(remainingToGoal / monthlyContribution)
         : Infinity;
-  // Use a stable "now" computed once per render. To avoid SSR/CSR hydration
-  // mismatch we derive the month label deterministically from a date that
-  // only changes once per month (anchored to UTC, day 1).
+  // Defer the date label to after mount so SSR and CSR markup match
+  // (otherwise `new Date()` can differ across month boundaries).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const targetDateLabel = useMemo(() => {
+    if (!mounted) return "—";
     if (remainingToGoal === 0) return "Today";
     if (!isFinite(monthsRemaining)) return "—";
     const now = new Date();
@@ -1493,7 +1495,8 @@ function Welcome({ onStart }: { onStart: () => void }) {
       year: "numeric",
       timeZone: "UTC",
     });
-  }, [remainingToGoal, monthsRemaining]);
+  }, [mounted, remainingToGoal, monthsRemaining]);
+
   const bumpMonthsSaved = (() => {
     if (remainingToGoal === 0 || !isFinite(monthsRemaining)) return 0;
     const bumped = Math.ceil(remainingToGoal / (monthlyContribution + 250));
