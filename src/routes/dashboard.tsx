@@ -606,10 +606,12 @@ function PlansList({
   plans,
   isPlus,
   onNewPlan,
+  hideNewPlanButton = false,
 }: {
   plans: PlanRow[];
   isPlus: boolean;
   onNewPlan: () => void;
+  hideNewPlanButton?: boolean;
 }) {
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const allTags = Array.from(new Set(plans.flatMap((p) => p.tags ?? []))).sort();
