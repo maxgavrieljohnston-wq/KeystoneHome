@@ -286,6 +286,10 @@ const updateMetaSchema = z.object({
   targetMoveIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   currentSavings: z.number().min(0).max(1e9).nullable().optional(),
   assumptions: assumptionsSchema.optional(),
+  answersPatch: z.object({
+    monthlySavings: z.number().min(0).max(1e7).optional(),
+    targetPriceOverride: z.number().min(0).max(1e9).nullable().optional(),
+  }).strict().optional(),
   environment: z.enum(["sandbox", "live"]).default("live"),
 });
 
