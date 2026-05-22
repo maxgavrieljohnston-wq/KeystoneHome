@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   updatePlanMeta,
   exportPlanPdf,
-  exportPlanCsv,
   togglePlanShare,
   renamePlan,
   deletePlan,
@@ -103,7 +102,6 @@ export function EditablePlanPanel({
   const qc = useQueryClient();
   const updateFn = useServerFn(updatePlanMeta);
   const pdfFn = useServerFn(exportPlanPdf);
-  const csvFn = useServerFn(exportPlanCsv);
   const shareFn = useServerFn(togglePlanShare);
   const renameFn = useServerFn(renamePlan);
   const deleteFn = useServerFn(deletePlan);
@@ -333,7 +331,7 @@ export function EditablePlanPanel({
   };
 
   // ── Plan actions ──────────────────────────────────────────────────────
-  const [busy, setBusy] = useState<null | "pdf" | "csv" | "share" | "rename" | "delete">(null);
+  const [busy, setBusy] = useState<null | "pdf" | "share" | "rename" | "delete">(null);
   const [showShare, setShowShare] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(planTitle ?? "");
@@ -346,24 +344,6 @@ export function EditablePlanPanel({
     } catch (e) {
       console.error(e);
       alert("Couldn't export PDF.");
-    } finally {
-      setBusy(null);
-    }
-  };
-  const handleCsv = async () => {
-    setBusy("csv");
-    try {
-      const res = await csvFn({ data: { planId, environment: env } });
-      const blob = new Blob([res.csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Couldn't export CSV.");
     } finally {
       setBusy(null);
     }
@@ -638,7 +618,7 @@ export function EditablePlanPanel({
         }}
       >
         <div style={{ fontSize: 12, color: C.inkMute, lineHeight: 1.4 }}>
-          Changes flow into your projections and any PDF/CSV you download.
+          Changes flow into your projections and any PDF you download.
         </div>
         <button
           type="button"
@@ -675,9 +655,6 @@ export function EditablePlanPanel({
       >
         <ActionBtn onClick={handlePdf} disabled={busy === "pdf"}>
           {busy === "pdf" ? "…" : "Download PDF"}
-        </ActionBtn>
-        <ActionBtn onClick={handleCsv} disabled={busy === "csv"}>
-          {busy === "csv" ? "…" : "Download CSV"}
         </ActionBtn>
         <ActionBtn onClick={handleShare}>
           {shareEnabled ? "Manage share" : "Share link"}

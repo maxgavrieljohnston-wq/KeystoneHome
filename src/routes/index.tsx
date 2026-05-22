@@ -3340,7 +3340,7 @@ function LimitReachedGate({ used, limit }: { used: number | null; limit: number 
         You've used {used ?? limit} of your {limit ?? 1} free scenario{(limit ?? 1) === 1 ? "" : "s"}.
       </h1>
       <p style={{ fontSize: 17, lineHeight: 1.5, color: "#3d3d3d", margin: "0 0 28px" }}>
-        Upgrade to save unlimited scenarios — try different cities, timelines, down-payment percentages, or partner vs. solo — plus PDF export, themed reports, and email reminders.
+        Upgrade to save unlimited scenarios — try different cities, timelines, down-payment percentages, or partner vs. solo — plus a themed, shareable monthly action plan and email reminders.
       </p>
       <Link to="/pricing" style={{ display: "inline-block", padding: "14px 22px", background: "#1a1a1a", color: "#f5efe6", textDecoration: "none", borderRadius: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase" }}>
         See upgrade options →

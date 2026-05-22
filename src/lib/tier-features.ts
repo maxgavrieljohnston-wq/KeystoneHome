@@ -21,27 +21,12 @@ export const PLUS_FEATURES: TierFeature[] = [
   {
     id: "action",
     short: "Monthly action plan",
-    long: "Savings & investing action plan — what to do each month",
-  },
-  {
-    id: "pdf",
-    short: "Full plan export (PDF + CSV)",
-    long: "Full plan export (PDF + CSV) — everything in your plan, portable",
+    long: "Monthly action plan — themed PDF report (Light, Dark, Sepia, Navy, Terracotta) you can download or share via link",
   },
   {
     id: "assumptions",
     short: "Custom assumptions",
     long: "Override the auto-filled tax, insurance, closing, mortgage rate, and expected return for any plan",
-  },
-  {
-    id: "theme",
-    short: "Themed reports",
-    long: "Themed reports (Light, Dark, Sepia, Navy, Terracotta)",
-  },
-  {
-    id: "share",
-    short: "Shareable plan link",
-    long: "Shareable plan link",
   },
   {
     id: "reminders",
