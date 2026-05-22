@@ -102,7 +102,6 @@ export function EditablePlanPanel({
   const qc = useQueryClient();
   const updateFn = useServerFn(updatePlanMeta);
   const pdfFn = useServerFn(exportPlanPdf);
-  const csvFn = useServerFn(exportPlanCsv);
   const shareFn = useServerFn(togglePlanShare);
   const renameFn = useServerFn(renamePlan);
   const deleteFn = useServerFn(deletePlan);
