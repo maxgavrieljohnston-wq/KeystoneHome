@@ -48,7 +48,7 @@ function orderProFeatures(features: readonly TierFeature[]): TierFeature[] {
 
 // Featured highlights shown above the fold; the rest is collapsed behind
 // "Show all features". Order matters — these render top-to-bottom.
-const PLUS_HIGHLIGHT_IDS = ["action", "assumptions", "accounts", "tags"];
+const PLUS_HIGHLIGHT_IDS = ["action", "assumptions", "accounts", "pdf"];
 const PRO_HIGHLIGHT_IDS = ["_plus", "stress", "market", "broker", "investing"];
 
 function splitFeatures(
