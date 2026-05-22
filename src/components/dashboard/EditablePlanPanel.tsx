@@ -331,7 +331,7 @@ export function EditablePlanPanel({
   };
 
   // ── Plan actions ──────────────────────────────────────────────────────
-  const [busy, setBusy] = useState<null | "pdf" | "csv" | "share" | "rename" | "delete">(null);
+  const [busy, setBusy] = useState<null | "pdf" | "share" | "rename" | "delete">(null);
   const [showShare, setShowShare] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(planTitle ?? "");
@@ -344,24 +344,6 @@ export function EditablePlanPanel({
     } catch (e) {
       console.error(e);
       alert("Couldn't export PDF.");
-    } finally {
-      setBusy(null);
-    }
-  };
-  const handleCsv = async () => {
-    setBusy("csv");
-    try {
-      const res = await csvFn({ data: { planId, environment: env } });
-      const blob = new Blob([res.csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = res.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Couldn't export CSV.");
     } finally {
       setBusy(null);
     }
