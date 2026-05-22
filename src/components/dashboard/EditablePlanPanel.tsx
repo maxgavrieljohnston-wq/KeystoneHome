@@ -656,9 +656,6 @@ export function EditablePlanPanel({
         <ActionBtn onClick={handlePdf} disabled={busy === "pdf"}>
           {busy === "pdf" ? "…" : "Download PDF"}
         </ActionBtn>
-        <ActionBtn onClick={handleCsv} disabled={busy === "csv"}>
-          {busy === "csv" ? "…" : "Download CSV"}
-        </ActionBtn>
         <ActionBtn onClick={handleShare}>
           {shareEnabled ? "Manage share" : "Share link"}
         </ActionBtn>
