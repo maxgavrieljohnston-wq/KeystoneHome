@@ -618,7 +618,7 @@ export function EditablePlanPanel({
         }}
       >
         <div style={{ fontSize: 12, color: C.inkMute, lineHeight: 1.4 }}>
-          Changes flow into your projections and any PDF/CSV you download.
+          Changes flow into your projections and any PDF you download.
         </div>
         <button
           type="button"
