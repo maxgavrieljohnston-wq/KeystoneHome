@@ -97,7 +97,7 @@ export const getMyPlans = createServerFn({ method: "GET" })
     const { supabase, userId, claims } = context;
     const email = (claims.email as string | undefined)?.toLowerCase();
 
-    const PLAN_COLS = "id, email, title, answers, created_at, tags, notes, share_slug, share_enabled, assumptions, target_move_in, current_savings, theme, parent_plan_id, version";
+    const PLAN_COLS = "id, email, title, answers, created_at, tags, notes, share_slug, share_enabled, assumptions, target_move_in, current_savings, theme, parent_plan_id, version, action_plan_progress";
     const { data: ownedPlans } = await supabase
       .from("plans")
       .select(PLAN_COLS)
