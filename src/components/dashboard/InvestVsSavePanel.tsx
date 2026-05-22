@@ -363,6 +363,8 @@ function RateRow({
   );
 }
 
+export { Section as InvestSection };
+
 function Section({
   eyebrow,
   title,
