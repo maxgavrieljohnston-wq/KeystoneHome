@@ -346,6 +346,7 @@ export type Database = {
       }
       plans: {
         Row: {
+          action_plan_progress: Json
           answers: Json
           assumptions: Json
           created_at: string
@@ -368,6 +369,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          action_plan_progress?: Json
           answers?: Json
           assumptions?: Json
           created_at?: string
@@ -390,6 +392,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          action_plan_progress?: Json
           answers?: Json
           assumptions?: Json
           created_at?: string
