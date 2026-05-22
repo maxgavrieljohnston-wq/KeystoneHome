@@ -29,11 +29,6 @@ export const PLUS_FEATURES: TierFeature[] = [
     long: "Full plan export (PDF + CSV) — everything in your plan, portable",
   },
   {
-    id: "tags",
-    short: "Tags, notes & goal tracker",
-    long: "Tags, notes & goal tracker",
-  },
-  {
     id: "assumptions",
     short: "Custom assumptions",
     long: "Override the auto-filled tax, insurance, closing, mortgage rate, and expected return for any plan",
