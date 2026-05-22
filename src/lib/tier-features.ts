@@ -14,11 +14,6 @@ export type TierFeature = {
 
 export const PLUS_FEATURES: TierFeature[] = [
   {
-    id: "save",
-    short: "Unlimited saved plans",
-    long: "Save unlimited scenarios (cities, timelines, down payments)",
-  },
-  {
     id: "invest",
     short: "Invest-vs-save projection",
     long: "Invest-vs-save projection — see how investing the down payment gets you there sooner",
