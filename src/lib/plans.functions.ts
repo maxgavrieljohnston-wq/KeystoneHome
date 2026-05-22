@@ -539,3 +539,68 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
     const safeTitle = (plan.title || "keystone-plan").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
     return { ok: true as const, csv, filename: `${safeTitle}.csv` };
   });
+
+/**
+ * Lightweight extras the dashboard panel needs alongside the user's plans:
+ *  - lender doc count (drives action-plan signals)
+ *  - profile display name + reminders flag
+ *  - active subscription flag (so the dashboard can lock Plus-only panels
+ *    without doing its own subscription lookup)
+ */
+export const getDashboardExtras = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+
+    const [docs, profile, isPaidSandbox, isPaidLive] = await Promise.all([
+      supabaseAdmin
+        .from("lender_documents")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+      supabaseAdmin
+        .from("profiles")
+        .select("display_name, reminders_enabled")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      userHasActiveSub(userId, "sandbox"),
+      userHasActiveSub(userId, "live"),
+    ]);
+
+    return {
+      lenderDocCount: docs.count ?? 0,
+      displayName: (profile.data?.display_name as string | null) ?? null,
+      remindersEnabled: Boolean(profile.data?.reminders_enabled),
+      hasActiveSubscription: isPaidSandbox || isPaidLive,
+    };
+  });
+
+/**
+ * Persist user progress against the generated action plan. The generator
+ * produces stable item IDs (e.g. "foundation.open_hysa") and we just track
+ * which ones the user has checked off or dismissed.
+ *
+ * No subscription gate — the action plan is part of the base dashboard.
+ */
+export const updateActionPlanProgress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({
+      planId: z.string().uuid(),
+      checked: z.array(z.string().min(1).max(120)).max(2000),
+      dismissed: z.array(z.string().min(1).max(120)).max(2000),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const payload = {
+      checked: Array.from(new Set(data.checked)),
+      dismissed: Array.from(new Set(data.dismissed)),
+      updatedAt: new Date().toISOString(),
+    };
+    const { error } = await supabaseAdmin
+      .from("plans")
+      .update({ action_plan_progress: payload })
+      .eq("id", data.planId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, progress: payload };
+  });
