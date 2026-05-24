@@ -101,6 +101,7 @@ export function InvestVsSavePanel({
 
   // Manual persist via Save button (no autosave).
   const updateMeta = useServerFn(updatePlanMeta);
+  const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const dirty =
     Boolean(planId && isPlus && !locked) &&
@@ -116,7 +117,15 @@ export function InvestVsSavePanel({
         investMonthly: Math.round(monthly),
         expectedReturnPct: Math.round(selectedRate * 1000) / 10,
       };
-      await updateMeta({ data: { planId, assumptions: nextAssumptions } });
+      await updateMeta({
+        data: {
+          planId,
+          assumptions: nextAssumptions,
+          answersPatch: { monthlySavings: Math.round(monthly) },
+        },
+      });
+      qc.invalidateQueries({ queryKey: ["my-plans"] });
+      qc.invalidateQueries({ queryKey: ["dash-extras"] });
     } catch (e) {
       console.warn("[invest panel] persist failed", e);
     } finally {
