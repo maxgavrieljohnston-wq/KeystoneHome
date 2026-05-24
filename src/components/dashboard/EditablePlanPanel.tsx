@@ -77,6 +77,7 @@ export function EditablePlanPanel({
     nNum(answers, "partnerCredit") != null ? String(nNum(answers, "partnerCredit")) : "",
   );
   const [hasPartner, setHasPartner] = useState<boolean>(bool(answers, "hasPartner"));
+  const [currentSavingsLocal, setCurrentSavingsLocal] = useState<string>(fmtMoney(currentSavings ?? 0));
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
