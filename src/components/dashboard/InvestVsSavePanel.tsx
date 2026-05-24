@@ -282,7 +282,7 @@ export function InvestVsSavePanel({
                 opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? "Saving…" : "Save contribution"}
+              {saving ? "Saving…" : "Save"}
             </button>
           </div>
         )}
