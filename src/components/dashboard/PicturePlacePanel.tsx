@@ -442,24 +442,19 @@ function PrioritySelect({
   placeholder,
 }: {
   items: { val: string; label: string }[];
-  values: PriorityMap;
-  onChange: (v: PriorityMap) => void;
+  values: string[];
+  onChange: (v: string[]) => void;
   placeholder: string;
 }) {
-  const available = items.filter((it) => !(it.val in values));
-  const selected = items.filter((it) => it.val in values);
+  const available = items.filter((it) => !values.includes(it.val));
+  const selected = items.filter((it) => values.includes(it.val));
 
   const add = (val: string) => {
-    if (!val) return;
-    onChange({ ...values, [val]: "nice" });
-  };
-  const toggle = (val: string) => {
-    onChange({ ...values, [val]: values[val] === "must" ? "nice" : "must" });
+    if (!val || values.includes(val)) return;
+    onChange([...values, val]);
   };
   const remove = (val: string) => {
-    const next = { ...values };
-    delete next[val];
-    onChange(next);
+    onChange(values.filter((v) => v !== val));
   };
 
   return (
@@ -488,64 +483,42 @@ function PrioritySelect({
 
       {selected.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {selected.map((it) => {
-            const must = values[it.val] === "must";
-            return (
-              <span
-                key={it.val}
+          {selected.map((it) => (
+            <span
+              key={it.val}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 10px",
+                fontSize: 13,
+                borderRadius: 999,
+                border: `1px solid ${C.inkFaint}`,
+                background: "transparent",
+                color: C.ink,
+              }}
+            >
+              {it.label}
+              <button
+                type="button"
+                onClick={() => remove(it.val)}
+                aria-label={`Remove ${it.label}`}
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 4px 4px 10px",
-                  fontSize: 13,
+                  width: 20,
+                  height: 20,
                   borderRadius: 999,
-                  border: `1px solid ${must ? C.ink : C.inkFaint}`,
-                  background: must ? C.ink : "transparent",
-                  color: must ? "#f5efe6" : C.ink,
+                  border: "none",
+                  background: "transparent",
+                  color: C.inkMute,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  lineHeight: 1,
                 }}
               >
-                {it.label}
-                <button
-                  type="button"
-                  onClick={() => toggle(it.val)}
-                  title={must ? "Must-have (click for nice)" : "Nice (click for must-have)"}
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 9,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    padding: "2px 6px",
-                    borderRadius: 999,
-                    border: `1px solid ${must ? "#f5efe6" : C.inkFaint}`,
-                    background: "transparent",
-                    color: must ? "#f5efe6" : C.inkSoft,
-                    cursor: "pointer",
-                  }}
-                >
-                  {must ? "Must" : "Nice"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => remove(it.val)}
-                  aria-label={`Remove ${it.label}`}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 999,
-                    border: "none",
-                    background: "transparent",
-                    color: must ? "#f5efe6" : C.inkMute,
-                    cursor: "pointer",
-                    fontSize: 14,
-                    lineHeight: 1,
-                  }}
-                >
-                  ×
-                </button>
-              </span>
-            );
-          })}
+                ×
+              </button>
+            </span>
+          ))}
         </div>
       )}
     </div>
