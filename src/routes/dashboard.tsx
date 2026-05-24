@@ -217,6 +217,8 @@ function DashboardPage() {
           </div>
         </div>
 
+        <DashboardActions planId={selected.id} />
+
         <div style={{ display: "grid", gap: 24 }}>
           <NumbersSummary metrics={metrics} currentSavings={selected.current_savings} />
         </div>
