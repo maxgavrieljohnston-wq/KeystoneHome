@@ -125,8 +125,9 @@ export function EditablePlanPanel({
     setCredit(nNum(answers, "credit") != null ? String(nNum(answers, "credit")) : "");
     setPartnerCredit(nNum(answers, "partnerCredit") != null ? String(nNum(answers, "partnerCredit")) : "");
     setHasPartner(bool(answers, "hasPartner"));
+    setCurrentSavingsLocal(fmtMoney(currentSavings ?? 0));
     setStatus("idle");
-  }, [planId, answers]);
+  }, [planId, answers, currentSavings]);
 
   const handleSave = () => {
     mut.mutate({
