@@ -349,3 +349,29 @@ export function computePlanMetrics(
     readinessLabel,
   };
 }
+
+/**
+ * Derive a "comfortable monthly savings capacity" from raw finance answers.
+ * Mirrors the onboarding timeline-screen logic: take-home (income * 0.78 / 12),
+ * subtract household expenses + debt, then cap at 25% of take-home. Rounded to $100.
+ * Returns 0 when income data is missing.
+ */
+export function computeSavingsCapacity(
+  answers: Record<string, unknown> | null | undefined,
+): { capacity: number; takeHomeMonthly: number; headroom: number } {
+  const num = (k: string): number => {
+    const v = answers?.[k];
+    return typeof v === "number" && isFinite(v) ? v : 0;
+  };
+  const hasPartner = answers?.hasPartner === true;
+  const householdIncome = num("income") + (hasPartner ? num("partnerIncome") : 0);
+  const householdExpenses =
+    num("expenses") + (hasPartner ? num("partnerExpenses") : 0) +
+    num("monthlyExpenses") + (hasPartner ? num("partnerMonthlyExpenses") : 0);
+  const householdDebt = num("debt") + (hasPartner ? num("partnerDebt") : 0);
+  const takeHomeMonthly = (householdIncome * 0.78) / 12;
+  const headroom = Math.max(0, takeHomeMonthly - householdExpenses - householdDebt);
+  const raw = Math.min(takeHomeMonthly * 0.25, headroom);
+  const capacity = raw > 0 ? Math.max(100, Math.floor(raw / 100) * 100) : 0;
+  return { capacity, takeHomeMonthly, headroom };
+}
