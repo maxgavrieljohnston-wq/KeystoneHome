@@ -4918,8 +4918,8 @@ function CalculatingScreen({ onDone }: { onDone: () => void }) {
             margin: "0 0 36px",
           }}
         >
-          We're pricing your market, modeling your timeline, and stress-testing
-          your risk profile. A few seconds.
+          We're pricing your market, modeling your timeline, and mapping
+          your path. A few seconds.
         </p>
 
         {/* Rotating fact */}
