@@ -24,7 +24,6 @@ function cleanLabel(label: string): string {
 // Source of truth (tier-features.ts) is untouched.
 const PRO_DISPLAY_ORDER = [
   "coach",
-  "stress",
   "market",
   "alerts",
   "docs",
