@@ -6,7 +6,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 
-import { computePlanMetrics } from "@/lib/plan-metrics";
+import { computePlanMetrics, computeTimeToGoal, formatMonths } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
 
 const C = {
