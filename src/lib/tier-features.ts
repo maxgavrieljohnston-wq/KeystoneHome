@@ -58,11 +58,6 @@ export const PRO_FEATURES: TierFeature[] = [
     long: "AI homebuying coach — plan-aware, with smart follow-ups",
   },
   {
-    id: "stress",
-    short: "Affordability stress-test",
-    long: "Stress-test your plan against rate shocks, income drops, and price changes",
-  },
-  {
     id: "market",
     short: "City market intelligence",
     long: "Live local market data: median price, price-to-income, trend",
