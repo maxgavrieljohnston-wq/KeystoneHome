@@ -890,7 +890,7 @@ export const applyCoachAction = createServerFn({ method: "POST" })
       .update({ status: "applied", applied_at: new Date().toISOString() })
       .eq("id", action.id);
 
-    return { ok: true as const, kind: action.kind, payload };
+    return { ok: true as const, kind: action.kind as "propose_assumption_change" | "propose_plan_change", payload: payload as any };
   });
 
 // ---------- clear current thread ----------
