@@ -6,10 +6,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 
-import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
-import type { ActionPlanProgress } from "@/lib/action-plan";
 
 const C = {
   paper: "#f5efe6",
