@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { monthsToGoal, futureValue } from "@/lib/invest-projection";
 import { computePlanMetrics } from "@/lib/plan-metrics";
@@ -101,23 +101,25 @@ export function InvestVsSavePanel({
 
   const sliderMax = Math.max(2000, Math.round(statedMonthly * 3));
 
-  // Debounced persist.
+  // Manual persist via Save button (no autosave).
   const updateMeta = useServerFn(updatePlanMeta);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!planId || !isPlus || locked) return;
-    if (Math.round(monthly) === Math.round(persistedMonthly ?? statedMonthly)) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
+  const [saving, setSaving] = useState(false);
+  const dirty =
+    Boolean(planId && isPlus && !locked) &&
+    Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly);
+
+  const handleSave = async () => {
+    if (!planId || !isPlus || locked || !dirty) return;
+    setSaving(true);
+    try {
       const nextAssumptions = { ...(assumptions ?? {}), investMonthly: Math.round(monthly) };
-      updateMeta({ data: { planId, assumptions: nextAssumptions } }).catch((e) => {
-        console.warn("[invest panel] persist failed", e);
-      });
-    }, 600);
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, [monthly, planId, isPlus, locked, persistedMonthly, statedMonthly, assumptions, updateMeta]);
+      await updateMeta({ data: { planId, assumptions: nextAssumptions } });
+    } catch (e) {
+      console.warn("[invest panel] persist failed", e);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Section
@@ -201,7 +203,7 @@ export function InvestVsSavePanel({
               color: C.ember,
             }}
           >
-            Monthly contribution {planId && isPlus && !locked ? "· auto-saved" : ""}
+            Monthly contribution
           </span>
           <span
             style={{
@@ -258,6 +260,30 @@ export function InvestVsSavePanel({
           </button>
           <span>{fmt(sliderMax)}</span>
         </div>
+        {planId && isPlus && (
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty || saving || locked}
+              style={{
+                padding: "9px 20px",
+                background: dirty ? C.ink : "transparent",
+                color: dirty ? "#f5efe6" : C.inkMute,
+                border: `1.5px solid ${dirty ? C.ink : C.inkFaint}`,
+                borderRadius: 8,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                cursor: dirty && !saving ? "pointer" : "default",
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? "Saving…" : "Save contribution"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Reality check: their model vs a more conservative one */}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { InvestSection } from "./InvestVsSavePanel";
@@ -151,15 +151,10 @@ export function PicturePlacePanel({
     onError: () => setStatus("error"),
   });
 
-  // Debounced autosave
-  const first = useRef(true);
-  useEffect(() => {
+  const handleSave = () => {
     if (locked) return;
-    if (first.current) { first.current = false; return; }
-    const t = setTimeout(() => mut.mutate(), 700);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zip, homeStyle, homeLayout, beds, baths, outdoor, parking, lifestyle, neighborhood]);
+    mut.mutate();
+  };
 
   const showLayout = LAYOUT_STYLES.has(homeStyle);
 
@@ -232,7 +227,7 @@ export function PicturePlacePanel({
             {status === "saving" ? "Saving…"
               : status === "saved" ? "✓ Saved"
               : status === "error" ? "Save failed"
-              : "Auto-saves"}
+              : "Click Save to update"}
           </div>
         </div>
       </div>
@@ -313,6 +308,29 @@ export function PicturePlacePanel({
       <Field label="Neighborhood — nice vs must-have">
         <PriorityRows items={NEIGHBORHOOD_ITEMS} values={neighborhood} onChange={setNeighborhood} />
       </Field>
+
+      <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={mut.isPending || locked}
+          style={{
+            padding: "10px 22px",
+            background: C.ink,
+            color: "#f5efe6",
+            border: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: mut.isPending ? "default" : "pointer",
+            opacity: mut.isPending ? 0.6 : 1,
+          }}
+        >
+          {mut.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
     </InvestSection>
   );
 }

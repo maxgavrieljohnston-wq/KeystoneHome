@@ -439,6 +439,9 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          initial_answers: Json | null
+          initial_assumptions: Json | null
+          initial_current_savings: number | null
           last_name: string | null
           notes: string | null
           parent_plan_id: string | null
@@ -462,6 +465,9 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
+          initial_answers?: Json | null
+          initial_assumptions?: Json | null
+          initial_current_savings?: number | null
           last_name?: string | null
           notes?: string | null
           parent_plan_id?: string | null
@@ -485,6 +491,9 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          initial_answers?: Json | null
+          initial_assumptions?: Json | null
+          initial_current_savings?: number | null
           last_name?: string | null
           notes?: string | null
           parent_plan_id?: string | null
