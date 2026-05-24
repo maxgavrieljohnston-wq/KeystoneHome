@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { monthsToGoal, futureValue } from "@/lib/invest-projection";
-import { computePlanMetrics } from "@/lib/plan-metrics";
+import { computePlanMetrics, computeSavingsCapacity } from "@/lib/plan-metrics";
 import { updatePlanMeta } from "@/lib/plans.functions";
 import { STRATEGIES } from "@/lib/keystone";
 
@@ -55,7 +55,14 @@ export function InvestVsSavePanel({
   );
 
   const derivedRate = metrics.expectedReturnRate || 0.07;
-  const statedMonthly = Math.max(50, Math.round(metrics.monthlySavings || 0));
+  // Derive capacity from current income/expenses/debt so the baseline updates
+  // live as the user edits the Finance panel. Falls back to the stored
+  // monthlySavings answer when income data is missing.
+  const capacity = useMemo(() => computeSavingsCapacity(answers), [answers]);
+  const statedMonthly = Math.max(
+    50,
+    Math.round(capacity.capacity || metrics.monthlySavings || 0),
+  );
 
   // Local overrides (manual-save pattern)
   const [selectedRate, setSelectedRate] = useState<number>(derivedRate);
