@@ -53,8 +53,14 @@ export function InvestVsSavePanel({
     [answers, assumptions],
   );
 
-  const userRate = metrics.expectedReturnRate || 0.07;
+  const derivedRate = metrics.expectedReturnRate || 0.07;
   const statedMonthly = Math.max(50, Math.round(metrics.monthlySavings || 0));
+
+  // Local overrides (manual-save pattern)
+  const [selectedRate, setSelectedRate] = useState<number>(derivedRate);
+  useEffect(() => {
+    setSelectedRate(derivedRate);
+  }, [derivedRate]);
 
   // Slider defaults to persisted investMonthly, else user's stated monthly.
   const persistedMonthly = (assumptions?.investMonthly as number | undefined) ?? null;
@@ -64,25 +70,25 @@ export function InvestVsSavePanel({
     setMonthly(persistedMonthly ?? statedMonthly);
   }, [persistedMonthly, statedMonthly]);
 
-  // Baseline: time to goal at their CURRENT stated monthly + their chosen rate.
+  // Baseline: time to goal at their CURRENT stated monthly + selected rate.
   const baselineMonths = useMemo(
-    () => monthsToGoal(metrics.saved, metrics.downPayment, statedMonthly, userRate),
-    [metrics.saved, metrics.downPayment, statedMonthly, userRate],
+    () => monthsToGoal(metrics.saved, metrics.downPayment, statedMonthly, selectedRate),
+    [metrics.saved, metrics.downPayment, statedMonthly, selectedRate],
   );
 
-  // Slider scenario: time to goal at chosen monthly + their rate.
+  // Slider scenario: time to goal at chosen monthly + selected rate.
   const sliderMonths = useMemo(
-    () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, userRate),
-    [metrics.saved, metrics.downPayment, monthly, userRate],
+    () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, selectedRate),
+    [metrics.saved, metrics.downPayment, monthly, selectedRate],
   );
 
-  // Total growth at slider monthly + user rate, evaluated at sliderMonths.
+  // Total growth at slider monthly + selected rate, evaluated at sliderMonths.
   const projectedGrowth = useMemo(() => {
     if (!isFinite(sliderMonths) || sliderMonths <= 0) return 0;
-    const end = futureValue(metrics.saved, monthly, userRate, sliderMonths);
+    const end = futureValue(metrics.saved, monthly, selectedRate, sliderMonths);
     const contributed = monthly * sliderMonths + metrics.saved;
     return Math.max(0, Math.round(end - contributed));
-  }, [metrics.saved, monthly, userRate, sliderMonths]);
+  }, [metrics.saved, monthly, selectedRate, sliderMonths]);
 
   // Delta vs baseline.
   const delta = useMemo(() => {
@@ -97,13 +103,18 @@ export function InvestVsSavePanel({
   const [saving, setSaving] = useState(false);
   const dirty =
     Boolean(planId && isPlus && !locked) &&
-    Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly);
+    (Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly) ||
+      Math.abs(selectedRate - derivedRate) >= 0.0001);
 
   const handleSave = async () => {
     if (!planId || !isPlus || locked || !dirty) return;
     setSaving(true);
     try {
-      const nextAssumptions = { ...(assumptions ?? {}), investMonthly: Math.round(monthly) };
+      const nextAssumptions = {
+        ...(assumptions ?? {}),
+        investMonthly: Math.round(monthly),
+        expectedReturnPct: Math.round(selectedRate * 1000) / 10,
+      };
       await updateMeta({ data: { planId, assumptions: nextAssumptions } });
     } catch (e) {
       console.warn("[invest panel] persist failed", e);
