@@ -208,6 +208,45 @@ async function* streamGateway(
   }
 }
 
+// Resolve a thread for this user: explicit id (must belong to them), else the
+// most recently updated non-archived thread, else create a fresh one tied to
+// the given plan.
+async function ensureThread(
+  userId: string,
+  opts: { threadId?: string; planId?: string; title?: string },
+): Promise<{ id: string; summary: string | null; plan_id: string | null }> {
+  if (opts.threadId) {
+    const { data } = await supabaseAdmin
+      .from("coach_threads")
+      .select("id, summary, plan_id, user_id")
+      .eq("id", opts.threadId)
+      .maybeSingle();
+    if (data && data.user_id === userId) {
+      return { id: data.id, summary: data.summary, plan_id: data.plan_id };
+    }
+  }
+  const { data: existing } = await supabaseAdmin
+    .from("coach_threads")
+    .select("id, summary, plan_id")
+    .eq("user_id", userId)
+    .eq("archived", false)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (existing && existing[0]) return existing[0];
+
+  const { data: created, error } = await supabaseAdmin
+    .from("coach_threads")
+    .insert({
+      user_id: userId,
+      plan_id: opts.planId ?? null,
+      title: opts.title ?? "New conversation",
+    })
+    .select("id, summary, plan_id")
+    .single();
+  if (error || !created) throw new Error(error?.message ?? "Failed to create thread");
+  return created;
+}
+
 export const sendCoachMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -216,6 +255,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         content: z.string().trim().min(1).max(4000),
         environment: z.enum(["sandbox", "live"]).default("live"),
         planId: z.string().uuid().optional(),
+        threadId: z.string().uuid().optional(),
       })
       .parse(input),
   )
@@ -233,7 +273,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     // Active plan (selected or latest).
     let planQuery = supabaseAdmin
       .from("plans")
-      .select("id, title, answers, created_at")
+      .select("id, title, answers, assumptions, current_savings, target_move_in, version, created_at")
       .eq("user_id", userId);
     if (data.planId) {
       planQuery = planQuery.eq("id", data.planId);
@@ -243,11 +283,18 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const { data: planRows } = await planQuery;
     const plan = planRows?.[0] ?? null;
 
-    // Full chat history → recent window + older to summarize.
+    // Resolve thread (scoped per-user, optionally tied to the active plan).
+    const thread = await ensureThread(userId, {
+      threadId: data.threadId,
+      planId: data.planId ?? plan?.id,
+    });
+
+    // Thread-scoped chat history → recent window + older to summarize.
     const { data: history } = await supabaseAdmin
       .from("coach_messages")
       .select("role, content, created_at")
       .eq("user_id", userId)
+      .eq("thread_id", thread.id)
       .order("created_at", { ascending: true });
 
     const allTurns = (history ?? []) as Array<{ role: string; content: string }>;
@@ -257,12 +304,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         : [];
     const recentTurns = allTurns.slice(-HISTORY_WINDOW);
 
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("coach_summary")
-      .eq("user_id", userId)
-      .maybeSingle();
-    let rollingSummary = (profile?.coach_summary as string | null) ?? "";
+    let rollingSummary = thread.summary ?? "";
 
     if (olderTurns.length > 0) {
       try {
