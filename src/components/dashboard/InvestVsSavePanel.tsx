@@ -260,6 +260,30 @@ export function InvestVsSavePanel({
           </button>
           <span>{fmt(sliderMax)}</span>
         </div>
+        {planId && isPlus && (
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty || saving || locked}
+              style={{
+                padding: "9px 20px",
+                background: dirty ? C.ink : "transparent",
+                color: dirty ? "#f5efe6" : C.inkMute,
+                border: `1.5px solid ${dirty ? C.ink : C.inkFaint}`,
+                borderRadius: 8,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                cursor: dirty && !saving ? "pointer" : "default",
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? "Saving…" : "Save contribution"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Reality check: their model vs a more conservative one */}
