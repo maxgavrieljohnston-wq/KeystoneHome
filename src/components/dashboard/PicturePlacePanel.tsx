@@ -301,12 +301,12 @@ export function PicturePlacePanel({
         />
       </Field>
 
-      <Field label="Lifestyle — nice vs must-have">
-        <PriorityRows items={LIFESTYLE_ITEMS} values={lifestyle} onChange={setLifestyle} />
+      <Field label="Lifestyle priorities">
+        <PrioritySelect items={LIFESTYLE_ITEMS} values={lifestyle} onChange={setLifestyle} placeholder="Add a lifestyle priority…" />
       </Field>
 
-      <Field label="Neighborhood — nice vs must-have">
-        <PriorityRows items={NEIGHBORHOOD_ITEMS} values={neighborhood} onChange={setNeighborhood} />
+      <Field label="Neighborhood priorities">
+        <PrioritySelect items={NEIGHBORHOOD_ITEMS} values={neighborhood} onChange={setNeighborhood} placeholder="Add a neighborhood priority…" />
       </Field>
 
       <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
