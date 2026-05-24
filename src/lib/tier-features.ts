@@ -58,11 +58,6 @@ export const PRO_FEATURES: TierFeature[] = [
     long: "AI homebuying coach — plan-aware, with smart follow-ups",
   },
   {
-    id: "alerts",
-    short: "Live mortgage rate alerts",
-    long: "Live mortgage rate alerts",
-  },
-  {
     id: "stress",
     short: "Affordability stress-test",
     long: "Stress-test your plan against rate shocks, income drops, and price changes",

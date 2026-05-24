@@ -242,7 +242,7 @@ export function buildActionPlan(args: {
     thisMonth.push({
       id: "thismonth.enable_reminders",
       label: "Turn on monthly email reminders",
-      cta: { label: "Manage reminders", href: "/rate-alerts" },
+      cta: { label: "Manage reminders", href: "/dashboard" },
     });
   }
 

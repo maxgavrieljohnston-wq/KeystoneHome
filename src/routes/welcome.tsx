@@ -108,7 +108,6 @@ function WelcomePage() {
         "Everything in Plus",
         "Chat with the AI homebuying coach",
         "Compare up to 3 plans side-by-side",
-        "Live mortgage rate alerts",
       ]
     : [
         "Save unlimited scenarios (cities, timelines, down payments)",
