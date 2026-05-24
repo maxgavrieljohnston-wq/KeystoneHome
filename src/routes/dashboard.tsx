@@ -200,11 +200,27 @@ function DashboardPage() {
           </button>
         </header>
 
+        {/* Greeting */}
+        <div style={{ marginBottom: 20 }}>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+              fontSize: 24,
+              fontWeight: 500,
+              color: C.ink,
+              marginBottom: 4,
+            }}
+          >
+            Welcome back{firstName !== "there" ? `, ${firstName}` : ""}.
+          </div>
+          <div style={{ fontSize: 14, color: C.inkMute }}>
+            Here are your numbers. Tap an icon below for any feature.
+          </div>
+        </div>
+
         <div style={{ display: "grid", gap: 24 }}>
-          {/* Numbers Summary — first thing users see */}
           <NumbersSummary metrics={metrics} currentSavings={selected.current_savings} />
 
-          {/* 1. Monthly Action Plan */}
           <MonthlyActionPlan
             planId={selected.id}
             planCreatedAt={selected.created_at}
@@ -217,75 +233,86 @@ function DashboardPage() {
             lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
             initialProgress={selected.action_plan_progress}
           />
-
-          {/* 2. Editable plan + share/PDF */}
-          <EditablePlanPanel
-            planId={selected.id}
-            planTitle={selected.title}
-            shareSlug={selected.share_slug}
-            shareEnabled={selected.share_enabled}
-            answers={selected.answers}
-            assumptions={selected.assumptions}
-            currentSavings={selected.current_savings}
-          />
-
-          {/* 3. Invest vs save */}
-          <InvestVsSavePanel
-            answers={selected.answers}
-            assumptions={selected.assumptions}
-            planId={selected.id}
-            isPlus={isPlus}
-            locked={!isPlus}
-            onLockedClick={onLockedClick}
-          />
-
-          {/* 4. Assumptions */}
-          <AssumptionsPanel
-            planId={selected.id}
-            answers={selected.answers}
-            targetPrice={metrics.targetPrice}
-            assumptions={selected.assumptions ?? {}}
-            isPlus={isPlus}
-            locked={!isPlus}
-            onLockedClick={onLockedClick}
-          />
-
-          {/* 4b. Picture your place — live home preview */}
-          <PicturePlacePanel
-            planId={selected.id}
-            answers={selected.answers}
-            assumptions={selected.assumptions}
-            locked={!isPlus}
-            onLockedClick={onLockedClick}
-          />
-
-          {/* 5. Recommended accounts */}
-          <RecommendedAccountsPanel
-            locked={!isPlus}
-            onLockedClick={onLockedClick}
-            timelineYears={metrics.timelineYears}
-          />
-
-          {/* 6. Risk scenarios */}
-          <RiskScenariosPanel
-            answers={selected.answers}
-            assumptions={selected.assumptions}
-            locked={!isPlus}
-            onLockedClick={onLockedClick}
-          />
-
-          {/* 7. Broker waitlist */}
-          <BrokerWaitlistPanel
-            isPro={isPro}
-            isPlus={isPlus}
-            locked={!isPlus && !isPro}
-            onLockedClick={onLockedClick}
-          />
         </div>
+
+        {/* Feature icon bar */}
+        <FeatureIconBar selectedPlanId={selectedId} />
       </div>
     </div>
   );
 }
+
+function FeatureIconBar({ selectedPlanId }: { selectedPlanId?: string }) {
+  return (
+    <div
+      style={{
+        marginTop: 48,
+        paddingTop: 24,
+        borderTop: `1px solid ${C.inkFaint}`,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          letterSpacing: "0.12em",
+          color: C.inkMute,
+          textTransform: "uppercase",
+          marginBottom: 16,
+          textAlign: "center",
+        }}
+      >
+        Features
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))",
+          gap: 12,
+        }}
+      >
+        {FEATURE_KEYS.map((key) => {
+          const meta = FEATURE_META[key];
+          const Icon = meta.icon;
+          return (
+            <Link
+              key={key}
+              to="/features/$key"
+              params={{ key }}
+              search={selectedPlanId ? { planId: selectedPlanId } : {}}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8,
+                padding: "14px 8px",
+                borderRadius: 10,
+                background: "#fff",
+                border: `1px solid ${C.inkFaint}`,
+                color: C.ink,
+                textDecoration: "none",
+                transition: "transform 0.15s ease, border-color 0.15s ease",
+              }}
+            >
+              <Icon size={22} strokeWidth={1.5} />
+              <div
+                style={{
+                  fontSize: 11,
+                  letterSpacing: "0.04em",
+                  color: C.inkSoft,
+                  textAlign: "center",
+                }}
+              >
+                {meta.short}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
