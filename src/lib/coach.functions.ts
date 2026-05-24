@@ -322,9 +322,9 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         if (newSummary) {
           rollingSummary = newSummary;
           await supabaseAdmin
-            .from("profiles")
-            .update({ coach_summary: newSummary })
-            .eq("user_id", userId);
+            .from("coach_threads")
+            .update({ summary: newSummary })
+            .eq("id", thread.id);
         }
       } catch (e) {
         console.warn("[coach] summary refresh failed", e);
