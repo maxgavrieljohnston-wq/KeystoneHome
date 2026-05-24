@@ -45,7 +45,7 @@ type PlanRow = {
   share_slug: string | null;
   share_enabled: boolean;
   created_at: string;
-  action_plan_progress: ActionPlanProgress | null;
+  action_plan_progress: unknown;
 };
 
 function DashboardPage() {
