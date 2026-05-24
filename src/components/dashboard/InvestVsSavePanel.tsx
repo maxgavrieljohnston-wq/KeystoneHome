@@ -54,7 +54,6 @@ export function InvestVsSavePanel({
   );
 
   const userRate = metrics.expectedReturnRate || 0.07;
-  const realistic = realisticRate(userRate);
   const statedMonthly = Math.max(50, Math.round(metrics.monthlySavings || 0));
 
   // Slider defaults to persisted investMonthly, else user's stated monthly.
@@ -75,12 +74,6 @@ export function InvestVsSavePanel({
   const sliderMonths = useMemo(
     () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, userRate),
     [metrics.saved, metrics.downPayment, monthly, userRate],
-  );
-
-  // Realistic scenario at the slider monthly.
-  const realisticMonths = useMemo(
-    () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, realistic),
-    [metrics.saved, metrics.downPayment, monthly, realistic],
   );
 
   // Total growth at slider monthly + user rate, evaluated at sliderMonths.
