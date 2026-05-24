@@ -190,40 +190,25 @@ function DashboardPage() {
               </h1>
             )}
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/" });
-              }}
-              style={{
-                border: `1px solid ${C.inkFaint}`,
-                color: C.inkMute,
-                background: "transparent",
-                padding: "8px 14px",
-                borderRadius: 6,
-                textDecoration: "none",
-                fontSize: 13,
-                cursor: "pointer",
-                fontFamily: "'Inter', system-ui, sans-serif",
-              }}
-            >
-              Log out
-            </button>
-            <Link
-              to="/"
-              style={{
-                border: `1px solid ${C.ink}`,
-                color: C.ink,
-                padding: "8px 14px",
-                borderRadius: 6,
-                textDecoration: "none",
-                fontSize: 13,
-              }}
-            >
-              + New plan
-            </Link>
-          </div>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/" });
+            }}
+            style={{
+              border: `1px solid ${C.inkFaint}`,
+              color: C.inkMute,
+              background: "transparent",
+              padding: "8px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontSize: 13,
+              cursor: "pointer",
+              fontFamily: "'Inter', system-ui, sans-serif",
+            }}
+          >
+            Log out
+          </button>
         </header>
 
         <div style={{ display: "grid", gap: 24 }}>
