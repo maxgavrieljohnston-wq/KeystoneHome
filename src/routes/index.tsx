@@ -3905,7 +3905,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
       ? `Cut ${monthsSooner} months off your timeline.`
       : "Own years sooner. Invest your down payment.";
   const sub = isPlus
-    ? "Pro adds adaptive strategy, broker matching, stress-tests, and live rate alerts."
+    ? "Pro adds adaptive strategy, broker matching, and live market intelligence."
     : "Plus shows you the path. Pro keeps it on track as life changes.";
 
   return (
