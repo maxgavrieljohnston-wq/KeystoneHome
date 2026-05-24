@@ -75,8 +75,8 @@ export function PicturePlacePanel({
   const [baths, setBaths] = useState(num(answers, "baths", 2));
   const [outdoor, setOutdoor] = useState(str(answers, "outdoorSpace") || "none");
   const [parking, setParking] = useState(str(answers, "parking") || "street");
-  const [lifestyle, setLifestyle] = useState<PriorityMap>(prioMap(answers, "lifestyle"));
-  const [neighborhood, setNeighborhood] = useState<PriorityMap>(prioMap(answers, "neighborhood"));
+  const [lifestyle, setLifestyle] = useState<string[]>(strArray(answers, "lifestyle"));
+  const [neighborhood, setNeighborhood] = useState<string[]>(strArray(answers, "neighborhood"));
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -89,8 +89,8 @@ export function PicturePlacePanel({
     setBaths(num(answers, "baths", 2));
     setOutdoor(str(answers, "outdoorSpace") || "none");
     setParking(str(answers, "parking") || "street");
-    setLifestyle(prioMap(answers, "lifestyle"));
-    setNeighborhood(prioMap(answers, "neighborhood"));
+    setLifestyle(strArray(answers, "lifestyle"));
+    setNeighborhood(strArray(answers, "neighborhood"));
   }, [planId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const liveAnswers = useMemo<Record<string, unknown>>(() => {
