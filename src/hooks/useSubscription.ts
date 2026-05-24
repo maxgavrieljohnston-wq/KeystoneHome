@@ -5,7 +5,7 @@ import { getStripeEnvironment } from "@/lib/stripe";
 import { useAuthReady } from "@/hooks/useAuthReady";
 
 const PLUS_PRICES = new Set(["plus_lifetime", "plus_monthly", "plus_yearly"]);
-const PRO_PRICES = new Set(["pro_monthly"]);
+const PRO_PRICES = new Set(["pro_monthly", "pro_yearly"]);
 
 export type Tier = "free" | "plus" | "pro";
 
