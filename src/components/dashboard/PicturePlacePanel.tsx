@@ -442,47 +442,119 @@ const stepBtn: React.CSSProperties = {
   color: C.ink,
 };
 
-function PriorityRows({
+function PrioritySelect({
   items,
   values,
   onChange,
+  placeholder,
 }: {
   items: { val: string; label: string }[];
   values: PriorityMap;
   onChange: (v: PriorityMap) => void;
+  placeholder: string;
 }) {
-  const set = (k: string, p: Priority | null) => {
+  const available = items.filter((it) => !(it.val in values));
+  const selected = items.filter((it) => it.val in values);
+
+  const add = (val: string) => {
+    if (!val) return;
+    onChange({ ...values, [val]: "nice" });
+  };
+  const toggle = (val: string) => {
+    onChange({ ...values, [val]: values[val] === "must" ? "nice" : "must" });
+  };
+  const remove = (val: string) => {
     const next = { ...values };
-    if (p === null) delete next[k];
-    else next[k] = p;
+    delete next[val];
     onChange(next);
   };
+
   return (
-    <div style={{ display: "grid", gap: 6 }}>
-      {items.map((it) => {
-        const v = values[it.val];
-        return (
-          <div
-            key={it.val}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "8px 10px",
-              border: `1px solid ${C.inkFaint}`,
-              borderRadius: 6,
-              gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 14, color: C.ink }}>{it.label}</span>
-            <div style={{ display: "flex", gap: 4 }}>
-              <MiniPill active={!v} onClick={() => set(it.val, null)}>Skip</MiniPill>
-              <MiniPill active={v === "nice"} onClick={() => set(it.val, "nice")}>Nice</MiniPill>
-              <MiniPill active={v === "must"} onClick={() => set(it.val, "must")}>Must</MiniPill>
-            </div>
-          </div>
-        );
-      })}
+    <div style={{ display: "grid", gap: 10 }}>
+      <select
+        value=""
+        onChange={(e) => add(e.target.value)}
+        disabled={available.length === 0}
+        style={{
+          width: "100%",
+          padding: "8px 10px",
+          fontSize: 14,
+          fontFamily: "inherit",
+          color: C.ink,
+          background: "transparent",
+          border: `1px solid ${C.inkFaint}`,
+          borderRadius: 6,
+          cursor: available.length === 0 ? "default" : "pointer",
+        }}
+      >
+        <option value="">{available.length === 0 ? "All added" : placeholder}</option>
+        {available.map((it) => (
+          <option key={it.val} value={it.val}>{it.label}</option>
+        ))}
+      </select>
+
+      {selected.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {selected.map((it) => {
+            const must = values[it.val] === "must";
+            return (
+              <span
+                key={it.val}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "4px 4px 4px 10px",
+                  fontSize: 13,
+                  borderRadius: 999,
+                  border: `1px solid ${must ? C.ink : C.inkFaint}`,
+                  background: must ? C.ink : "transparent",
+                  color: must ? "#f5efe6" : C.ink,
+                }}
+              >
+                {it.label}
+                <button
+                  type="button"
+                  onClick={() => toggle(it.val)}
+                  title={must ? "Must-have (click for nice)" : "Nice (click for must-have)"}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    padding: "2px 6px",
+                    borderRadius: 999,
+                    border: `1px solid ${must ? "#f5efe6" : C.inkFaint}`,
+                    background: "transparent",
+                    color: must ? "#f5efe6" : C.inkSoft,
+                    cursor: "pointer",
+                  }}
+                >
+                  {must ? "Must" : "Nice"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(it.val)}
+                  aria-label={`Remove ${it.label}`}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 999,
+                    border: "none",
+                    background: "transparent",
+                    color: must ? "#f5efe6" : C.inkMute,
+                    cursor: "pointer",
+                    fontSize: 14,
+                    lineHeight: 1,
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
