@@ -47,7 +47,7 @@ export function useSubscription(): SubscriptionState {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    return data;
+    return Array.isArray(data) ? (data[0] ?? null) : data;
   };
 
   const { data, isLoading, refetch } = useQuery({
@@ -82,10 +82,11 @@ export function useSubscription(): SubscriptionState {
     };
   }, [userId, refetch]);
 
-  const status = (data?.status as string | null) ?? null;
-  const periodEnd = (data?.current_period_end as string | null) ?? null;
-  const priceId = (data?.price_id as string | null) ?? null;
-  const cancelAtPeriodEnd = Boolean(data?.cancel_at_period_end);
+  const subscription = Array.isArray(data) ? (data[0] ?? null) : data;
+  const status = (subscription?.status as string | null) ?? null;
+  const periodEnd = (subscription?.current_period_end as string | null) ?? null;
+  const priceId = (subscription?.price_id as string | null) ?? null;
+  const cancelAtPeriodEnd = Boolean(subscription?.cancel_at_period_end);
 
   const periodActive = !periodEnd || new Date(periodEnd) > new Date();
   const isActive =
