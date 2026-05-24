@@ -226,6 +226,7 @@ function FeaturePage() {
           {meta?.label}
         </h1>
         {panel}
+        <FeatureIconBar selectedPlanId={selected.id} activeKey={key as FeatureKey} />
       </div>
     </div>
   );
