@@ -1,21 +1,14 @@
 import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useUpgradeGate } from "@/hooks/useUpgradeGate";
 import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
-import { EditablePlanPanel } from "@/components/dashboard/EditablePlanPanel";
-import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
-import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
-import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
-import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
-import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
-import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { computePlanMetrics } from "@/lib/plan-metrics";
+import { FEATURE_KEYS, FEATURE_META } from "@/lib/dashboard-features";
 import type { ActionPlanProgress } from "@/lib/action-plan";
 
 const C = {
