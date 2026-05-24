@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
-import { useSubscription } from "@/hooks/useSubscription";
+
 import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FEATURE_KEYS, FEATURE_META } from "@/lib/dashboard-features";
