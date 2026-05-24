@@ -142,6 +142,7 @@ export function EditablePlanPanel({
         partnerCredit: parsed.partnerCredit,
         hasPartner,
       },
+      currentSavings: Number(onlyDigits(currentSavingsLocal) || 0),
     });
   };
 
