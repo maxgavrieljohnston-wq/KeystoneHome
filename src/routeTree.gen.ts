@@ -23,6 +23,7 @@ import { Route as BrokerMatchRouteImport } from './routes/broker-match'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as FeaturesKeyRouteImport } from './routes/features.$key'
 import { Route as AdminUpgradeFunnelRouteImport } from './routes/admin.upgrade-funnel'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -100,6 +101,11 @@ const PSlugRoute = PSlugRouteImport.update({
   path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeaturesKeyRoute = FeaturesKeyRouteImport.update({
+  id: '/features/$key',
+  path: '/features/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUpgradeFunnelRoute = AdminUpgradeFunnelRouteImport.update({
   id: '/admin/upgrade-funnel',
   path: '/admin/upgrade-funnel',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
+  '/features/$key': typeof FeaturesKeyRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
+  '/features/$key': typeof FeaturesKeyRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
+  '/features/$key': typeof FeaturesKeyRoute
   '/p/$slug': typeof PSlugRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/reminders/dispatch': typeof ApiPublicRemindersDispatchRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/welcome'
     | '/admin/upgrade-funnel'
+    | '/features/$key'
     | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/welcome'
     | '/admin/upgrade-funnel'
+    | '/features/$key'
     | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/welcome'
     | '/admin/upgrade-funnel'
+    | '/features/$key'
     | '/p/$slug'
     | '/api/public/payments/webhook'
     | '/api/public/reminders/dispatch'
@@ -285,6 +297,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   AdminUpgradeFunnelRoute: typeof AdminUpgradeFunnelRoute
+  FeaturesKeyRoute: typeof FeaturesKeyRoute
   PSlugRoute: typeof PSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicRemindersDispatchRoute: typeof ApiPublicRemindersDispatchRoute
@@ -393,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/features/$key': {
+      id: '/features/$key'
+      path: '/features/$key'
+      fullPath: '/features/$key'
+      preLoaderRoute: typeof FeaturesKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/upgrade-funnel': {
       id: '/admin/upgrade-funnel'
       path: '/admin/upgrade-funnel'
@@ -453,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   AdminUpgradeFunnelRoute: AdminUpgradeFunnelRoute,
+  FeaturesKeyRoute: FeaturesKeyRoute,
   PSlugRoute: PSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicRemindersDispatchRoute: ApiPublicRemindersDispatchRoute,
@@ -463,13 +484,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
