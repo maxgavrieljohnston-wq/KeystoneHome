@@ -7,15 +7,12 @@ import { investEdge, projectScenarios } from "@/lib/invest-projection";
 import { buildPlanDigest, shouldUseExtendedReasoning } from "@/lib/coach-context";
 
 const COACH_MODEL = "google/gemini-3-flash-preview";
-
-// Sliding window: keep this many most-recent turns verbatim. Anything older
-// is folded into a rolling summary stored on profiles.coach_summary.
 const HISTORY_WINDOW = 12;
 
-// Marker used to ask the model to append follow-up chips at the END of its
-// response. We strip this from streamed output so the user never sees it.
 const FOLLOWUPS_OPEN = "<<FOLLOWUPS>>";
 const FOLLOWUPS_CLOSE = "<<END>>";
+
+// ---------- subscription helpers ----------
 
 async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
   const { data, error } = await supabaseAdmin.rpc("has_active_subscription", {
@@ -44,16 +41,105 @@ async function userIsPro(userId: string, env: "sandbox" | "live") {
   return priceId === "pro_monthly" || priceId === "pro_yearly";
 }
 
-export const getCoachMessages = createServerFn({ method: "GET" })
+// ---------- thread management ----------
+
+export const listCoachThreads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
-      .from("coach_messages")
-      .select("id, role, content, created_at, meta")
-      .order("created_at", { ascending: true });
+      .from("coach_threads")
+      .select("id, title, plan_id, archived, updated_at, created_at")
+      .eq("archived", false)
+      .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { messages: data ?? [] };
+    return { threads: data ?? [] };
+  });
+
+export const createCoachThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid().optional(),
+        title: z.string().trim().min(1).max(120).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: created, error } = await supabaseAdmin
+      .from("coach_threads")
+      .insert({
+        user_id: context.userId,
+        plan_id: data.planId ?? null,
+        title: data.title ?? "New conversation",
+      })
+      .select("id, title, plan_id, updated_at")
+      .single();
+    if (error || !created) throw new Error(error?.message ?? "Failed");
+    return { thread: created };
+  });
+
+export const renameCoachThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        threadId: z.string().uuid(),
+        title: z.string().trim().min(1).max(120),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("coach_threads")
+      .update({ title: data.title })
+      .eq("id", data.threadId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const deleteCoachThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ threadId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    // Messages + actions cascade by user_id+thread_id scoping below.
+    await supabaseAdmin
+      .from("coach_messages")
+      .delete()
+      .eq("user_id", context.userId)
+      .eq("thread_id", data.threadId);
+    const { error } = await supabaseAdmin
+      .from("coach_threads")
+      .delete()
+      .eq("id", data.threadId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+// ---------- messages + plans ----------
+
+export const getCoachMessages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ threadId: z.string().uuid().optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    let q = supabase
+      .from("coach_messages")
+      .select("id, role, content, created_at, meta, thread_id")
+      .order("created_at", { ascending: true });
+    if (data.threadId) q = q.eq("thread_id", data.threadId);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { messages: rows ?? [] };
   });
 
 export const listCoachPlans = createServerFn({ method: "GET" })
@@ -68,7 +154,6 @@ export const listCoachPlans = createServerFn({ method: "GET" })
     return { plans: data ?? [] };
   });
 
-// Plan-aware starter prompts for the empty state.
 export const getCoachStarters = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -80,11 +165,8 @@ export const getCoachStarters = createServerFn({ method: "POST" })
       .from("plans")
       .select("id, title, answers")
       .eq("user_id", userId);
-    if (data.planId) {
-      planQuery = planQuery.eq("id", data.planId);
-    } else {
-      planQuery = planQuery.order("created_at", { ascending: false }).limit(1);
-    }
+    if (data.planId) planQuery = planQuery.eq("id", data.planId);
+    else planQuery = planQuery.order("created_at", { ascending: false }).limit(1);
     const { data: rows } = await planQuery;
     const plan = rows?.[0] ?? null;
 
@@ -118,7 +200,16 @@ export const getCoachStarters = createServerFn({ method: "POST" })
     }
   });
 
+// ---------- gateway plumbing ----------
+
 type GatewayMessage = { role: "system" | "user" | "assistant"; content: string };
+
+type ToolCallAccum = {
+  index: number;
+  id?: string;
+  name?: string;
+  args: string;
+};
 
 async function callGatewayJson(
   apiKey: string,
@@ -143,20 +234,104 @@ async function callGatewayJson(
   return json.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
-// Parse SSE deltas from a streaming gateway response.
-async function* streamGateway(
+// Coach tool schema for propose-and-apply actions.
+const COACH_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "propose_assumption_change",
+      description:
+        "Propose changing one of the user's planning assumptions. Use when the user's math would improve materially, or they ask a what-if. Do not call more than twice per reply.",
+      parameters: {
+        type: "object",
+        properties: {
+          key: {
+            type: "string",
+            enum: [
+              "mortgageRatePct",
+              "pmiPct",
+              "expectedReturnPct",
+              "hoaMonthly",
+              "closingCostPct",
+            ],
+            description:
+              "Assumption key. Percent fields are stored as percent values (e.g. 6.5 for 6.5%), hoaMonthly is dollars/month.",
+          },
+          value: { type: "number" },
+          rationale: { type: "string" },
+        },
+        required: ["key", "value", "rationale"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_plan_change",
+      description:
+        "Propose changing one of the user's plan answers — target price, monthly savings, current savings, or target move-in date.",
+      parameters: {
+        type: "object",
+        properties: {
+          field: {
+            type: "string",
+            enum: [
+              "targetPriceOverride",
+              "monthlySavings",
+              "currentSavings",
+              "targetMoveIn",
+            ],
+          },
+          value: {
+            type: "string",
+            description:
+              "For numeric fields, a numeric string like '450000' or '1500'. For targetMoveIn, an ISO date 'YYYY-MM-DD'.",
+          },
+          rationale: { type: "string" },
+        },
+        required: ["field", "value", "rationale"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "draft_lender_email",
+      description:
+        "Draft an email the user can send to a mortgage lender. Use when they are preparing to reach out or have lender-specific questions.",
+      parameters: {
+        type: "object",
+        properties: {
+          subject: { type: "string" },
+          body: { type: "string" },
+          rationale: { type: "string" },
+        },
+        required: ["subject", "body"],
+        additionalProperties: false,
+      },
+    },
+  },
+];
+
+async function* streamGatewayWithTools(
   apiKey: string,
   messages: GatewayMessage[],
-  opts?: { reasoningEffort?: "low" | "medium" },
-): AsyncGenerator<string> {
+  opts: { reasoningEffort?: "low" | "medium" },
+): AsyncGenerator<
+  | { type: "delta"; delta: string }
+  | { type: "tool"; call: ToolCallAccum }
+> {
   const body: Record<string, unknown> = {
     model: COACH_MODEL,
     messages,
     stream: true,
+    tools: COACH_TOOLS,
+    tool_choice: "auto",
   };
-  if (opts?.reasoningEffort) {
-    body.reasoning = { effort: opts.reasoningEffort };
-  }
+  if (opts.reasoningEffort) body.reasoning = { effort: opts.reasoningEffort };
+
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -173,6 +348,7 @@ async function* streamGateway(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
+  const tools = new Map<number, ToolCallAccum>();
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -186,19 +362,43 @@ async function* streamGateway(
         if (!line || line.startsWith(":")) continue;
         if (!line.startsWith("data: ")) continue;
         const payload = line.slice(6).trim();
-        if (payload === "[DONE]") return;
+        if (payload === "[DONE]") {
+          for (const t of tools.values()) yield { type: "tool", call: t };
+          return;
+        }
         try {
           const parsed = JSON.parse(payload) as {
-            choices?: Array<{ delta?: { content?: string } }>;
+            choices?: Array<{
+              delta?: {
+                content?: string;
+                tool_calls?: Array<{
+                  index?: number;
+                  id?: string;
+                  function?: { name?: string; arguments?: string };
+                }>;
+              };
+            }>;
           };
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) yield delta;
+          const delta = parsed.choices?.[0]?.delta;
+          if (delta?.content) yield { type: "delta", delta: delta.content };
+          if (delta?.tool_calls) {
+            for (const tc of delta.tool_calls) {
+              const idx = tc.index ?? 0;
+              const cur =
+                tools.get(idx) ?? { index: idx, args: "" };
+              if (tc.id) cur.id = tc.id;
+              if (tc.function?.name) cur.name = tc.function.name;
+              if (tc.function?.arguments) cur.args += tc.function.arguments;
+              tools.set(idx, cur);
+            }
+          }
         } catch {
           buf = line + "\n" + buf;
           break;
         }
       }
     }
+    for (const t of tools.values()) yield { type: "tool", call: t };
   } finally {
     try {
       reader.releaseLock();
@@ -208,26 +408,25 @@ async function* streamGateway(
   }
 }
 
-// Resolve a thread for this user: explicit id (must belong to them), else the
-// most recently updated non-archived thread, else create a fresh one tied to
-// the given plan.
+// ---------- threads ----------
+
 async function ensureThread(
   userId: string,
   opts: { threadId?: string; planId?: string; title?: string },
-): Promise<{ id: string; summary: string | null; plan_id: string | null }> {
+): Promise<{ id: string; summary: string | null; plan_id: string | null; title: string }> {
   if (opts.threadId) {
     const { data } = await supabaseAdmin
       .from("coach_threads")
-      .select("id, summary, plan_id, user_id")
+      .select("id, summary, plan_id, user_id, title")
       .eq("id", opts.threadId)
       .maybeSingle();
     if (data && data.user_id === userId) {
-      return { id: data.id, summary: data.summary, plan_id: data.plan_id };
+      return { id: data.id, summary: data.summary, plan_id: data.plan_id, title: data.title };
     }
   }
   const { data: existing } = await supabaseAdmin
     .from("coach_threads")
-    .select("id, summary, plan_id")
+    .select("id, summary, plan_id, title")
     .eq("user_id", userId)
     .eq("archived", false)
     .order("updated_at", { ascending: false })
@@ -241,11 +440,19 @@ async function ensureThread(
       plan_id: opts.planId ?? null,
       title: opts.title ?? "New conversation",
     })
-    .select("id, summary, plan_id")
+    .select("id, summary, plan_id, title")
     .single();
   if (error || !created) throw new Error(error?.message ?? "Failed to create thread");
   return created;
 }
+
+function deriveTitleFromTurn(content: string): string {
+  const trimmed = content.replace(/\s+/g, " ").trim();
+  if (trimmed.length <= 60) return trimmed;
+  return trimmed.slice(0, 57).trimEnd() + "…";
+}
+
+// ---------- main send ----------
 
 export const sendCoachMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -270,26 +477,20 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
 
     const email = (claims.email as string | undefined)?.toLowerCase();
 
-    // Active plan (selected or latest).
     let planQuery = supabaseAdmin
       .from("plans")
       .select("id, title, answers, assumptions, current_savings, target_move_in, version, created_at")
       .eq("user_id", userId);
-    if (data.planId) {
-      planQuery = planQuery.eq("id", data.planId);
-    } else {
-      planQuery = planQuery.order("created_at", { ascending: false }).limit(1);
-    }
+    if (data.planId) planQuery = planQuery.eq("id", data.planId);
+    else planQuery = planQuery.order("created_at", { ascending: false }).limit(1);
     const { data: planRows } = await planQuery;
     const plan = planRows?.[0] ?? null;
 
-    // Resolve thread (scoped per-user, optionally tied to the active plan).
     const thread = await ensureThread(userId, {
       threadId: data.threadId,
       planId: data.planId ?? plan?.id,
     });
 
-    // Thread-scoped chat history → recent window + older to summarize.
     const { data: history } = await supabaseAdmin
       .from("coach_messages")
       .select("role, content, created_at")
@@ -303,6 +504,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         ? allTurns.slice(0, allTurns.length - HISTORY_WINDOW)
         : [];
     const recentTurns = allTurns.slice(-HISTORY_WINDOW);
+    const isFirstTurn = allTurns.length === 0;
 
     let rollingSummary = thread.summary ?? "";
 
@@ -331,8 +533,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       }
     }
 
-    // Structured plan digest (numbers + verdict + invest delta), used in place
-    // of dumping the raw `answers` JSON into the prompt.
     const planDigest = plan ? buildPlanDigest(plan as never) : "";
     const planContext = planDigest
       ? `User's homebuying plan (use these numbers — do not re-derive):\n${planDigest}`
@@ -342,46 +542,54 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       ? `\n\nEarlier conversation summary (older turns folded for brevity):\n${rollingSummary}`
       : "";
 
-    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan numbers verbatim — they are pre-computed for you, do not recalculate. A core Keystone message: investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring it up naturally when relevant. When you don't know something (e.g. exact current mortgage rates today), say so and explain how to find out. Never give legal, tax, or specific investment advice — recommend a professional.\n\nAfter your reply, on a new line, output exactly one JSON object on its own line in the form:\n${FOLLOWUPS_OPEN}{"chips":["short follow-up 1","short follow-up 2","short follow-up 3"]}${FOLLOWUPS_CLOSE}\nEach chip must be under 60 chars, written as the user (e.g. "Show me a stretch goal at $200/mo more"), and concretely actionable for this user.\n\n${planContext}${summaryBlock}\n\nUser email: ${email ?? "unknown"}`;
+    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan numbers verbatim — they are pre-computed for you, do not recalculate. A core Keystone message: investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring it up naturally when relevant.
+
+When you propose a concrete change to the user's plan — an assumption tweak (rate, expected return, PMI, HOA, closing %), a different target price, monthly savings, savings balance, or move-in date — emit a tool call (propose_assumption_change or propose_plan_change) so the user can Apply it with one click. Mention the proposal briefly in prose ("I'd bump your assumed rate to 6.5% — Apply below"). Don't restate the full numbers in prose. Use draft_lender_email only when they're preparing to contact a lender. Never give legal, tax, or specific investment advice — recommend a professional.
+
+After your reply, on a new line, output exactly one JSON object on its own line in the form:
+${FOLLOWUPS_OPEN}{"chips":["short follow-up 1","short follow-up 2","short follow-up 3"]}${FOLLOWUPS_CLOSE}
+Each chip must be under 60 chars, written as the user (e.g. "Show me a stretch goal at $200/mo more"), and concretely actionable for this user.
+
+${planContext}${summaryBlock}
+
+User email: ${email ?? "unknown"}`;
 
     const messages: GatewayMessage[] = [
       { role: "system", content: systemPrompt },
       ...recentTurns.map((m) => ({
-        role: (m.role === "assistant" ? "assistant" : "user") as
-          | "user"
-          | "assistant",
+        role: (m.role === "assistant" ? "assistant" : "user") as "user" | "assistant",
         content: m.content,
       })),
       { role: "user", content: data.content },
     ];
 
-    const reasoningEffort: "low" | "medium" = shouldUseExtendedReasoning(
-      data.content,
-    )
+    const reasoningEffort: "low" | "medium" = shouldUseExtendedReasoning(data.content)
       ? "medium"
       : "low";
 
-    // Stream tokens. Buffer the full text to extract chips at the end, but
-    // never yield text that's part of the FOLLOWUPS marker block.
     let buffer = "";
-    let yielded = 0; // chars already emitted from `buffer`
+    let yielded = 0;
     let markerHit = false;
-    const SAFETY_TAIL = FOLLOWUPS_OPEN.length; // hold back this many chars
+    const SAFETY_TAIL = FOLLOWUPS_OPEN.length;
+    const collectedTools: ToolCallAccum[] = [];
 
     try {
-      for await (const delta of streamGateway(apiKey, messages, { reasoningEffort })) {
+      for await (const ev of streamGatewayWithTools(apiKey, messages, { reasoningEffort })) {
+        if (ev.type === "tool") {
+          collectedTools.push(ev.call);
+          continue;
+        }
+        const delta = ev.delta;
         buffer += delta;
         if (!markerHit) {
           const idx = buffer.indexOf(FOLLOWUPS_OPEN);
           if (idx !== -1) {
-            // Flush everything up to the marker, then stop emitting.
             if (idx > yielded) {
               yield { type: "delta" as const, delta: buffer.slice(yielded, idx) };
               yielded = idx;
             }
             markerHit = true;
           } else {
-            // Hold back a tail in case the marker straddles chunks.
             const safe = Math.max(yielded, buffer.length - SAFETY_TAIL);
             if (safe > yielded) {
               yield { type: "delta" as const, delta: buffer.slice(yielded, safe) };
@@ -395,13 +603,11 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       throw e;
     }
 
-    // Flush any held-back tail if we never saw the marker.
     if (!markerHit && yielded < buffer.length) {
       yield { type: "delta" as const, delta: buffer.slice(yielded) };
       yielded = buffer.length;
     }
 
-    // Extract reply + chips from the full buffer.
     let reply = buffer;
     let chips: string[] = [];
     const match = buffer.match(/<<FOLLOWUPS>>([\s\S]*?)<<END>>/);
@@ -424,7 +630,6 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     }
     if (!reply) reply = "Sorry, I had trouble responding.";
 
-    // Persist user + assistant turns now that the call succeeded.
     const { data: inserted } = await supabaseAdmin
       .from("coach_messages")
       .insert([
@@ -443,34 +648,279 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
           meta: chips.length > 0 ? { chips } : null,
         },
       ])
-      .select("id");
+      .select("id, role");
 
-    // Touch the thread so it sorts to the top of the threads list.
-    await supabaseAdmin
-      .from("coach_threads")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", thread.id);
+    const assistantId = inserted?.find((r) => r.role === "assistant")?.id ?? null;
+
+    // Persist tool-call proposals as actions tied to the assistant message.
+    const insertedActions: Array<{ id: string; kind: string; payload: any }> = [];
+    if (assistantId && collectedTools.length > 0) {
+      const rows = collectedTools
+        .map((t) => {
+          if (!t.name) return null;
+          let parsedArgs: Record<string, unknown> = {};
+          try {
+            parsedArgs = JSON.parse(t.args || "{}");
+          } catch {
+            return null;
+          }
+          if (!["propose_assumption_change", "propose_plan_change", "draft_lender_email"].includes(t.name)) {
+            return null;
+          }
+          return {
+            user_id: userId,
+            message_id: assistantId,
+            kind: t.name,
+            payload: { ...parsedArgs, plan_id: data.planId ?? plan?.id ?? null } as any,
+            status: "proposed",
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
+      if (rows.length > 0) {
+        const { data: actionRows } = await supabaseAdmin
+          .from("coach_message_actions")
+          .insert(rows)
+          .select("id, kind, payload");
+        if (actionRows) insertedActions.push(...(actionRows as any[]));
+      }
+    }
+
+
+    // Auto-title thread after the first user turn if still default.
+    if (
+      isFirstTurn &&
+      (thread.title === "New conversation" || !thread.title)
+    ) {
+      const newTitle = deriveTitleFromTurn(data.content);
+      await supabaseAdmin
+        .from("coach_threads")
+        .update({ title: newTitle, updated_at: new Date().toISOString() })
+        .eq("id", thread.id);
+    } else {
+      await supabaseAdmin
+        .from("coach_threads")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", thread.id);
+    }
 
     yield {
       type: "done" as const,
       chips,
       reply,
       threadId: thread.id,
-      assistantMessageId: inserted?.[1]?.id ?? null,
+      assistantMessageId: assistantId,
+      actions: insertedActions,
     };
   });
 
-export const clearCoachHistory = createServerFn({ method: "POST" })
+// ---------- actions: list / apply / dismiss ----------
+
+export const listCoachActions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) =>
+    z
+      .object({ messageIds: z.array(z.string().uuid()).max(200) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.messageIds.length === 0) return { actions: [] };
+    const { data: rows, error } = await supabaseAdmin
+      .from("coach_message_actions")
+      .select("id, message_id, kind, payload, status, applied_at, created_at")
+      .eq("user_id", context.userId)
+      .in("message_id", data.messageIds)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { actions: rows ?? [] };
+  });
+
+export const dismissCoachAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ actionId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
     const { error } = await supabaseAdmin
-      .from("coach_messages")
-      .delete()
+      .from("coach_message_actions")
+      .update({ status: "dismissed" })
+      .eq("id", data.actionId)
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+const ASSUMPTION_KEYS = new Set([
+  "mortgageRatePct",
+  "pmiPct",
+  "expectedReturnPct",
+  "hoaMonthly",
+  "closingCostPct",
+]);
+
+const ANSWER_FIELDS = new Set([
+  "targetPriceOverride",
+  "monthlySavings",
+  "currentSavings",
+  "targetMoveIn",
+]);
+
+export const applyCoachAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        actionId: z.string().uuid(),
+        environment: z.enum(["sandbox", "live"]).default("live"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const allowed = await userHasActiveSub(userId, data.environment);
+    if (!allowed) throw new Response("Upgrade required", { status: 403 });
+
+    const { data: action, error: readErr } = await supabaseAdmin
+      .from("coach_message_actions")
+      .select("id, kind, payload, status, user_id")
+      .eq("id", data.actionId)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!action || action.user_id !== userId)
+      throw new Response("Not found", { status: 404 });
+    if (action.status !== "proposed")
+      return { ok: true as const, alreadyHandled: true };
+
+    const payload = (action.payload ?? {}) as Record<string, any>;
+    const planId = (payload.plan_id as string | undefined) ?? null;
+
+    // Locate the target plan.
+    type PlanRow = { id: string; answers: Record<string, unknown> | null; assumptions: Record<string, unknown> | null };
+    let plan: PlanRow | null = null;
+    if (planId) {
+      const { data: row } = await supabaseAdmin
+        .from("plans")
+        .select("id, answers, assumptions")
+        .eq("id", planId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (row) plan = row as unknown as PlanRow;
+    }
+    if (!plan) {
+      const { data: row } = await supabaseAdmin
+        .from("plans")
+        .select("id, answers, assumptions")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (row) plan = row as unknown as PlanRow;
+    }
+
+
+    if (action.kind === "draft_lender_email") {
+      // Nothing to mutate server-side; UI opens mailto. Just mark applied.
+      await supabaseAdmin
+        .from("coach_message_actions")
+        .update({ status: "applied", applied_at: new Date().toISOString() })
+        .eq("id", action.id);
+      return { ok: true as const, kind: "draft_lender_email" as const, payload: payload as any };
+    }
+
+
+    if (!plan) throw new Response("No plan to update", { status: 400 });
+
+    if (action.kind === "propose_assumption_change") {
+      const key = String(payload.key ?? "");
+      const value = Number(payload.value);
+      if (!ASSUMPTION_KEYS.has(key) || !Number.isFinite(value)) {
+        throw new Response("Invalid assumption", { status: 400 });
+      }
+      const merged = { ...(plan.assumptions ?? {}), [key]: value };
+      const { error } = await supabaseAdmin
+        .from("plans")
+        .update({ assumptions: merged as never })
+        .eq("id", plan.id)
+        .eq("user_id", userId);
+      if (error) throw new Error(error.message);
+    } else if (action.kind === "propose_plan_change") {
+      const field = String(payload.field ?? "");
+      if (!ANSWER_FIELDS.has(field)) {
+        throw new Response("Invalid field", { status: 400 });
+      }
+      const raw = payload.value;
+      if (field === "targetMoveIn") {
+        const date = String(raw ?? "");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          throw new Response("Invalid date", { status: 400 });
+        }
+        const { error } = await supabaseAdmin
+          .from("plans")
+          .update({ target_move_in: date as never })
+          .eq("id", plan.id)
+          .eq("user_id", userId);
+        if (error) throw new Error(error.message);
+      } else {
+        const num = Number(raw);
+        if (!Number.isFinite(num) || num < 0) {
+          throw new Response("Invalid value", { status: 400 });
+        }
+        if (field === "currentSavings") {
+          const { error } = await supabaseAdmin
+            .from("plans")
+            .update({ current_savings: num as never })
+            .eq("id", plan.id)
+            .eq("user_id", userId);
+          if (error) throw new Error(error.message);
+        } else {
+          const merged = { ...(plan.answers ?? {}), [field]: num };
+          const { error } = await supabaseAdmin
+            .from("plans")
+            .update({ answers: merged as never })
+            .eq("id", plan.id)
+            .eq("user_id", userId);
+          if (error) throw new Error(error.message);
+        }
+      }
+    } else {
+      throw new Response("Unknown action kind", { status: 400 });
+    }
+
     await supabaseAdmin
-      .from("profiles")
-      .update({ coach_summary: null })
-      .eq("user_id", context.userId);
+      .from("coach_message_actions")
+      .update({ status: "applied", applied_at: new Date().toISOString() })
+      .eq("id", action.id);
+
+    return { ok: true as const, kind: action.kind as "propose_assumption_change" | "propose_plan_change", payload: payload as any };
+  });
+
+// ---------- clear current thread ----------
+
+export const clearCoachHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ threadId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.threadId) {
+      await supabaseAdmin
+        .from("coach_messages")
+        .delete()
+        .eq("user_id", context.userId)
+        .eq("thread_id", data.threadId);
+      await supabaseAdmin
+        .from("coach_threads")
+        .update({ summary: null })
+        .eq("id", data.threadId)
+        .eq("user_id", context.userId);
+    } else {
+      await supabaseAdmin
+        .from("coach_messages")
+        .delete()
+        .eq("user_id", context.userId);
+      await supabaseAdmin
+        .from("coach_threads")
+        .update({ summary: null })
+        .eq("user_id", context.userId);
+    }
     return { ok: true as const };
   });
