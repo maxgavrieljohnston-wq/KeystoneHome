@@ -27,6 +27,7 @@ type AnswersPatch = {
   hasPartner?: boolean;
 };
 
+
 type Props = {
   planId: string;
   planTitle: string | null;
@@ -73,6 +74,7 @@ export function EditablePlanPanel({
     nNum(answers, "partnerCredit") != null ? String(nNum(answers, "partnerCredit")) : "",
   );
   const [hasPartner, setHasPartner] = useState<boolean>(bool(answers, "hasPartner"));
+  const [currentSavingsLocal, setCurrentSavingsLocal] = useState<string>(fmtMoney(currentSavings ?? 0));
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -91,11 +93,11 @@ export function EditablePlanPanel({
   );
 
   const mut = useMutation({
-    mutationFn: (vars: { answersPatch: AnswersPatch }) =>
+    mutationFn: (vars: { answersPatch: AnswersPatch; currentSavings?: number }) =>
       updateFn({
         data: {
           planId,
-          currentSavings: currentSavings ?? 0,
+          currentSavings: vars.currentSavings ?? currentSavings ?? 0,
           answersPatch: vars.answersPatch,
           environment: env,
         } as never,
@@ -120,8 +122,9 @@ export function EditablePlanPanel({
     setCredit(nNum(answers, "credit") != null ? String(nNum(answers, "credit")) : "");
     setPartnerCredit(nNum(answers, "partnerCredit") != null ? String(nNum(answers, "partnerCredit")) : "");
     setHasPartner(bool(answers, "hasPartner"));
+    setCurrentSavingsLocal(fmtMoney(currentSavings ?? 0));
     setStatus("idle");
-  }, [planId, answers]);
+  }, [planId, answers, currentSavings]);
 
   const handleSave = () => {
     mut.mutate({
@@ -136,6 +139,7 @@ export function EditablePlanPanel({
         partnerCredit: parsed.partnerCredit,
         hasPartner,
       },
+      currentSavings: Number(onlyDigits(currentSavingsLocal) || 0),
     });
   };
 
@@ -197,6 +201,7 @@ export function EditablePlanPanel({
 
       <Section title="You">
         <Grid>
+          <MoneyField label="Current savings" value={currentSavingsLocal} onChange={setCurrentSavingsLocal} />
           <MoneyField label="Annual income" value={income} onChange={setIncome} />
           <MoneyField label="Monthly expenses" value={monthlyExpenses} onChange={setMonthlyExpenses} />
           <MoneyField label="Monthly debt payments" value={debt} onChange={setDebt} />
