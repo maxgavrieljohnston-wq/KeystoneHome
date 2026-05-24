@@ -653,7 +653,7 @@ User email: ${email ?? "unknown"}`;
     const assistantId = inserted?.find((r) => r.role === "assistant")?.id ?? null;
 
     // Persist tool-call proposals as actions tied to the assistant message.
-    const insertedActions: Array<{ id: string; kind: string; payload: Record<string, unknown> }> = [];
+    const insertedActions: Array<{ id: string; kind: string; payload: any }> = [];
     if (assistantId && collectedTools.length > 0) {
       const rows = collectedTools
         .map((t) => {
@@ -671,7 +671,7 @@ User email: ${email ?? "unknown"}`;
             user_id: userId,
             message_id: assistantId,
             kind: t.name,
-            payload: { ...parsedArgs, plan_id: data.planId ?? plan?.id ?? null },
+            payload: { ...parsedArgs, plan_id: data.planId ?? plan?.id ?? null } as any,
             status: "proposed",
           };
         })
@@ -681,9 +681,10 @@ User email: ${email ?? "unknown"}`;
           .from("coach_message_actions")
           .insert(rows)
           .select("id, kind, payload");
-        if (actionRows) insertedActions.push(...(actionRows as never[]));
+        if (actionRows) insertedActions.push(...(actionRows as any[]));
       }
     }
+
 
     // Auto-title thread after the first user turn if still default.
     if (
@@ -789,11 +790,12 @@ export const applyCoachAction = createServerFn({ method: "POST" })
     if (action.status !== "proposed")
       return { ok: true as const, alreadyHandled: true };
 
-    const payload = (action.payload ?? {}) as Record<string, unknown>;
+    const payload = (action.payload ?? {}) as Record<string, any>;
     const planId = (payload.plan_id as string | undefined) ?? null;
 
     // Locate the target plan.
-    let plan: { id: string; answers: Record<string, unknown>; assumptions: Record<string, unknown> | null } | null = null;
+    type PlanRow = { id: string; answers: Record<string, unknown> | null; assumptions: Record<string, unknown> | null };
+    let plan: PlanRow | null = null;
     if (planId) {
       const { data: row } = await supabaseAdmin
         .from("plans")
@@ -801,7 +803,7 @@ export const applyCoachAction = createServerFn({ method: "POST" })
         .eq("id", planId)
         .eq("user_id", userId)
         .maybeSingle();
-      if (row) plan = row as never;
+      if (row) plan = row as unknown as PlanRow;
     }
     if (!plan) {
       const { data: row } = await supabaseAdmin
@@ -811,8 +813,9 @@ export const applyCoachAction = createServerFn({ method: "POST" })
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (row) plan = row as never;
+      if (row) plan = row as unknown as PlanRow;
     }
+
 
     if (action.kind === "draft_lender_email") {
       // Nothing to mutate server-side; UI opens mailto. Just mark applied.
@@ -820,8 +823,9 @@ export const applyCoachAction = createServerFn({ method: "POST" })
         .from("coach_message_actions")
         .update({ status: "applied", applied_at: new Date().toISOString() })
         .eq("id", action.id);
-      return { ok: true as const, kind: "draft_lender_email" as const, payload };
+      return { ok: true as const, kind: "draft_lender_email" as const, payload: payload as any };
     }
+
 
     if (!plan) throw new Response("No plan to update", { status: 400 });
 
