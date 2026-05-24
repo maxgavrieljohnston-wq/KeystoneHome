@@ -327,7 +327,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const SAFETY_TAIL = FOLLOWUPS_OPEN.length; // hold back this many chars
 
     try {
-      for await (const delta of streamGateway(apiKey, messages)) {
+      for await (const delta of streamGateway(apiKey, messages, { reasoningEffort })) {
         buffer += delta;
         if (!markerHit) {
           const idx = buffer.indexOf(FOLLOWUPS_OPEN);
