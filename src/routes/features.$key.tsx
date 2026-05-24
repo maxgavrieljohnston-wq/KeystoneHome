@@ -15,6 +15,7 @@ import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
+import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FEATURE_KEYS, FEATURE_META, type FeatureKey } from "@/lib/dashboard-features";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
