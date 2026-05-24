@@ -251,6 +251,29 @@ export function EditablePlanPanel({
           </Grid>
         )}
       </Section>
+
+      <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={mut.isPending}
+          style={{
+            padding: "10px 22px",
+            background: C.ink,
+            color: "#f5efe6",
+            border: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: mut.isPending ? "default" : "pointer",
+            opacity: mut.isPending ? 0.6 : 1,
+          }}
+        >
+          {mut.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
     </div>
   );
 }
