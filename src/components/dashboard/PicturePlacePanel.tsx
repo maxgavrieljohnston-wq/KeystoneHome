@@ -15,48 +15,14 @@ const C = {
   sage: "#5a8a5c",
 };
 
-type Priority = "nice" | "must";
-type PriorityMap = Record<string, Priority>;
-
-const LIFESTYLE_ITEMS = [
-  { val: "kids", label: "Space for kids" },
-  { val: "dog", label: "Room for a dog" },
-  { val: "host", label: "Hosting friends" },
-  { val: "mornings", label: "Quiet mornings outside" },
-  { val: "garden", label: "Gardening" },
-  { val: "lowmaint", label: "Low maintenance" },
-  { val: "office", label: "Home office" },
-];
-
-const NEIGHBORHOOD_ITEMS = [
-  { val: "walk", label: "Walkable area" },
-  { val: "schools", label: "Good schools" },
-  { val: "commute", label: "Near work" },
-  { val: "transit", label: "Public transit" },
-  { val: "quiet", label: "Quiet suburb" },
-  { val: "nature", label: "Parks & nature" },
-  { val: "nightlife", label: "Restaurants & nightlife" },
-  { val: "family", label: "Near family" },
-];
-
-const LAYOUT_STYLES = new Set(["starter", "single", "multi", "fixer"]);
-
-const num = (a: Record<string, unknown>, k: string, fb = 0): number => {
-  const v = a[k];
-  return typeof v === "number" && isFinite(v) ? v : fb;
-};
 const str = (a: Record<string, unknown>, k: string): string => {
   const v = a[k];
   return typeof v === "string" ? v : "";
 };
-const prioMap = (a: Record<string, unknown>, k: string): PriorityMap => {
+const strArray = (a: Record<string, unknown>, k: string): string[] => {
   const v = a[k];
-  if (!v || typeof v !== "object") return {};
-  const out: PriorityMap = {};
-  for (const [key, val] of Object.entries(v as Record<string, unknown>)) {
-    if (val === "nice" || val === "must") out[key] = val;
-  }
-  return out;
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string") as string[];
+  return [];
 };
 
 export function PicturePlacePanel({
