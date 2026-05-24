@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { monthsToGoal, futureValue } from "@/lib/invest-projection";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { updatePlanMeta } from "@/lib/plans.functions";
