@@ -295,6 +295,8 @@ const updateMetaSchema = z.object({
     partnerIncome: z.number().min(0).max(1e8).optional(),
     debt: z.number().min(0).max(1e7).optional(),
     partnerDebt: z.number().min(0).max(1e7).optional(),
+    monthlyExpenses: z.number().min(0).max(1e7).optional(),
+    partnerMonthlyExpenses: z.number().min(0).max(1e7).optional(),
     credit: z.number().min(300).max(850).nullable().optional(),
     partnerCredit: z.number().min(300).max(850).nullable().optional(),
     zip: z.string().max(10).optional(),
