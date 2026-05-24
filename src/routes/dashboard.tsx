@@ -54,7 +54,6 @@ function DashboardPage() {
   const navigate = useNavigate();
   const { planId: selectedId } = Route.useSearch();
   const sub = useSubscription();
-  const gate = useUpgradeGate();
 
   const plansFn = useServerFn(getMyPlans);
   const extrasFn = useServerFn(getDashboardExtras);
@@ -100,11 +99,8 @@ function DashboardPage() {
 
   if (!selected) return <Centered>No plan selected.</Centered>;
 
-  const isPlus = sub.isPlus;
-  const isPro = sub.isPro;
-  const onLockedClick = () => gate.openUpgrade("plus", "dashboard-panel");
-
   const metrics = computePlanMetrics(selected.answers, selected.assumptions);
+  const firstName = (selected.title || "").split(" ")[0] || "there";
 
   return (
     <div
