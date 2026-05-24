@@ -459,3 +459,117 @@ function NumbersSummary({
     </div>
   );
 }
+
+function ComparisonRow({
+  label,
+  value,
+  rightLabel,
+  rightValue,
+  highlight,
+  footnote,
+}: {
+  label: string;
+  value: string;
+  rightLabel: string;
+  rightValue: string;
+  highlight?: boolean;
+  footnote?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 16,
+        padding: "16px 18px",
+        borderRadius: 10,
+        background: highlight ? "#fff7ef" : "#faf6ee",
+        border: highlight ? `1.5px solid ${C.ember}` : `1px solid ${C.inkFaint}`,
+        position: "relative",
+      }}
+    >
+      {highlight && (
+        <div
+          style={{
+            position: "absolute",
+            top: -10,
+            left: 14,
+            background: C.ember,
+            color: "#fff",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            padding: "3px 8px",
+            borderRadius: 4,
+          }}
+        >
+          Recommended
+        </div>
+      )}
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            color: C.inkMute,
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            marginBottom: 4,
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+            fontSize: 26,
+            fontWeight: 600,
+            color: C.ink,
+            lineHeight: 1.1,
+          }}
+        >
+          {value}
+        </div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: C.inkMute,
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            marginBottom: 4,
+          }}
+        >
+          {rightLabel}
+        </div>
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+            fontSize: 26,
+            fontWeight: 600,
+            color: highlight ? C.ember : C.ink,
+            lineHeight: 1.1,
+          }}
+        >
+          {rightValue}
+        </div>
+      </div>
+      {footnote && (
+        <div
+          style={{
+            gridColumn: "1 / -1",
+            fontSize: 12,
+            color: C.ember,
+            fontStyle: "italic",
+            marginTop: 4,
+          }}
+        >
+          {footnote}
+        </div>
+      )}
+    </div>
+  );
+}
