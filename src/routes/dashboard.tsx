@@ -1,10 +1,11 @@
 import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
+import { getMyPlans, getDashboardExtras, revertPlanToInitial, exportPlanPdf } from "@/lib/plans.functions";
+import { getStripeEnvironment } from "@/lib/stripe";
 
 import { computePlanMetrics, computeTimeToGoal, formatMonths } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
