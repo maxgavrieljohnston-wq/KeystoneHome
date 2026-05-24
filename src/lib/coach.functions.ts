@@ -4,6 +4,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { investEdge, projectScenarios } from "@/lib/invest-projection";
+import { buildPlanDigest, shouldUseExtendedReasoning } from "@/lib/coach-context";
+
+const COACH_MODEL = "google/gemini-3-flash-preview";
 
 // Sliding window: keep this many most-recent turns verbatim. Anything older
 // is folded into a rolling summary stored on profiles.coach_summary.
@@ -127,7 +130,7 @@ async function callGatewayJson(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: "google/gemini-2.5-flash", messages }),
+    body: JSON.stringify({ model: COACH_MODEL, messages }),
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -144,18 +147,23 @@ async function callGatewayJson(
 async function* streamGateway(
   apiKey: string,
   messages: GatewayMessage[],
+  opts?: { reasoningEffort?: "low" | "medium" },
 ): AsyncGenerator<string> {
+  const body: Record<string, unknown> = {
+    model: COACH_MODEL,
+    messages,
+    stream: true,
+  };
+  if (opts?.reasoningEffort) {
+    body.reasoning = { effort: opts.reasoningEffort };
+  }
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages,
-      stream: true,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok || !res.body) {
     const txt = res.ok ? "no body" : await res.text().catch(() => "");
@@ -200,6 +208,45 @@ async function* streamGateway(
   }
 }
 
+// Resolve a thread for this user: explicit id (must belong to them), else the
+// most recently updated non-archived thread, else create a fresh one tied to
+// the given plan.
+async function ensureThread(
+  userId: string,
+  opts: { threadId?: string; planId?: string; title?: string },
+): Promise<{ id: string; summary: string | null; plan_id: string | null }> {
+  if (opts.threadId) {
+    const { data } = await supabaseAdmin
+      .from("coach_threads")
+      .select("id, summary, plan_id, user_id")
+      .eq("id", opts.threadId)
+      .maybeSingle();
+    if (data && data.user_id === userId) {
+      return { id: data.id, summary: data.summary, plan_id: data.plan_id };
+    }
+  }
+  const { data: existing } = await supabaseAdmin
+    .from("coach_threads")
+    .select("id, summary, plan_id")
+    .eq("user_id", userId)
+    .eq("archived", false)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (existing && existing[0]) return existing[0];
+
+  const { data: created, error } = await supabaseAdmin
+    .from("coach_threads")
+    .insert({
+      user_id: userId,
+      plan_id: opts.planId ?? null,
+      title: opts.title ?? "New conversation",
+    })
+    .select("id, summary, plan_id")
+    .single();
+  if (error || !created) throw new Error(error?.message ?? "Failed to create thread");
+  return created;
+}
+
 export const sendCoachMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -208,6 +255,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         content: z.string().trim().min(1).max(4000),
         environment: z.enum(["sandbox", "live"]).default("live"),
         planId: z.string().uuid().optional(),
+        threadId: z.string().uuid().optional(),
       })
       .parse(input),
   )
@@ -225,7 +273,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     // Active plan (selected or latest).
     let planQuery = supabaseAdmin
       .from("plans")
-      .select("id, title, answers, created_at")
+      .select("id, title, answers, assumptions, current_savings, target_move_in, version, created_at")
       .eq("user_id", userId);
     if (data.planId) {
       planQuery = planQuery.eq("id", data.planId);
@@ -235,11 +283,18 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const { data: planRows } = await planQuery;
     const plan = planRows?.[0] ?? null;
 
-    // Full chat history → recent window + older to summarize.
+    // Resolve thread (scoped per-user, optionally tied to the active plan).
+    const thread = await ensureThread(userId, {
+      threadId: data.threadId,
+      planId: data.planId ?? plan?.id,
+    });
+
+    // Thread-scoped chat history → recent window + older to summarize.
     const { data: history } = await supabaseAdmin
       .from("coach_messages")
       .select("role, content, created_at")
       .eq("user_id", userId)
+      .eq("thread_id", thread.id)
       .order("created_at", { ascending: true });
 
     const allTurns = (history ?? []) as Array<{ role: string; content: string }>;
@@ -249,12 +304,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         : [];
     const recentTurns = allTurns.slice(-HISTORY_WINDOW);
 
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("coach_summary")
-      .eq("user_id", userId)
-      .maybeSingle();
-    let rollingSummary = (profile?.coach_summary as string | null) ?? "";
+    let rollingSummary = thread.summary ?? "";
 
     if (olderTurns.length > 0) {
       try {
@@ -272,49 +322,27 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
         if (newSummary) {
           rollingSummary = newSummary;
           await supabaseAdmin
-            .from("profiles")
-            .update({ coach_summary: newSummary })
-            .eq("user_id", userId);
+            .from("coach_threads")
+            .update({ summary: newSummary })
+            .eq("id", thread.id);
         }
       } catch (e) {
         console.warn("[coach] summary refresh failed", e);
       }
     }
 
-    let investContext = "";
-    if (plan) {
-      try {
-        const m = computePlanMetrics(
-          (plan.answers as Record<string, unknown>) ?? {},
-          null,
-        );
-        const months = Math.max(1, Math.round(m.timelineYears * 12));
-        const scenarios = projectScenarios({
-          saved: m.saved,
-          target: m.downPayment,
-          months,
-        });
-        const invested = scenarios.find((s) => s.scenario.id === "invested")!;
-        const edge = investEdge({
-          saved: m.saved,
-          target: m.downPayment,
-          monthly: invested.monthly,
-        });
-        investContext = `\n\nInvest-vs-save delta (Keystone's core thesis — reference these naturally):\n- Down-payment goal: $${m.downPayment.toLocaleString()} in ${m.timelineYears} years\n- Currently saved: $${m.saved.toLocaleString()}\n- Required at 7% (invested): $${invested.monthly.toLocaleString()}/mo, growth contributes $${invested.growth.toLocaleString()}\n- Investing instead of using a basic savings account at the same monthly contribution gets the user there ${edge.monthsSooner} months sooner and saves them $${edge.dollarsSaved.toLocaleString()} in contributions.`;
-      } catch (e) {
-        console.warn("[coach] invest-context failed", e);
-      }
-    }
-
-    const planContext = plan
-      ? `User's homebuying plan answers (use these as context):\nPlan: ${plan.title ?? "Untitled plan"}\n${JSON.stringify(plan.answers, null, 2)}`
+    // Structured plan digest (numbers + verdict + invest delta), used in place
+    // of dumping the raw `answers` JSON into the prompt.
+    const planDigest = plan ? buildPlanDigest(plan as never) : "";
+    const planContext = planDigest
+      ? `User's homebuying plan (use these numbers — do not re-derive):\n${planDigest}`
       : "The user has not yet completed their homebuying plan questionnaire.";
 
     const summaryBlock = rollingSummary
       ? `\n\nEarlier conversation summary (older turns folded for brevity):\n${rollingSummary}`
       : "";
 
-    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan data to personalize advice. A core message of Keystone is that investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring this up naturally when relevant. When you don't know something (e.g. exact current mortgage rates), say so and explain how to find out. Never give legal, tax, or specific investment advice — recommend a professional.\n\nAfter your reply, on a new line, output exactly one JSON object on its own line in the form:\n${FOLLOWUPS_OPEN}{"chips":["short follow-up 1","short follow-up 2","short follow-up 3"]}${FOLLOWUPS_CLOSE}\nEach chip must be under 60 chars, written as the user (e.g. "Show me a stretch goal at $200/mo more"), and concretely actionable for this user.\n\n${planContext}${investContext}${summaryBlock}\n\nUser email: ${email ?? "unknown"}`;
+    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan numbers verbatim — they are pre-computed for you, do not recalculate. A core Keystone message: investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring it up naturally when relevant. When you don't know something (e.g. exact current mortgage rates today), say so and explain how to find out. Never give legal, tax, or specific investment advice — recommend a professional.\n\nAfter your reply, on a new line, output exactly one JSON object on its own line in the form:\n${FOLLOWUPS_OPEN}{"chips":["short follow-up 1","short follow-up 2","short follow-up 3"]}${FOLLOWUPS_CLOSE}\nEach chip must be under 60 chars, written as the user (e.g. "Show me a stretch goal at $200/mo more"), and concretely actionable for this user.\n\n${planContext}${summaryBlock}\n\nUser email: ${email ?? "unknown"}`;
 
     const messages: GatewayMessage[] = [
       { role: "system", content: systemPrompt },
@@ -327,6 +355,12 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       { role: "user", content: data.content },
     ];
 
+    const reasoningEffort: "low" | "medium" = shouldUseExtendedReasoning(
+      data.content,
+    )
+      ? "medium"
+      : "low";
+
     // Stream tokens. Buffer the full text to extract chips at the end, but
     // never yield text that's part of the FOLLOWUPS marker block.
     let buffer = "";
@@ -335,7 +369,7 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     const SAFETY_TAIL = FOLLOWUPS_OPEN.length; // hold back this many chars
 
     try {
-      for await (const delta of streamGateway(apiKey, messages)) {
+      for await (const delta of streamGateway(apiKey, messages, { reasoningEffort })) {
         buffer += delta;
         if (!markerHit) {
           const idx = buffer.indexOf(FOLLOWUPS_OPEN);
@@ -391,22 +425,39 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     if (!reply) reply = "Sorry, I had trouble responding.";
 
     // Persist user + assistant turns now that the call succeeded.
-    await supabaseAdmin.from("coach_messages").insert([
-      {
-        user_id: userId,
-        role: "user",
-        content: data.content,
-        meta: data.planId ? { plan_id: data.planId } : null,
-      },
-      {
-        user_id: userId,
-        role: "assistant",
-        content: reply,
-        meta: chips.length > 0 ? { chips } : null,
-      },
-    ]);
+    const { data: inserted } = await supabaseAdmin
+      .from("coach_messages")
+      .insert([
+        {
+          user_id: userId,
+          thread_id: thread.id,
+          role: "user",
+          content: data.content,
+          meta: data.planId ? { plan_id: data.planId } : null,
+        },
+        {
+          user_id: userId,
+          thread_id: thread.id,
+          role: "assistant",
+          content: reply,
+          meta: chips.length > 0 ? { chips } : null,
+        },
+      ])
+      .select("id");
 
-    yield { type: "done" as const, chips, reply };
+    // Touch the thread so it sorts to the top of the threads list.
+    await supabaseAdmin
+      .from("coach_threads")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", thread.id);
+
+    yield {
+      type: "done" as const,
+      chips,
+      reply,
+      threadId: thread.id,
+      assistantMessageId: inserted?.[1]?.id ?? null,
+    };
   });
 
 export const clearCoachHistory = createServerFn({ method: "POST" })

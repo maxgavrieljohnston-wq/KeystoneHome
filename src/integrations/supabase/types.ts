@@ -125,6 +125,47 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_message_actions: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          id: string
+          kind: string
+          message_id: string
+          payload: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          message_id: string
+          payload?: Json
+          status?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          message_id?: string
+          payload?: Json
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_message_actions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "coach_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_messages: {
         Row: {
           content: string
@@ -132,6 +173,7 @@ export type Database = {
           id: string
           meta: Json | null
           role: string
+          thread_id: string
           user_id: string
         }
         Insert: {
@@ -140,6 +182,7 @@ export type Database = {
           id?: string
           meta?: Json | null
           role: string
+          thread_id: string
           user_id: string
         }
         Update: {
@@ -148,6 +191,48 @@ export type Database = {
           id?: string
           meta?: Json | null
           role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "coach_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_threads: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          plan_id: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          plan_id?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          plan_id?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
