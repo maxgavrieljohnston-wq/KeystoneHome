@@ -25,7 +25,7 @@ export const FEATURE_META: Record<
   FeatureKey,
   { label: string; short: string; icon: LucideIcon }
 > = {
-  editable: { label: "Editable plan", short: "Plan", icon: Pencil },
+  editable: { label: "Current finances", short: "Finances", icon: Pencil },
   invest: { label: "Invest vs save", short: "Invest", icon: TrendingUp },
   assumptions: { label: "Assumptions", short: "Tune", icon: Sliders },
   picture: { label: "Picture your place", short: "Picture", icon: Home },
