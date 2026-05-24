@@ -308,6 +308,29 @@ export function PicturePlacePanel({
       <Field label="Neighborhood — nice vs must-have">
         <PriorityRows items={NEIGHBORHOOD_ITEMS} values={neighborhood} onChange={setNeighborhood} />
       </Field>
+
+      <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={mut.isPending || locked}
+          style={{
+            padding: "10px 22px",
+            background: C.ink,
+            color: "#f5efe6",
+            border: "none",
+            borderRadius: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            cursor: mut.isPending ? "default" : "pointer",
+            opacity: mut.isPending ? 0.6 : 1,
+          }}
+        >
+          {mut.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
     </InvestSection>
   );
 }
