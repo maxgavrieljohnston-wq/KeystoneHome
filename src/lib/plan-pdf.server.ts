@@ -147,7 +147,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
     `${Math.round(m.housingRatio * 100)}% — ${m.verdict}`,
     { color: verdictColor },
   );
-  y -= 8;
+  y -= 4;
 
   sectionHeader("02", "Cash to close");
   row("Down payment", money(m.downPayment));
@@ -175,7 +175,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
       row("Required savings to hit goal", `${money(g.requiredMonthly)}/mo`, { bold: true });
     }
   }
-  y -= 8;
+  y -= 4;
 
   // ── 03. Save-vs-invest comparison chart ─────────────────────────────────
   sectionHeader("03", `Path to your deposit — ${m.timelineYears} yr`);
@@ -309,17 +309,22 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
     }
     y = sy - 3;
   }
-  y -= 4;
+  y -= 2;
 
-  // ── 06. Profile snapshot ────────────────────────────────────────────────
-  sectionHeader("06", "Profile snapshot");
-  row("Location", `${m.city}${m.zip ? ` · ${m.zip}` : ""}`);
-  row("Home", m.homeStyleLabel);
-  row("Household", hasPartner ? "Two-person" : "Solo");
-  row("Combined income", `${money(combinedIncome)}/yr`);
-  // Drop the lowest-priority rows if we'd collide with the footer (y < 75)
-  if (y > 78) row("Monthly expenses", `${money(expenses)}/mo`);
-  if (y > 78) row("Total debt payments", `${money(debt)}/mo`);
+  // ── 06. Profile snapshot ─ render only what fits above the footer (y >= 72)
+  const safeRow = (label: string, val: string) => {
+    if (y < 72) return;
+    row(label, val);
+  };
+  if (y >= 90) {
+    sectionHeader("06", "Profile snapshot");
+    safeRow("Location", `${m.city}${m.zip ? ` · ${m.zip}` : ""}`);
+    safeRow("Home", m.homeStyleLabel);
+    safeRow("Household", hasPartner ? "Two-person" : "Solo");
+    safeRow("Combined income", `${money(combinedIncome)}/yr`);
+    safeRow("Monthly expenses", `${money(expenses)}/mo`);
+    safeRow("Total debt payments", `${money(debt)}/mo`);
+  }
 
   // Footer
   const footY = 50;
