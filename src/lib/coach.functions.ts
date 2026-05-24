@@ -425,22 +425,39 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
     if (!reply) reply = "Sorry, I had trouble responding.";
 
     // Persist user + assistant turns now that the call succeeded.
-    await supabaseAdmin.from("coach_messages").insert([
-      {
-        user_id: userId,
-        role: "user",
-        content: data.content,
-        meta: data.planId ? { plan_id: data.planId } : null,
-      },
-      {
-        user_id: userId,
-        role: "assistant",
-        content: reply,
-        meta: chips.length > 0 ? { chips } : null,
-      },
-    ]);
+    const { data: inserted } = await supabaseAdmin
+      .from("coach_messages")
+      .insert([
+        {
+          user_id: userId,
+          thread_id: thread.id,
+          role: "user",
+          content: data.content,
+          meta: data.planId ? { plan_id: data.planId } : null,
+        },
+        {
+          user_id: userId,
+          thread_id: thread.id,
+          role: "assistant",
+          content: reply,
+          meta: chips.length > 0 ? { chips } : null,
+        },
+      ])
+      .select("id");
 
-    yield { type: "done" as const, chips, reply };
+    // Touch the thread so it sorts to the top of the threads list.
+    await supabaseAdmin
+      .from("coach_threads")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", thread.id);
+
+    yield {
+      type: "done" as const,
+      chips,
+      reply,
+      threadId: thread.id,
+      assistantMessageId: inserted?.[1]?.id ?? null,
+    };
   });
 
 export const clearCoachHistory = createServerFn({ method: "POST" })
