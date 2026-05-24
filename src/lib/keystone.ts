@@ -38,14 +38,17 @@ export const STRATEGIES: Risk[] = [
   { rate: 0.1,   label: "Growth",       desc: "Equities · ~10%/yr", tone: "ember" },
 ];
 
+const byLabel = (l: string): Risk => STRATEGIES.find((s) => s.label === l) ?? STRATEGIES[0];
+
 export function deriveRisk(answers: Record<number, number>): Risk {
   const keys = Object.keys(answers);
-  if (!keys.length) return STRATEGIES[1];
+  if (!keys.length) return byLabel("Balanced");
   const score = keys.reduce((a, k) => a + answers[Number(k)], 0);
   const pct = score / (keys.length * 3);
-  if (pct >= 0.72) return STRATEGIES[2];
-  if (pct >= 0.42) return STRATEGIES[1];
-  return STRATEGIES[0];
+  if (pct >= 0.72) return byLabel("Growth");
+  if (pct >= 0.55) return byLabel("Balanced");
+  if (pct >= 0.32) return byLabel("Moderate");
+  return byLabel("Conservative");
 }
 
 // ── Mortgage ───────────────────────────────────────────────────────────────
