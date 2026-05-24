@@ -53,8 +53,14 @@ export function InvestVsSavePanel({
     [answers, assumptions],
   );
 
-  const userRate = metrics.expectedReturnRate || 0.07;
+  const derivedRate = metrics.expectedReturnRate || 0.07;
   const statedMonthly = Math.max(50, Math.round(metrics.monthlySavings || 0));
+
+  // Local overrides (manual-save pattern)
+  const [selectedRate, setSelectedRate] = useState<number>(derivedRate);
+  useEffect(() => {
+    setSelectedRate(derivedRate);
+  }, [derivedRate]);
 
   // Slider defaults to persisted investMonthly, else user's stated monthly.
   const persistedMonthly = (assumptions?.investMonthly as number | undefined) ?? null;
@@ -64,25 +70,25 @@ export function InvestVsSavePanel({
     setMonthly(persistedMonthly ?? statedMonthly);
   }, [persistedMonthly, statedMonthly]);
 
-  // Baseline: time to goal at their CURRENT stated monthly + their chosen rate.
+  // Baseline: time to goal at their CURRENT stated monthly + selected rate.
   const baselineMonths = useMemo(
-    () => monthsToGoal(metrics.saved, metrics.downPayment, statedMonthly, userRate),
-    [metrics.saved, metrics.downPayment, statedMonthly, userRate],
+    () => monthsToGoal(metrics.saved, metrics.downPayment, statedMonthly, selectedRate),
+    [metrics.saved, metrics.downPayment, statedMonthly, selectedRate],
   );
 
-  // Slider scenario: time to goal at chosen monthly + their rate.
+  // Slider scenario: time to goal at chosen monthly + selected rate.
   const sliderMonths = useMemo(
-    () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, userRate),
-    [metrics.saved, metrics.downPayment, monthly, userRate],
+    () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, selectedRate),
+    [metrics.saved, metrics.downPayment, monthly, selectedRate],
   );
 
-  // Total growth at slider monthly + user rate, evaluated at sliderMonths.
+  // Total growth at slider monthly + selected rate, evaluated at sliderMonths.
   const projectedGrowth = useMemo(() => {
     if (!isFinite(sliderMonths) || sliderMonths <= 0) return 0;
-    const end = futureValue(metrics.saved, monthly, userRate, sliderMonths);
+    const end = futureValue(metrics.saved, monthly, selectedRate, sliderMonths);
     const contributed = monthly * sliderMonths + metrics.saved;
     return Math.max(0, Math.round(end - contributed));
-  }, [metrics.saved, monthly, userRate, sliderMonths]);
+  }, [metrics.saved, monthly, selectedRate, sliderMonths]);
 
   // Delta vs baseline.
   const delta = useMemo(() => {
@@ -97,13 +103,18 @@ export function InvestVsSavePanel({
   const [saving, setSaving] = useState(false);
   const dirty =
     Boolean(planId && isPlus && !locked) &&
-    Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly);
+    (Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly) ||
+      Math.abs(selectedRate - derivedRate) >= 0.0001);
 
   const handleSave = async () => {
     if (!planId || !isPlus || locked || !dirty) return;
     setSaving(true);
     try {
-      const nextAssumptions = { ...(assumptions ?? {}), investMonthly: Math.round(monthly) };
+      const nextAssumptions = {
+        ...(assumptions ?? {}),
+        investMonthly: Math.round(monthly),
+        expectedReturnPct: Math.round(selectedRate * 1000) / 10,
+      };
       await updateMeta({ data: { planId, assumptions: nextAssumptions } });
     } catch (e) {
       console.warn("[invest panel] persist failed", e);
@@ -123,7 +134,7 @@ export function InvestVsSavePanel({
     >
       <p style={{ color: C.inkSoft, fontSize: 15, lineHeight: 1.5, margin: "0 0 22px" }}>
         You're contributing <strong style={{ color: C.ink }}>{fmt(statedMonthly)}/mo</strong> at a{" "}
-        <strong style={{ color: C.ink }}>{(userRate * 100).toFixed(1)}%</strong> return. Move the
+        <strong style={{ color: C.ink }}>{(selectedRate * 100).toFixed(1)}%</strong> return. Move the
         slider to see how a different monthly changes your timeline.
       </p>
 
@@ -147,7 +158,7 @@ export function InvestVsSavePanel({
             marginBottom: 8,
           }}
         >
-          At {fmt(monthly)}/mo · {(userRate * 100).toFixed(1)}%
+          At {fmt(monthly)}/mo · {(selectedRate * 100).toFixed(1)}%
         </div>
         <div
           style={{
@@ -271,7 +282,7 @@ export function InvestVsSavePanel({
                 opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? "Saving…" : "Save contribution"}
+              {saving ? "Saving…" : "Save"}
             </button>
           </div>
         )}
@@ -293,16 +304,18 @@ export function InvestVsSavePanel({
         </div>
         <div style={{ display: "grid", gap: 10 }}>
           {STRATEGIES.map((s) => {
-            const isYours = Math.abs(s.rate - userRate) < 0.0025;
+            const isSelected = Math.abs(s.rate - selectedRate) < 0.0025;
             const months = monthsToGoal(metrics.saved, metrics.downPayment, monthly, s.rate);
             return (
               <RateRow
                 key={s.label}
-                label={isYours ? `${s.label} · your profile` : s.label}
+                label={isSelected ? `${s.label} · your profile` : s.label}
                 sub={s.desc}
                 months={months}
-                accent={isYours ? C.ember : C.inkSoft}
-                primary={isYours}
+                accent={isSelected ? C.ember : C.inkSoft}
+                primary={isSelected}
+                onClick={() => { if (!locked && isPlus) setSelectedRate(s.rate); }}
+                clickable={!locked && isPlus}
               />
             );
           })}
@@ -316,7 +329,7 @@ export function InvestVsSavePanel({
               lineHeight: 1.5,
             }}
           >
-            At your {(userRate * 100).toFixed(1)}% profile, your money earns roughly{" "}
+            At your {(selectedRate * 100).toFixed(1)}% profile, your money earns roughly{" "}
             <strong style={{ color: C.sage }}>{fmt(projectedGrowth)}</strong> in growth along the
             way — work you don't have to do.
           </div>
@@ -332,15 +345,19 @@ function RateRow({
   months,
   accent,
   primary = false,
+  onClick,
+  clickable = false,
 }: {
   label: string;
   sub: string;
   months: number;
   accent: string;
   primary?: boolean;
+  onClick?: () => void;
+  clickable?: boolean;
 }) {
   const reachable = isFinite(months);
-  return (
+  const content = (
     <div
       style={{
         display: "flex",
@@ -378,6 +395,23 @@ function RateRow({
         {reachable ? fmtMonths(months) : "Won't reach"}
       </div>
     </div>
+  );
+
+  if (!clickable) return content;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        all: "unset",
+        display: "block",
+        width: "100%",
+        cursor: "pointer",
+      }}
+    >
+      {content}
+    </button>
   );
 }
 
