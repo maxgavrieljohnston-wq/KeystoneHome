@@ -53,7 +53,7 @@ type PlanRow = {
 function DashboardPage() {
   const navigate = useNavigate();
   const { planId: selectedId } = Route.useSearch();
-  const sub = useSubscription();
+  
 
   const plansFn = useServerFn(getMyPlans);
   const extrasFn = useServerFn(getDashboardExtras);
