@@ -4,6 +4,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { investEdge, projectScenarios } from "@/lib/invest-projection";
+import { buildPlanDigest, shouldUseExtendedReasoning } from "@/lib/coach-context";
+
+const COACH_MODEL = "google/gemini-3-flash-preview";
 
 // Sliding window: keep this many most-recent turns verbatim. Anything older
 // is folded into a rolling summary stored on profiles.coach_summary.
