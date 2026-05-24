@@ -24,7 +24,6 @@ function cleanLabel(label: string): string {
 // Source of truth (tier-features.ts) is untouched.
 const PRO_DISPLAY_ORDER = [
   "coach",
-  "stress",
   "market",
   "alerts",
   "docs",
@@ -49,7 +48,7 @@ function orderProFeatures(features: readonly TierFeature[]): TierFeature[] {
 // Featured highlights shown above the fold; the rest is collapsed behind
 // "Show all features". Order matters — these render top-to-bottom.
 const PLUS_HIGHLIGHT_IDS = ["action", "assumptions", "accounts", "invest"];
-const PRO_HIGHLIGHT_IDS = ["_plus", "stress", "market", "broker", "investing"];
+const PRO_HIGHLIGHT_IDS = ["_plus", "market", "broker", "investing"];
 
 function splitFeatures(
   features: readonly TierFeature[],

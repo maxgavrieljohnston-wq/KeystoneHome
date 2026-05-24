@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as StressTestRouteImport } from './routes/stress-test'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MarketRouteImport } from './routes/market'
@@ -39,11 +38,6 @@ const WelcomeRoute = WelcomeRouteImport.update({
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StressTestRoute = StressTestRouteImport.update({
-  id: '/stress-test',
-  path: '/stress-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -152,7 +146,6 @@ export interface FileRoutesByFullPath {
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
@@ -175,7 +168,6 @@ export interface FileRoutesByTo {
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
@@ -199,7 +191,6 @@ export interface FileRoutesById {
   '/market': typeof MarketRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/stress-test': typeof StressTestRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/welcome': typeof WelcomeRoute
   '/admin/upgrade-funnel': typeof AdminUpgradeFunnelRoute
@@ -224,7 +215,6 @@ export interface FileRouteTypes {
     | '/market'
     | '/pricing'
     | '/reset-password'
-    | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
     | '/admin/upgrade-funnel'
@@ -247,7 +237,6 @@ export interface FileRouteTypes {
     | '/market'
     | '/pricing'
     | '/reset-password'
-    | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
     | '/admin/upgrade-funnel'
@@ -270,7 +259,6 @@ export interface FileRouteTypes {
     | '/market'
     | '/pricing'
     | '/reset-password'
-    | '/stress-test'
     | '/unsubscribe'
     | '/welcome'
     | '/admin/upgrade-funnel'
@@ -294,7 +282,6 @@ export interface RootRouteChildren {
   MarketRoute: typeof MarketRoute
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  StressTestRoute: typeof StressTestRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   WelcomeRoute: typeof WelcomeRoute
   AdminUpgradeFunnelRoute: typeof AdminUpgradeFunnelRoute
@@ -320,13 +307,6 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stress-test': {
-      id: '/stress-test'
-      path: '/stress-test'
-      fullPath: '/stress-test'
-      preLoaderRoute: typeof StressTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -470,7 +450,6 @@ const rootRouteChildren: RootRouteChildren = {
   MarketRoute: MarketRoute,
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  StressTestRoute: StressTestRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   WelcomeRoute: WelcomeRoute,
   AdminUpgradeFunnelRoute: AdminUpgradeFunnelRoute,
@@ -484,3 +463,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
