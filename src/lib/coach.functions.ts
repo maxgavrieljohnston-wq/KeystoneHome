@@ -289,40 +289,18 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       }
     }
 
-    let investContext = "";
-    if (plan) {
-      try {
-        const m = computePlanMetrics(
-          (plan.answers as Record<string, unknown>) ?? {},
-          null,
-        );
-        const months = Math.max(1, Math.round(m.timelineYears * 12));
-        const scenarios = projectScenarios({
-          saved: m.saved,
-          target: m.downPayment,
-          months,
-        });
-        const invested = scenarios.find((s) => s.scenario.id === "invested")!;
-        const edge = investEdge({
-          saved: m.saved,
-          target: m.downPayment,
-          monthly: invested.monthly,
-        });
-        investContext = `\n\nInvest-vs-save delta (Keystone's core thesis — reference these naturally):\n- Down-payment goal: $${m.downPayment.toLocaleString()} in ${m.timelineYears} years\n- Currently saved: $${m.saved.toLocaleString()}\n- Required at 7% (invested): $${invested.monthly.toLocaleString()}/mo, growth contributes $${invested.growth.toLocaleString()}\n- Investing instead of using a basic savings account at the same monthly contribution gets the user there ${edge.monthsSooner} months sooner and saves them $${edge.dollarsSaved.toLocaleString()} in contributions.`;
-      } catch (e) {
-        console.warn("[coach] invest-context failed", e);
-      }
-    }
-
-    const planContext = plan
-      ? `User's homebuying plan answers (use these as context):\nPlan: ${plan.title ?? "Untitled plan"}\n${JSON.stringify(plan.answers, null, 2)}`
+    // Structured plan digest (numbers + verdict + invest delta), used in place
+    // of dumping the raw `answers` JSON into the prompt.
+    const planDigest = plan ? buildPlanDigest(plan as never) : "";
+    const planContext = planDigest
+      ? `User's homebuying plan (use these numbers — do not re-derive):\n${planDigest}`
       : "The user has not yet completed their homebuying plan questionnaire.";
 
     const summaryBlock = rollingSummary
       ? `\n\nEarlier conversation summary (older turns folded for brevity):\n${rollingSummary}`
       : "";
 
-    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan data to personalize advice. A core message of Keystone is that investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring this up naturally when relevant. When you don't know something (e.g. exact current mortgage rates), say so and explain how to find out. Never give legal, tax, or specific investment advice — recommend a professional.\n\nAfter your reply, on a new line, output exactly one JSON object on its own line in the form:\n${FOLLOWUPS_OPEN}{"chips":["short follow-up 1","short follow-up 2","short follow-up 3"]}${FOLLOWUPS_CLOSE}\nEach chip must be under 60 chars, written as the user (e.g. "Show me a stretch goal at $200/mo more"), and concretely actionable for this user.\n\n${planContext}${investContext}${summaryBlock}\n\nUser email: ${email ?? "unknown"}`;
+    const systemPrompt = `You are Keystone Coach, a warm, practical homebuying coach for first-time buyers in the US. Be concise (2-4 short paragraphs max), specific, and actionable. Use the user's plan numbers verbatim — they are pre-computed for you, do not recalculate. A core Keystone message: investing the down-payment savings (rather than parking them in a basic savings account) gets users to their goal months sooner — bring it up naturally when relevant. When you don't know something (e.g. exact current mortgage rates today), say so and explain how to find out. Never give legal, tax, or specific investment advice — recommend a professional.\n\nAfter your reply, on a new line, output exactly one JSON object on its own line in the form:\n${FOLLOWUPS_OPEN}{"chips":["short follow-up 1","short follow-up 2","short follow-up 3"]}${FOLLOWUPS_CLOSE}\nEach chip must be under 60 chars, written as the user (e.g. "Show me a stretch goal at $200/mo more"), and concretely actionable for this user.\n\n${planContext}${summaryBlock}\n\nUser email: ${email ?? "unknown"}`;
 
     const messages: GatewayMessage[] = [
       { role: "system", content: systemPrompt },
@@ -334,6 +312,12 @@ export const sendCoachMessage = createServerFn({ method: "POST" })
       })),
       { role: "user", content: data.content },
     ];
+
+    const reasoningEffort: "low" | "medium" = shouldUseExtendedReasoning(
+      data.content,
+    )
+      ? "medium"
+      : "low";
 
     // Stream tokens. Buffer the full text to extract chips at the end, but
     // never yield text that's part of the FOLLOWUPS marker block.
