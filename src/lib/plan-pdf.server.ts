@@ -248,7 +248,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   page.drawRectangle({ x: gx + gaugeW * 0.4, y: gy, width: gaugeW * 0.2, height: gaugeH, color: gold, opacity: 0.3 });
   page.drawRectangle({ x: gx + gaugeW * 0.6, y: gy, width: gaugeW * 0.4, height: gaugeH, color: sage, opacity: 0.3 });
   // outline
-  page.drawRectangle({ x: gx, y: gy, width: gaugeW, height: gaugeH, borderColor: ink, borderWidth: 0.5, color: undefined as never, opacity: 0 });
+  page.drawRectangle({ x: gx, y: gy, width: gaugeW, height: gaugeH, borderColor: ink, borderWidth: 0.5, opacity: 0 });
   // marker
   const scorePct = Math.max(0, Math.min(100, m.readiness)) / 100;
   const markerX = gx + gaugeW * scorePct;
