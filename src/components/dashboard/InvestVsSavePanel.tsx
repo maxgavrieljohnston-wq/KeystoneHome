@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { monthsToGoal, futureValue } from "@/lib/invest-projection";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { updatePlanMeta } from "@/lib/plans.functions";
+import { STRATEGIES } from "@/lib/keystone";
 
 const C = {
   paper: "#f5efe6",
@@ -29,11 +30,8 @@ const fmtMonths = (m: number): string => {
   return r === 0 ? `${y} yr` : `${y} yr ${r} mo`;
 };
 
-// "Realistic" derates user's chosen rate to account for inflation, fees,
-// sequence risk. Floor at 4% (HYSA-ish). Never higher than the user's rate.
-function realisticRate(userRate: number) {
-  return Math.max(0.04, Math.min(userRate, userRate - 0.02));
-}
+
+
 
 export function InvestVsSavePanel({
   answers,
@@ -56,7 +54,6 @@ export function InvestVsSavePanel({
   );
 
   const userRate = metrics.expectedReturnRate || 0.07;
-  const realistic = realisticRate(userRate);
   const statedMonthly = Math.max(50, Math.round(metrics.monthlySavings || 0));
 
   // Slider defaults to persisted investMonthly, else user's stated monthly.
@@ -77,12 +74,6 @@ export function InvestVsSavePanel({
   const sliderMonths = useMemo(
     () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, userRate),
     [metrics.saved, metrics.downPayment, monthly, userRate],
-  );
-
-  // Realistic scenario at the slider monthly.
-  const realisticMonths = useMemo(
-    () => monthsToGoal(metrics.saved, metrics.downPayment, monthly, realistic),
-    [metrics.saved, metrics.downPayment, monthly, realistic],
   );
 
   // Total growth at slider monthly + user rate, evaluated at sliderMonths.
@@ -286,7 +277,7 @@ export function InvestVsSavePanel({
         )}
       </div>
 
-      {/* Reality check: their model vs a more conservative one */}
+      {/* All strategy tiers — same monthly contribution, different rates */}
       <div style={{ borderTop: `1px solid ${C.inkFaint}`, paddingTop: 18 }}>
         <div
           style={{
@@ -298,22 +289,23 @@ export function InvestVsSavePanel({
             marginBottom: 12,
           }}
         >
-          Reality check
+          Strategy comparison · {fmt(monthly)}/mo
         </div>
         <div style={{ display: "grid", gap: 10 }}>
-          <RateRow
-            label="Your model"
-            sub={`${(userRate * 100).toFixed(1)}% annual return`}
-            months={sliderMonths}
-            accent={C.ember}
-            primary
-          />
-          <RateRow
-            label="More realistic"
-            sub={`${(realistic * 100).toFixed(1)}% — after inflation & fees`}
-            months={realisticMonths}
-            accent={C.inkSoft}
-          />
+          {STRATEGIES.map((s) => {
+            const isYours = Math.abs(s.rate - userRate) < 0.0025;
+            const months = monthsToGoal(metrics.saved, metrics.downPayment, monthly, s.rate);
+            return (
+              <RateRow
+                key={s.label}
+                label={isYours ? `${s.label} · your profile` : s.label}
+                sub={s.desc}
+                months={months}
+                accent={isYours ? C.ember : C.inkSoft}
+                primary={isYours}
+              />
+            );
+          })}
         </div>
         {projectedGrowth > 0 && isFinite(sliderMonths) && (
           <div
@@ -324,9 +316,9 @@ export function InvestVsSavePanel({
               lineHeight: 1.5,
             }}
           >
-            Along the way your money earns roughly{" "}
-            <strong style={{ color: C.sage }}>{fmt(projectedGrowth)}</strong> in growth — work you
-            don't have to do.
+            At your {(userRate * 100).toFixed(1)}% profile, your money earns roughly{" "}
+            <strong style={{ color: C.sage }}>{fmt(projectedGrowth)}</strong> in growth along the
+            way — work you don't have to do.
           </div>
         )}
       </div>
