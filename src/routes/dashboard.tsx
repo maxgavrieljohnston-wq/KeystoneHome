@@ -11,6 +11,7 @@ import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { EditablePlanPanel } from "@/components/dashboard/EditablePlanPanel";
 import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
+import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
@@ -247,6 +248,15 @@ function DashboardPage() {
             targetPrice={metrics.targetPrice}
             assumptions={selected.assumptions ?? {}}
             isPlus={isPlus}
+            locked={!isPlus}
+            onLockedClick={onLockedClick}
+          />
+
+          {/* 4b. Picture your place — live home preview */}
+          <PicturePlacePanel
+            planId={selected.id}
+            answers={selected.answers}
+            assumptions={selected.assumptions}
             locked={!isPlus}
             onLockedClick={onLockedClick}
           />
