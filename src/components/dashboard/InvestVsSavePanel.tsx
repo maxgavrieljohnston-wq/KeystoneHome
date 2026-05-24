@@ -30,11 +30,8 @@ const fmtMonths = (m: number): string => {
   return r === 0 ? `${y} yr` : `${y} yr ${r} mo`;
 };
 
-// "Realistic" derates user's chosen rate to account for inflation, fees,
-// sequence risk. Floor at 4% (HYSA-ish). Never higher than the user's rate.
-function realisticRate(userRate: number) {
-  return Math.max(0.04, Math.min(userRate, userRate - 0.02));
-}
+
+
 
 export function InvestVsSavePanel({
   answers,
