@@ -15,9 +15,6 @@ const C = {
   sage: "#5a8a5c",
 };
 
-type Priority = "nice" | "must";
-type PriorityMap = Record<string, Priority>;
-
 const LIFESTYLE_ITEMS = [
   { val: "kids", label: "Space for kids" },
   { val: "dog", label: "Room for a dog" },
@@ -49,14 +46,10 @@ const str = (a: Record<string, unknown>, k: string): string => {
   const v = a[k];
   return typeof v === "string" ? v : "";
 };
-const prioMap = (a: Record<string, unknown>, k: string): PriorityMap => {
+const strArray = (a: Record<string, unknown>, k: string): string[] => {
   const v = a[k];
-  if (!v || typeof v !== "object") return {};
-  const out: PriorityMap = {};
-  for (const [key, val] of Object.entries(v as Record<string, unknown>)) {
-    if (val === "nice" || val === "must") out[key] = val;
-  }
-  return out;
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string") as string[];
+  return [];
 };
 
 export function PicturePlacePanel({
@@ -82,8 +75,8 @@ export function PicturePlacePanel({
   const [baths, setBaths] = useState(num(answers, "baths", 2));
   const [outdoor, setOutdoor] = useState(str(answers, "outdoorSpace") || "none");
   const [parking, setParking] = useState(str(answers, "parking") || "street");
-  const [lifestyle, setLifestyle] = useState<PriorityMap>(prioMap(answers, "lifestyle"));
-  const [neighborhood, setNeighborhood] = useState<PriorityMap>(prioMap(answers, "neighborhood"));
+  const [lifestyle, setLifestyle] = useState<string[]>(strArray(answers, "lifestyle"));
+  const [neighborhood, setNeighborhood] = useState<string[]>(strArray(answers, "neighborhood"));
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -96,8 +89,8 @@ export function PicturePlacePanel({
     setBaths(num(answers, "baths", 2));
     setOutdoor(str(answers, "outdoorSpace") || "none");
     setParking(str(answers, "parking") || "street");
-    setLifestyle(prioMap(answers, "lifestyle"));
-    setNeighborhood(prioMap(answers, "neighborhood"));
+    setLifestyle(strArray(answers, "lifestyle"));
+    setNeighborhood(strArray(answers, "neighborhood"));
   }, [planId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const liveAnswers = useMemo<Record<string, unknown>>(() => {
@@ -449,24 +442,19 @@ function PrioritySelect({
   placeholder,
 }: {
   items: { val: string; label: string }[];
-  values: PriorityMap;
-  onChange: (v: PriorityMap) => void;
+  values: string[];
+  onChange: (v: string[]) => void;
   placeholder: string;
 }) {
-  const available = items.filter((it) => !(it.val in values));
-  const selected = items.filter((it) => it.val in values);
+  const available = items.filter((it) => !values.includes(it.val));
+  const selected = items.filter((it) => values.includes(it.val));
 
   const add = (val: string) => {
-    if (!val) return;
-    onChange({ ...values, [val]: "nice" });
-  };
-  const toggle = (val: string) => {
-    onChange({ ...values, [val]: values[val] === "must" ? "nice" : "must" });
+    if (!val || values.includes(val)) return;
+    onChange([...values, val]);
   };
   const remove = (val: string) => {
-    const next = { ...values };
-    delete next[val];
-    onChange(next);
+    onChange(values.filter((v) => v !== val));
   };
 
   return (
@@ -495,64 +483,42 @@ function PrioritySelect({
 
       {selected.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {selected.map((it) => {
-            const must = values[it.val] === "must";
-            return (
-              <span
-                key={it.val}
+          {selected.map((it) => (
+            <span
+              key={it.val}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 10px",
+                fontSize: 13,
+                borderRadius: 999,
+                border: `1px solid ${C.inkFaint}`,
+                background: "transparent",
+                color: C.ink,
+              }}
+            >
+              {it.label}
+              <button
+                type="button"
+                onClick={() => remove(it.val)}
+                aria-label={`Remove ${it.label}`}
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 4px 4px 10px",
-                  fontSize: 13,
+                  width: 20,
+                  height: 20,
                   borderRadius: 999,
-                  border: `1px solid ${must ? C.ink : C.inkFaint}`,
-                  background: must ? C.ink : "transparent",
-                  color: must ? "#f5efe6" : C.ink,
+                  border: "none",
+                  background: "transparent",
+                  color: C.inkMute,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  lineHeight: 1,
                 }}
               >
-                {it.label}
-                <button
-                  type="button"
-                  onClick={() => toggle(it.val)}
-                  title={must ? "Must-have (click for nice)" : "Nice (click for must-have)"}
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 9,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    padding: "2px 6px",
-                    borderRadius: 999,
-                    border: `1px solid ${must ? "#f5efe6" : C.inkFaint}`,
-                    background: "transparent",
-                    color: must ? "#f5efe6" : C.inkSoft,
-                    cursor: "pointer",
-                  }}
-                >
-                  {must ? "Must" : "Nice"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => remove(it.val)}
-                  aria-label={`Remove ${it.label}`}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 999,
-                    border: "none",
-                    background: "transparent",
-                    color: must ? "#f5efe6" : C.inkMute,
-                    cursor: "pointer",
-                    fontSize: 14,
-                    lineHeight: 1,
-                  }}
-                >
-                  ×
-                </button>
-              </span>
-            );
-          })}
+                ×
+              </button>
+            </span>
+          ))}
         </div>
       )}
     </div>
