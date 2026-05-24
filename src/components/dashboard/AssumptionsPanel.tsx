@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { InvestSection } from "./InvestVsSavePanel";
 import { deriveAssumptions } from "@/lib/plan-assumptions";
 import { updatePlanMeta } from "@/lib/plans.functions";
@@ -99,6 +100,7 @@ export function AssumptionsPanel({
   onLockedClick: () => void;
 }) {
   const updateMeta = useServerFn(updatePlanMeta);
+  const qc = useQueryClient();
 
   // Local form state — undefined = "use derived default".
   const initial: Record<string, number | undefined> = {};
@@ -114,6 +116,18 @@ export function AssumptionsPanel({
     setVals(next);
   }, [planId, assumptions]);
 
+  // Optimistically patch the cached plan so every panel recomputes immediately.
+  const patchCache = (nextAssumptions: Record<string, number>) => {
+    qc.setQueryData(["my-plans"], (prev: unknown) => {
+      if (!Array.isArray(prev)) return prev;
+      return prev.map((p) =>
+        p && typeof p === "object" && (p as { id?: string }).id === planId
+          ? { ...p, assumptions: nextAssumptions }
+          : p,
+      );
+    });
+  };
+
   const save = async () => {
     if (!isPlus || locked) return;
     setSaving(true);
@@ -128,10 +142,13 @@ export function AssumptionsPanel({
           next[f.key] = v;
         }
       }
+      patchCache(next);
       await updateMeta({ data: { planId, assumptions: next } });
+      qc.invalidateQueries({ queryKey: ["my-plans"] });
       setSavedAt(Date.now());
     } catch (e) {
       console.warn("[assumptions] save failed", e);
+      qc.invalidateQueries({ queryKey: ["my-plans"] });
       alert("Couldn't save your assumptions. Please try again.");
     } finally {
       setSaving(false);
@@ -144,13 +161,16 @@ export function AssumptionsPanel({
     try {
       const next: Record<string, number> = { ...(assumptions ?? {}) };
       for (const f of FIELDS) delete next[f.key];
+      patchCache(next);
       await updateMeta({ data: { planId, assumptions: next } });
+      qc.invalidateQueries({ queryKey: ["my-plans"] });
       const cleared: Record<string, number | undefined> = {};
       for (const f of FIELDS) cleared[f.key] = undefined;
       setVals(cleared);
       setSavedAt(Date.now());
     } catch (e) {
       console.warn("[assumptions] reset failed", e);
+      qc.invalidateQueries({ queryKey: ["my-plans"] });
     } finally {
       setSaving(false);
     }
