@@ -96,11 +96,11 @@ export function EditablePlanPanel({
   );
 
   const mut = useMutation({
-    mutationFn: (vars: { answersPatch: AnswersPatch }) =>
+    mutationFn: (vars: { answersPatch: AnswersPatch; currentSavings?: number }) =>
       updateFn({
         data: {
           planId,
-          currentSavings: currentSavings ?? 0,
+          currentSavings: vars.currentSavings ?? currentSavings ?? 0,
           answersPatch: vars.answersPatch,
           environment: env,
         } as never,
