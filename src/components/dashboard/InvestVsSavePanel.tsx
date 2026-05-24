@@ -287,7 +287,7 @@ export function InvestVsSavePanel({
         )}
       </div>
 
-      {/* Reality check: their model vs a more conservative one */}
+      {/* All strategy tiers — same monthly contribution, different rates */}
       <div style={{ borderTop: `1px solid ${C.inkFaint}`, paddingTop: 18 }}>
         <div
           style={{
@@ -299,22 +299,23 @@ export function InvestVsSavePanel({
             marginBottom: 12,
           }}
         >
-          Reality check
+          Strategy comparison · {fmt(monthly)}/mo
         </div>
         <div style={{ display: "grid", gap: 10 }}>
-          <RateRow
-            label="Your model"
-            sub={`${(userRate * 100).toFixed(1)}% annual return`}
-            months={sliderMonths}
-            accent={C.ember}
-            primary
-          />
-          <RateRow
-            label="More realistic"
-            sub={`${(realistic * 100).toFixed(1)}% — after inflation & fees`}
-            months={realisticMonths}
-            accent={C.inkSoft}
-          />
+          {STRATEGIES.map((s) => {
+            const isYours = Math.abs(s.rate - userRate) < 0.0025;
+            const months = monthsToGoal(metrics.saved, metrics.downPayment, monthly, s.rate);
+            return (
+              <RateRow
+                key={s.label}
+                label={isYours ? `${s.label} · your profile` : s.label}
+                sub={s.desc}
+                months={months}
+                accent={isYours ? C.ember : C.inkSoft}
+                primary={isYours}
+              />
+            );
+          })}
         </div>
         {projectedGrowth > 0 && isFinite(sliderMonths) && (
           <div
@@ -325,9 +326,9 @@ export function InvestVsSavePanel({
               lineHeight: 1.5,
             }}
           >
-            Along the way your money earns roughly{" "}
-            <strong style={{ color: C.sage }}>{fmt(projectedGrowth)}</strong> in growth — work you
-            don't have to do.
+            At your {(userRate * 100).toFixed(1)}% profile, your money earns roughly{" "}
+            <strong style={{ color: C.sage }}>{fmt(projectedGrowth)}</strong> in growth along the
+            way — work you don't have to do.
           </div>
         )}
       </div>
