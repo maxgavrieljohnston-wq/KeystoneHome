@@ -8,7 +8,7 @@ import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 
 import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
-import { FEATURE_KEYS, FEATURE_META } from "@/lib/dashboard-features";
+import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
 import type { ActionPlanProgress } from "@/lib/action-plan";
 
 const C = {
