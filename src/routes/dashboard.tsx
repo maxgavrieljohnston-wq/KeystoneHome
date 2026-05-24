@@ -252,6 +252,15 @@ function DashboardPage() {
             onLockedClick={onLockedClick}
           />
 
+          {/* 4b. Picture your place — live home preview */}
+          <PicturePlacePanel
+            planId={selected.id}
+            answers={selected.answers}
+            assumptions={selected.assumptions}
+            locked={!isPlus}
+            onLockedClick={onLockedClick}
+          />
+
           {/* 5. Recommended accounts */}
           <RecommendedAccountsPanel
             locked={!isPlus}
