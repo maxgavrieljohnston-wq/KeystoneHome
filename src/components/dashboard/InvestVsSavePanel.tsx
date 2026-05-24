@@ -345,15 +345,19 @@ function RateRow({
   months,
   accent,
   primary = false,
+  onClick,
+  clickable = false,
 }: {
   label: string;
   sub: string;
   months: number;
   accent: string;
   primary?: boolean;
+  onClick?: () => void;
+  clickable?: boolean;
 }) {
   const reachable = isFinite(months);
-  return (
+  const content = (
     <div
       style={{
         display: "flex",
@@ -391,6 +395,23 @@ function RateRow({
         {reachable ? fmtMonths(months) : "Won't reach"}
       </div>
     </div>
+  );
+
+  if (!clickable) return content;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        all: "unset",
+        display: "block",
+        width: "100%",
+        cursor: "pointer",
+      }}
+    >
+      {content}
+    </button>
   );
 }
 
