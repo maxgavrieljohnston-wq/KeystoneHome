@@ -15,6 +15,7 @@ import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
+import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FEATURE_KEYS, FEATURE_META, type FeatureKey } from "@/lib/dashboard-features";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
@@ -90,6 +91,22 @@ function FeaturePage() {
 
   let panel: React.ReactNode = null;
   switch (key as FeatureKey) {
+    case "plan":
+      panel = (
+        <MonthlyActionPlan
+          planId={selected.id}
+          planCreatedAt={selected.created_at}
+          answers={selected.answers}
+          assumptions={selected.assumptions}
+          currentSavings={selected.current_savings}
+          targetMoveIn={selected.target_move_in}
+          shareEnabled={selected.share_enabled}
+          remindersEnabled={extrasQ.data?.remindersEnabled ?? false}
+          lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
+          initialProgress={selected.action_plan_progress ?? null}
+        />
+      );
+      break;
     case "editable":
       panel = (
         <EditablePlanPanel

@@ -6,10 +6,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 
-import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
-import type { ActionPlanProgress } from "@/lib/action-plan";
 
 const C = {
   paper: "#f5efe6",
@@ -47,7 +45,7 @@ type PlanRow = {
   share_slug: string | null;
   share_enabled: boolean;
   created_at: string;
-  action_plan_progress: ActionPlanProgress | null;
+  action_plan_progress: unknown;
 };
 
 function DashboardPage() {
@@ -220,20 +218,8 @@ function DashboardPage() {
 
         <div style={{ display: "grid", gap: 24 }}>
           <NumbersSummary metrics={metrics} currentSavings={selected.current_savings} />
-
-          <MonthlyActionPlan
-            planId={selected.id}
-            planCreatedAt={selected.created_at}
-            answers={selected.answers}
-            assumptions={selected.assumptions}
-            currentSavings={selected.current_savings}
-            targetMoveIn={selected.target_move_in}
-            shareEnabled={selected.share_enabled}
-            remindersEnabled={extrasQ.data?.remindersEnabled ?? false}
-            lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
-            initialProgress={selected.action_plan_progress}
-          />
         </div>
+
 
         {/* Feature icon bar */}
         <FeatureIconBar selectedPlanId={selectedId} />
