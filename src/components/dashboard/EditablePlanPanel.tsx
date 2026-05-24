@@ -27,6 +27,10 @@ type AnswersPatch = {
   hasPartner?: boolean;
 };
 
+type CurrentSavingsPatch = {
+  currentSavings: number;
+};
+
 type Props = {
   planId: string;
   planTitle: string | null;
