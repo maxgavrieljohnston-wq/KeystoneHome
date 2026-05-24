@@ -8,7 +8,7 @@ import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 
 import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
-import { FEATURE_KEYS, FEATURE_META } from "@/lib/dashboard-features";
+import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
 import type { ActionPlanProgress } from "@/lib/action-plan";
 
 const C = {
@@ -242,76 +242,6 @@ function DashboardPage() {
   );
 }
 
-function FeatureIconBar({ selectedPlanId }: { selectedPlanId?: string }) {
-  return (
-    <div
-      style={{
-        marginTop: 48,
-        paddingTop: 24,
-        borderTop: `1px solid ${C.inkFaint}`,
-      }}
-    >
-      <div
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 11,
-          letterSpacing: "0.12em",
-          color: C.inkMute,
-          textTransform: "uppercase",
-          marginBottom: 16,
-          textAlign: "center",
-        }}
-      >
-        Features
-      </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))",
-          gap: 12,
-        }}
-      >
-        {FEATURE_KEYS.map((key) => {
-          const meta = FEATURE_META[key];
-          const Icon = meta.icon;
-          return (
-            <Link
-              key={key}
-              to="/features/$key"
-              params={{ key }}
-              search={selectedPlanId ? { planId: selectedPlanId } : {}}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 8,
-                padding: "14px 8px",
-                borderRadius: 10,
-                background: "#fff",
-                border: `1px solid ${C.inkFaint}`,
-                color: C.ink,
-                textDecoration: "none",
-                transition: "transform 0.15s ease, border-color 0.15s ease",
-              }}
-            >
-              <Icon size={22} strokeWidth={1.5} />
-              <div
-                style={{
-                  fontSize: 11,
-                  letterSpacing: "0.04em",
-                  color: C.inkSoft,
-                  textAlign: "center",
-                }}
-              >
-                {meta.short}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 
 function Centered({ children }: { children: React.ReactNode }) {

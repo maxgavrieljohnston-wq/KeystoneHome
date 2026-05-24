@@ -17,6 +17,7 @@ import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FEATURE_KEYS, FEATURE_META, type FeatureKey } from "@/lib/dashboard-features";
+import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
 
 const C = {
   paper: "#f5efe6",
@@ -225,6 +226,7 @@ function FeaturePage() {
           {meta?.label}
         </h1>
         {panel}
+        <FeatureIconBar selectedPlanId={selected.id} activeKey={key as FeatureKey} />
       </div>
     </div>
   );
