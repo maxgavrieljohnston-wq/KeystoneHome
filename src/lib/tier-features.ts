@@ -29,6 +29,11 @@ export const PLUS_FEATURES: TierFeature[] = [
     long: "Override the auto-filled tax, insurance, closing, mortgage rate, and expected return for any plan",
   },
   {
+    id: "picture",
+    short: "Live home preview",
+    long: "Live home preview — tweak ZIP, beds/baths, style, and must-haves to watch your target price update instantly",
+  },
+  {
     id: "reminders",
     short: "Email reminders",
     long: "Email reminders & milestones",
