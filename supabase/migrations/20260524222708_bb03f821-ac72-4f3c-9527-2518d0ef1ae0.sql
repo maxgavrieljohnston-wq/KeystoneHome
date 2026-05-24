@@ -1,0 +1,1 @@
+update public.subscriptions set environment='sandbox' where user_id='6fe8345a-22d7-4cc3-8f02-e33598791b21';
