@@ -269,13 +269,21 @@ function NumbersSummary({
   const saved = currentSavings ?? 0;
   const pctSaved = metrics.cashToClose > 0 ? Math.min(100, (saved / metrics.cashToClose) * 100) : 0;
 
+  const statedMonthly = metrics.monthlySavings || 0;
+  const returnRate = metrics.expectedReturnRate || 0;
+  const time = computeTimeToGoal({
+    cashToClose: metrics.cashToClose,
+    currentSavings: saved,
+    monthlySavings: statedMonthly,
+    annualReturnRate: returnRate,
+  });
+  const ratePct = (returnRate * 100).toFixed(1);
+
   const rows = [
     { label: "Target price", value: fmtCurrency(metrics.targetPrice) },
     { label: "Down payment", value: fmtCurrency(metrics.downPayment) },
     { label: "Cash to close", value: fmtCurrency(metrics.cashToClose) },
-    { label: "Monthly savings needed", value: fmtCurrency(metrics.monthlyInvested) },
     { label: "Monthly housing cost", value: fmtCurrency(metrics.totalHousing) },
-    { label: "Timeline", value: `${metrics.timelineYears} yr` },
   ];
 
   return (
@@ -298,6 +306,30 @@ function NumbersSummary({
         }}
       >
         Your numbers
+      </div>
+
+      {/* Savings comparison */}
+      <div style={{ display: "grid", gap: 12, marginBottom: 24 }}>
+        {/* Save-only row */}
+        <ComparisonRow
+          label="Monthly savings"
+          value={fmtCurrency(statedMonthly)}
+          rightLabel="Time to goal (no investing)"
+          rightValue={formatMonths(time.monthsSaveOnly)}
+        />
+        {/* Invested row — highlighted */}
+        <ComparisonRow
+          highlight
+          label={`Same amount invested @ ${ratePct}%`}
+          value={fmtCurrency(statedMonthly)}
+          rightLabel="Time to goal (investing)"
+          rightValue={formatMonths(time.monthsInvested)}
+          footnote={
+            time.timeSavedMonths && time.timeSavedMonths > 0
+              ? `Investing gets you there ${formatMonths(time.timeSavedMonths)} sooner.`
+              : undefined
+          }
+        />
       </div>
 
       <div
@@ -335,6 +367,7 @@ function NumbersSummary({
           </div>
         ))}
       </div>
+
 
       {/* Readiness + progress */}
       <div
