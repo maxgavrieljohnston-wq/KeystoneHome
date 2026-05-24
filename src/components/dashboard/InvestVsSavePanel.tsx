@@ -134,7 +134,7 @@ export function InvestVsSavePanel({
     >
       <p style={{ color: C.inkSoft, fontSize: 15, lineHeight: 1.5, margin: "0 0 22px" }}>
         You're contributing <strong style={{ color: C.ink }}>{fmt(statedMonthly)}/mo</strong> at a{" "}
-        <strong style={{ color: C.ink }}>{(userRate * 100).toFixed(1)}%</strong> return. Move the
+        <strong style={{ color: C.ink }}>{(selectedRate * 100).toFixed(1)}%</strong> return. Move the
         slider to see how a different monthly changes your timeline.
       </p>
 
@@ -158,7 +158,7 @@ export function InvestVsSavePanel({
             marginBottom: 8,
           }}
         >
-          At {fmt(monthly)}/mo · {(userRate * 100).toFixed(1)}%
+          At {fmt(monthly)}/mo · {(selectedRate * 100).toFixed(1)}%
         </div>
         <div
           style={{
@@ -304,16 +304,18 @@ export function InvestVsSavePanel({
         </div>
         <div style={{ display: "grid", gap: 10 }}>
           {STRATEGIES.map((s) => {
-            const isYours = Math.abs(s.rate - userRate) < 0.0025;
+            const isSelected = Math.abs(s.rate - selectedRate) < 0.0025;
             const months = monthsToGoal(metrics.saved, metrics.downPayment, monthly, s.rate);
             return (
               <RateRow
                 key={s.label}
-                label={isYours ? `${s.label} · your profile` : s.label}
+                label={isSelected ? `${s.label} · your profile` : s.label}
                 sub={s.desc}
                 months={months}
-                accent={isYours ? C.ember : C.inkSoft}
-                primary={isYours}
+                accent={isSelected ? C.ember : C.inkSoft}
+                primary={isSelected}
+                onClick={() => { if (!locked && isPlus) setSelectedRate(s.rate); }}
+                clickable={!locked && isPlus}
               />
             );
           })}
@@ -327,7 +329,7 @@ export function InvestVsSavePanel({
               lineHeight: 1.5,
             }}
           >
-            At your {(userRate * 100).toFixed(1)}% profile, your money earns roughly{" "}
+            At your {(selectedRate * 100).toFixed(1)}% profile, your money earns roughly{" "}
             <strong style={{ color: C.sage }}>{fmt(projectedGrowth)}</strong> in growth along the
             way — work you don't have to do.
           </div>
