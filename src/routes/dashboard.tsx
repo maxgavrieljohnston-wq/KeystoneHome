@@ -11,6 +11,7 @@ import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { EditablePlanPanel } from "@/components/dashboard/EditablePlanPanel";
 import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
+import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
