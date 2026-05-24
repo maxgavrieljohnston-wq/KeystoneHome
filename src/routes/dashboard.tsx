@@ -317,3 +317,180 @@ function Centered({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+function fmtCurrency(n: number): string {
+  if (!isFinite(n)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
+function NumbersSummary({
+  metrics,
+  currentSavings,
+}: {
+  metrics: ReturnType<typeof computePlanMetrics>;
+  currentSavings: number | null;
+}) {
+  const saved = currentSavings ?? 0;
+  const pctSaved = metrics.cashToClose > 0 ? Math.min(100, (saved / metrics.cashToClose) * 100) : 0;
+
+  const rows = [
+    { label: "Target price", value: fmtCurrency(metrics.targetPrice) },
+    { label: "Down payment", value: fmtCurrency(metrics.downPayment) },
+    { label: "Cash to close", value: fmtCurrency(metrics.cashToClose) },
+    { label: "Monthly savings needed", value: fmtCurrency(metrics.monthlyInvested) },
+    { label: "Monthly housing cost", value: fmtCurrency(metrics.totalHousing) },
+    { label: "Timeline", value: `${metrics.timelineYears} yr` },
+  ];
+
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: `1.5px solid ${C.ink}`,
+        borderRadius: 12,
+        padding: "28px 24px",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          letterSpacing: "0.12em",
+          color: C.inkMute,
+          textTransform: "uppercase",
+          marginBottom: 20,
+        }}
+      >
+        Your numbers
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: "20px 16px",
+        }}
+      >
+        {rows.map((r) => (
+          <div key={r.label}>
+            <div
+              style={{
+                fontSize: 11,
+                color: C.inkMute,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                marginBottom: 4,
+              }}
+            >
+              {r.label}
+            </div>
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+                fontSize: 28,
+                fontWeight: 600,
+                color: C.ink,
+                lineHeight: 1.1,
+              }}
+            >
+              {r.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Readiness + progress */}
+      <div
+        style={{
+          marginTop: 24,
+          paddingTop: 20,
+          borderTop: `1px solid ${C.inkFaint}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              color: C.inkMute,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              marginBottom: 4,
+            }}
+          >
+            Readiness
+          </div>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+              fontSize: 22,
+              fontWeight: 600,
+              color: C.ink,
+            }}
+          >
+            {metrics.readinessLabel}
+          </div>
+        </div>
+
+        <div style={{ textAlign: "right" }}>
+          <div
+            style={{
+              fontSize: 11,
+              color: C.inkMute,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              marginBottom: 4,
+            }}
+          >
+            Saved toward goal
+          </div>
+          <div
+            style={{
+              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+              fontSize: 22,
+              fontWeight: 600,
+              color: C.ink,
+            }}
+          >
+            {pctSaved.toFixed(0)}%
+          </div>
+          <div style={{ fontSize: 12, color: C.inkMute, marginTop: 2 }}>
+            {fmtCurrency(saved)} of {fmtCurrency(metrics.cashToClose)}
+          </div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div
+        style={{
+          marginTop: 12,
+          height: 4,
+          background: "#ebe2d3",
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pctSaved}%`,
+            background: C.ember,
+            borderRadius: 2,
+            transition: "width 0.6s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
