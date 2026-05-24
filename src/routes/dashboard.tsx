@@ -212,6 +212,9 @@ function DashboardPage() {
         </header>
 
         <div style={{ display: "grid", gap: 24 }}>
+          {/* Numbers Summary — first thing users see */}
+          <NumbersSummary metrics={metrics} currentSavings={selected.current_savings} />
+
           {/* 1. Monthly Action Plan */}
           <MonthlyActionPlan
             planId={selected.id}
