@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { InvestSection } from "./InvestVsSavePanel";
 import { deriveAssumptions } from "@/lib/plan-assumptions";
 import { updatePlanMeta } from "@/lib/plans.functions";
