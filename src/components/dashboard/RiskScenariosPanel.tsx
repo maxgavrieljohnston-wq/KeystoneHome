@@ -57,13 +57,7 @@ export function RiskScenariosPanel({
     });
   }, [metrics.saved, monthly, months]);
 
-  const yMax = Math.max(...series.flatMap((s) => s.path)) * 1.05;
-  const yMin = 0;
-  const w = 480;
-  const h = 200;
-  const pad = { l: 8, r: 8, t: 8, b: 18 };
-  const xAt = (i: number, n: number) => pad.l + ((w - pad.l - pad.r) * i) / n;
-  const yAt = (v: number) => pad.t + (h - pad.t - pad.b) * (1 - (v - yMin) / (yMax - yMin));
+  const goalLabel = fmt(metrics.downPayment);
 
   return (
     <InvestSection
@@ -79,35 +73,10 @@ export function RiskScenariosPanel({
         {metrics.timelineYears === 1 ? "" : "s"}. Bands show ±15% on the projected end balance.
       </p>
 
-      <div style={{ width: "100%", overflow: "hidden", border: `1px solid ${C.inkFaint}`, borderRadius: 8, padding: 8 }}>
-        <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="xMidYMid meet">
-          {/* Goal line */}
-          <line
-            x1={pad.l}
-            x2={w - pad.r}
-            y1={yAt(metrics.downPayment)}
-            y2={yAt(metrics.downPayment)}
-            stroke={C.ember}
-            strokeWidth={1}
-            strokeDasharray="4 4"
-          />
-          <text x={w - pad.r} y={yAt(metrics.downPayment) - 4} textAnchor="end" fontSize="10" fill={C.ember} fontFamily="JetBrains Mono, monospace">
-            GOAL {fmt(metrics.downPayment)}
-          </text>
-
-          {series.map((s) => {
-            const d = s.path
-              .map((v, i) => `${i === 0 ? "M" : "L"} ${xAt(i, s.path.length - 1).toFixed(1)} ${yAt(v).toFixed(1)}`)
-              .join(" ");
-            return (
-              <g key={s.id}>
-                <path d={d} fill="none" stroke={s.color} strokeWidth={2} />
-                <circle cx={xAt(s.path.length - 1, s.path.length - 1)} cy={yAt(s.end)} r={3} fill={s.color} />
-              </g>
-            );
-          })}
-        </svg>
+      <div style={{ fontSize: 12, color: C.inkMute, fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>
+        GOAL {goalLabel}
       </div>
+
 
       <div style={{ display: "grid", gap: 6, marginTop: 14 }}>
         {series.map((s) => (
