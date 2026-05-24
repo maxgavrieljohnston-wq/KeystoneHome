@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { monthsToGoal, futureValue } from "@/lib/invest-projection";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { updatePlanMeta } from "@/lib/plans.functions";
+import { STRATEGIES } from "@/lib/keystone";
 
 const C = {
   paper: "#f5efe6",
