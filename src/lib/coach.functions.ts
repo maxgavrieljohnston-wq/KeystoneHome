@@ -130,7 +130,7 @@ async function callGatewayJson(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: "google/gemini-2.5-flash", messages }),
+    body: JSON.stringify({ model: COACH_MODEL, messages }),
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -147,18 +147,23 @@ async function callGatewayJson(
 async function* streamGateway(
   apiKey: string,
   messages: GatewayMessage[],
+  opts?: { reasoningEffort?: "low" | "medium" },
 ): AsyncGenerator<string> {
+  const body: Record<string, unknown> = {
+    model: COACH_MODEL,
+    messages,
+    stream: true,
+  };
+  if (opts?.reasoningEffort) {
+    body.reasoning = { effort: opts.reasoningEffort };
+  }
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages,
-      stream: true,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok || !res.body) {
     const txt = res.ok ? "no body" : await res.text().catch(() => "");
