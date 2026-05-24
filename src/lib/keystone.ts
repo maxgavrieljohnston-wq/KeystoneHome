@@ -32,9 +32,10 @@ export function calcRequiredMonthly(
 export type Risk = { rate: number; label: string; desc: string; tone: string };
 
 export const STRATEGIES: Risk[] = [
-  { rate: 0.04, label: "Conservative", desc: "Bonds & CDs · ~4%/yr", tone: "sage" },
-  { rate: 0.07, label: "Balanced",     desc: "Index funds & bonds · ~7%/yr", tone: "ink" },
-  { rate: 0.1,  label: "Growth",       desc: "Equities · ~10%/yr", tone: "ember" },
+  { rate: 0.04,  label: "Conservative", desc: "Bonds & CDs · ~4%/yr", tone: "sage" },
+  { rate: 0.055, label: "Moderate",     desc: "Bond-heavy blend · ~5.5%/yr", tone: "sage" },
+  { rate: 0.07,  label: "Balanced",     desc: "Index funds & bonds · ~7%/yr", tone: "ink" },
+  { rate: 0.1,   label: "Growth",       desc: "Equities · ~10%/yr", tone: "ember" },
 ];
 
 export function deriveRisk(answers: Record<number, number>): Risk {
