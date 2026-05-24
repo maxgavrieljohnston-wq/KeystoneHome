@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { updatePlanMeta } from "@/lib/plans.functions";
@@ -109,30 +109,35 @@ export function EditablePlanPanel({
     onError: () => setStatus("error"),
   });
 
-  const firstRender = useRef(true);
+  // Reset local form when the active plan switches (or its underlying data does).
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    const t = setTimeout(() => {
-      mut.mutate({
-        answersPatch: {
-          income: parsed.income,
-          partnerIncome: parsed.partnerIncome,
-          monthlyExpenses: parsed.monthlyExpenses,
-          partnerMonthlyExpenses: parsed.partnerMonthlyExpenses,
-          debt: parsed.debt,
-          partnerDebt: parsed.partnerDebt,
-          credit: parsed.credit,
-          partnerCredit: parsed.partnerCredit,
-          hasPartner,
-        },
-      });
-    }, 600);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed, hasPartner]);
+    setIncome(fmtMoney(num(answers, "income")));
+    setPartnerIncome(fmtMoney(num(answers, "partnerIncome")));
+    setMonthlyExpenses(fmtMoney(num(answers, "monthlyExpenses")));
+    setPartnerMonthlyExpenses(fmtMoney(num(answers, "partnerMonthlyExpenses")));
+    setDebt(fmtMoney(num(answers, "debt")));
+    setPartnerDebt(fmtMoney(num(answers, "partnerDebt")));
+    setCredit(nNum(answers, "credit") != null ? String(nNum(answers, "credit")) : "");
+    setPartnerCredit(nNum(answers, "partnerCredit") != null ? String(nNum(answers, "partnerCredit")) : "");
+    setHasPartner(bool(answers, "hasPartner"));
+    setStatus("idle");
+  }, [planId, answers]);
+
+  const handleSave = () => {
+    mut.mutate({
+      answersPatch: {
+        income: parsed.income,
+        partnerIncome: parsed.partnerIncome,
+        monthlyExpenses: parsed.monthlyExpenses,
+        partnerMonthlyExpenses: parsed.partnerMonthlyExpenses,
+        debt: parsed.debt,
+        partnerDebt: parsed.partnerDebt,
+        credit: parsed.credit,
+        partnerCredit: parsed.partnerCredit,
+        hasPartner,
+      },
+    });
+  };
 
   return (
     <div
@@ -186,7 +191,7 @@ export function EditablePlanPanel({
               ? "✓ Saved"
               : status === "error"
                 ? "Save failed"
-                : "Auto-saves as you type"}
+                : "Click Save to update"}
         </div>
       </div>
 
