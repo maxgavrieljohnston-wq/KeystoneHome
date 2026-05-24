@@ -159,6 +159,38 @@ export const renamePlan = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const revertPlanToInitial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => planIdSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: plan, error: readErr } = await supabaseAdmin
+      .from("plans")
+      .select("initial_answers, initial_assumptions, initial_current_savings, answers")
+      .eq("id", data.planId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!plan) throw new Response("Not found", { status: 404 });
+
+    const initialAnswers = (plan as { initial_answers: unknown }).initial_answers
+      ?? (plan as { answers: unknown }).answers
+      ?? {};
+    const initialAssumptions = (plan as { initial_assumptions: unknown }).initial_assumptions ?? {};
+    const initialSavings = (plan as { initial_current_savings: number | null }).initial_current_savings;
+
+    const { error } = await supabaseAdmin
+      .from("plans")
+      .update({
+        answers: initialAnswers,
+        assumptions: initialAssumptions,
+        current_savings: initialSavings,
+      } as never)
+      .eq("id", data.planId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
 export const deletePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => planIdSchema.parse(input))
