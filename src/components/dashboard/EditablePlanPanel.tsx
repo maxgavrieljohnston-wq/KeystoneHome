@@ -204,6 +204,7 @@ export function EditablePlanPanel({
 
       <Section title="You">
         <Grid>
+          <MoneyField label="Current savings" value={currentSavingsLocal} onChange={setCurrentSavingsLocal} />
           <MoneyField label="Annual income" value={income} onChange={setIncome} />
           <MoneyField label="Monthly expenses" value={monthlyExpenses} onChange={setMonthlyExpenses} />
           <MoneyField label="Monthly debt payments" value={debt} onChange={setDebt} />
