@@ -383,9 +383,8 @@ function RateRow({
         background: primary ? `${accent}0d` : "transparent",
       }}
     >
-      <div>
-        <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
-        <div
+      <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
+      <div
         style={{
           fontSize: 18,
           color: accent,
