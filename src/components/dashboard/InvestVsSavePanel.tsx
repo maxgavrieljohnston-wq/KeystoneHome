@@ -327,7 +327,6 @@ export function InvestVsSavePanel({
               <RateRow
                 key={s.label}
                 label={isSelected ? `${s.label} · your profile` : s.label}
-                sub={s.desc}
                 months={months}
                 accent={isSelected ? C.ember : C.inkSoft}
                 primary={isSelected}
@@ -358,7 +357,6 @@ export function InvestVsSavePanel({
 
 function RateRow({
   label,
-  sub,
   months,
   accent,
   primary = false,
@@ -366,7 +364,6 @@ function RateRow({
   clickable = false,
 }: {
   label: string;
-  sub: string;
   months: number;
   accent: string;
   primary?: boolean;
@@ -386,21 +383,7 @@ function RateRow({
         background: primary ? `${accent}0d` : "transparent",
       }}
     >
-      <div>
-        <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 9,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: C.inkMute,
-            marginTop: 2,
-          }}
-        >
-          {sub}
-        </div>
-      </div>
+      <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
       <div
         style={{
           fontSize: 18,
