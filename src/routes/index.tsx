@@ -206,19 +206,30 @@ const INITIAL: Data = {
   
 };
 
-// Feature-adjusted price multiplier — same math used live on "Picture the place".
+// Feature-adjusted price multiplier — same math used live on "Picture your place".
 function computeFeatureMult(d: Data): number {
   const baseAdj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
   let m = baseAdj.priceMult;
   m += Math.max(0, (d.beds ?? 0) - 3) * 0.05;
   m += Math.max(0, (d.baths ?? 0) - 2) * 0.03;
+  // Outdoor/parking inputs were removed from onboarding — multipliers left
+  // behind so legacy plans loaded from the DB still price the same.
   if (d.outdoorSpace === "patio") m += 0.02;
   if (d.outdoorSpace === "yard") m += 0.05;
   if (d.parking === "driveway") m += 0.02;
   if (d.parking === "garage") m += 0.05;
-  const w = (v: "nice" | "must") => (v === "must" ? 0.025 : 0.01);
-  Object.values(d.lifestyle ?? {}).forEach((v) => (m += w(v as "nice" | "must")));
-  Object.values(d.neighborhood ?? {}).forEach((v) => (m += w(v as "nice" | "must")));
+  const tagBump = (raw: unknown) => {
+    if (Array.isArray(raw)) return raw.length * 0.015;
+    if (raw && typeof raw === "object") {
+      return Object.values(raw as Record<string, unknown>).reduce<number>(
+        (a, v) => a + (v === "must" ? 0.025 : v === "nice" ? 0.01 : 0),
+        0,
+      );
+    }
+    return 0;
+  };
+  m += tagBump(d.lifestyle);
+  m += tagBump(d.neighborhood);
   return m;
 }
 
