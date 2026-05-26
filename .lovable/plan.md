@@ -1,43 +1,116 @@
-# Polish the downloadable PDF
 
-Scope: keep the single-page editorial layout in `src/lib/plan-pdf.server.ts`. Make it tighter, more visual, and consistent with the rest of the app.
+# Keystone Onboarding & Results Optimization
 
-## Changes
+All work lives in `src/routes/index.tsx` (the wizard + Report) plus a small new component file, `src/lib/keystone.ts` (style list), and `src/lib/plan-metrics.ts` (readiness already exists; we'll reuse). No visual identity, palette, or typography changes.
 
-### 1. Fix overflow & layout discipline
-- Reduce row line-height (17 → 15) and section gaps so all 6 sections fit reliably even with goal block + all optional rows.
-- Add a real bottom guard: if a section would cross y=80, drop the lowest-priority optional rows (e.g. profile snapshot's expenses/debt) instead of overlapping the footer.
-- Tighten section header spacing.
+## 1. Shorten the flow (combine + trim)
 
-### 2. Readiness gauge (replaces the plain "Score" row in section 04)
-- Horizontal 0–100 track ~220px wide with three color zones (ember 0–39, gold 40–59, sage 60–100), filled to the user's score, with a tick marker and the numeric "{score} / 100 — {label}" beside it.
-- Drawn with `page.drawRectangle` — no new dependency.
+**Combine `homeStyle` + `homeFeatures` into one screen: `homePicture`.**
+New `FLOW`:
+```
+welcome → email → introFinances → partner → age → employment → finances →
+insightIncome → credit → insightCredit → [partner branch] → factDemo →
+zip → homePicture → downGoal → timeline → introMoveIn → introRisk →
+risk0…risk3 → calculating → dashboard
+```
 
-### 3. Save-vs-invest comparison chart (replaces the two scalar rows in section 03)
-- Four horizontal bars, one per tier: Conservative, Moderate, Balanced, Growth (rates pulled from the same `RISK_PROFILES` source used by `InvestVsSavePanel` so they stay in sync).
-- Each bar shows `$/mo needed` for the same deposit + timeline, labeled with rate and dollar amount. Bar widths scale to the largest (Save-only / Conservative).
-- Highlight the user's currently-selected tier (from `assumptions.expectedReturnPct`) with the ember accent; others in faint.
-- Keep "Already saved" and "Target deposit" as the two summary rows above the chart.
+`homePicture` screen content (single scroll, mobile-first, current type/spacing):
+- Home type chips: **Single family, Condo, Townhouse, Multi-family** (drop split-level, ranch).
+- Bed / Bath steppers (kept).
+- One combined "What matters most" multi-select (no must/nice, matches the existing PicturePlacePanel pattern): Walkable area, Good schools, Near work, Home office, Room for a dog, Space for kids, Quiet suburb, Restaurants & nightlife, Parks & nature.
+- Remove: outdoor space, parking, split-level, ranch, detailed outdoor prefs.
 
-### 4. Personalize "Next steps" (section 05)
-Derive bullets from the user's actual numbers instead of the current near-static list:
-- If `housingRatio > 0.36`: lead with "Lower your target price to ~{X} to bring housing under 36% of income."
-- If `dti > 0.43`: "Pay down {money(debtToReduce)} of debt to qualify comfortably."
-- If `credit < 680`: "Raise your credit score above 680 — biggest rate impact."
-- If `timelineYears < 3`: keep-in-cash bullet; else surface the active investment tier's $/mo.
-- If `g.requiredMonthly > m.monthlyToSave * 1.2`: "Your goal date requires {money(required)}/mo — consider extending move-in by {N} months."
-- Always end with the 6-month re-check bullet.
-Cap at 4 bullets; wrap as today.
+Data model: keep `outdoorSpace`/`parking` fields but stop collecting them (default `null`); `lifestyle`/`neighborhood` become `string[]` (mirrors the dashboard change already shipped). `priceMult` in `index.tsx` and `plan-metrics.ts` updated to treat each selected tag as a flat +0.015 bump and ignore removed fields.
 
-### 5. Footer + small fixes
-- Change footer URL from `keystonehomeowner.lovable.app` to `keystonehomeowners.com`.
-- Add a small "Page 1 of 1" on the right of the footer line (sets up cleanly if we ever go multi-page).
-- Fix the `headerRight` label from "THE REPORT" to "HOMEBUYING PLAN" (matches in-app language).
+Net: ~3 screens removed, fewer inputs per screen → ~25% shorter.
 
-## Files touched
-- `src/lib/plan-pdf.server.ts` — all of the above; pure rendering changes, no new deps.
-- Import `RISK_PROFILES` (or the equivalent export) from `src/lib/keystone.ts` so tier rates are a single source of truth with the dashboard.
+## 2. Micro-insight cards between sections
+
+New lightweight `InsightCard` component (cream card, rust accent rule, one-line headline + one-line subtext, "Based on regional market data" footnote). Inserted as standalone screens:
+- `insightIncome` (after `finances`): "You're within range for many first-time buyers in your area."
+- `insightCredit` (after `credit`): "Your credit range could qualify for competitive mortgage rates."
+- `insightSavings` shown inline on the existing `downGoal` screen as a small note: "You already have more saved than many buyers starting their journey."
+- `insightDebt` shown inline on `finances` results step or on `insightIncome` if DTI healthy.
+
+Copy is conditional on the user's numbers (simple thresholds) but always reassuring; never exaggerated. Auto-advance disabled — user taps "Continue."
+
+## 3. Future-visualization transition
+
+New screen `introMoveIn` placed right before `introRisk`:
+- Title: **Picture move-in day.**
+- Body: "You unlock the front door. Boxes everywhere. Nothing's fully set up yet — but it's yours."
+- Subtext: "Now let's build the fastest realistic path to get there."
+- Uses the existing intro-screen layout (same as `introFinances`/`introRisk`) for visual consistency.
+
+## 4. Trust & credibility anchors
+
+Add a reusable `<TrustNote>` (small caps, muted, current type scale). Placed under:
+- Affordability verdict on Report → "Mortgage estimates are educational, not lender approvals."
+- Target price on `homePicture` → "Based on regional market data."
+- Rate on timeline → "Updated using current average market rates."
+- Readiness score → "Typical ranges sourced from national housing data."
+
+No legalistic blocks, just one-liners.
+
+## 5. Results: add "Your biggest timeline lever" before the paywall
+
+New `BiggestLeverPanel` rendered in `Report` immediately before `<ReportPaywall />`.
+
+Compute 4 candidate levers from the user's plan and surface the single highest-impact one (plus the runner-up as a smaller chip):
+- +$250/mo savings → months saved (using `computeTimeToGoal`).
+- Credit +40 pts → new rate via `rateFromCredit`, monthly delta.
+- Target price −10% → cash-to-close + monthly delta + months saved.
+- Down payment 10% vs current → months sooner.
+
+Tone: "Saving $250 more each month gets you in 14 months sooner." Plus a secondary "Other levers" row with 2 muted options. This is the last free aha before the upsell.
+
+## 6. Reframe the Plus paywall
+
+Rewrite `ReportPaywall` copy (no pricing change, same component, same CTA wiring):
+- Eyebrow: **Keystone Plus**
+- Headline: **Your plan adapts as life changes.**
+- Body (3 short lines, not a feature bullet list):
+  - "Rates move, income shifts, life happens. Plus keeps your path honest."
+  - "Adjust assumptions, track progress, and recover from setbacks without starting over."
+  - "Built to stay with you from today through closing."
+- Replace the current feature-checklist with 3 calm value pillars: **Stay on track · Adapt in real time · Move faster when you can.**
+- Keep monthsSooner figure as a quiet supporting line, not the hero.
+
+## 7. Homebuyer Readiness component
+
+New `<ReadinessPanel>` on the Report (above BiggestLever, after the affordability verdict). Reuses the existing `readiness` score in `plan-metrics.ts` but presents it as:
+- Big score (0–100) + tier label: *Early days / Building / Almost there / Ready to act*.
+- **Helping you (top 3)** and **Slowing you down (top 3)** lists, derived from the same sub-scores (credit, DTI, savings vs target, timeline, income stability via employment).
+- One-line empowering caption: "This isn't a credit score — it's a snapshot of how close you are to a confident offer."
+- TrustNote underneath.
+
+Tone strictly constructive (e.g. "Credit in a competitive band" / "Savings still building toward your down payment").
+
+## 8. Paywall ordering
+
+Final Report order:
+1. Hero affordability summary (existing)
+2. Timeline saving vs investing (existing)
+3. **Homebuyer Readiness** (new)
+4. **Your biggest timeline lever** (new)
+5. **Plus paywall** (reframed)
+6. Everything currently below paywall stays.
+
+This delays the paywall by two emotionally rewarding sections.
+
+---
+
+## Technical notes
+
+- All changes are presentation + flow logic; no DB schema, no server function, no auth changes.
+- `FLOW` and `PROGRESS_SCREENS` updated together so the progress bar percentage stays accurate after combining/removing screens.
+- `priceMult` updated in both `src/routes/index.tsx` and `src/lib/plan-metrics.ts` to drop must/nice weighting and ignore `outdoorSpace`/`parking`.
+- New components colocated in `src/routes/index.tsx` for now (matches current file convention); if `BiggestLever` or `ReadinessPanel` grow beyond ~80 lines we extract to `src/components/dashboard/`.
+- Lifestyle/neighborhood storage migrates from `Record<string,"must"|"nice">` to `string[]` — already done on the dashboard; we mirror it on the onboarding side. A small `normalizeLifestyle()` helper handles legacy plans loaded from the DB.
+- No changes to Stripe, subscription tiers, or pricing.
 
 ## Out of scope
-- Multi-page layout, cover hero, custom fonts, deposit-progress bar, monthly housing breakdown chart, partner breakdown, wishlist section. (Can revisit later.)
-- No DB, server-fn signature, or download-button changes.
+
+- Visual redesign, palette, typography, spacing tokens.
+- Backend / RLS / server function changes.
+- A/B testing infrastructure (can be added later).
