@@ -1278,7 +1278,7 @@ function ScreenSwitch({
     );
   }
 
-  if (screen === "homeFeatures") {
+  // homeFeatures merged into homePicture (above).
     const Stepper = ({
       label,
       value,
