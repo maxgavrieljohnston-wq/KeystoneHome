@@ -157,8 +157,8 @@ type Data = {
   outdoorSpace: string | null;
   parking: string | null;
   homeLayout: string | null;
-  lifestyle: Record<string, "nice" | "must">;
-  neighborhood: Record<string, "nice" | "must">;
+  lifestyle: string[];
+  neighborhood: string[];
   timelineYears: number;
   timelineBucket: string | null;
   downGoalPct: number | null;
