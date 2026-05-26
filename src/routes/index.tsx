@@ -2838,6 +2838,76 @@ function IntroPage({
   );
 }
 
+function TrustNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 9,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        color: C.inkFaint,
+        marginTop: 8,
+      }}
+    >
+      — {children}
+    </div>
+  );
+}
+
+function InsightScreen({
+  kicker,
+  lines,
+  onNext,
+}: {
+  kicker: string;
+  lines: { headline: string; sub: string }[];
+  onNext: () => void;
+}) {
+  return (
+    <div style={{ paddingTop: 30 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 20,
+        }}
+      >
+        — {kicker}
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 28 }} />
+      {lines.map((l, i) => (
+        <div key={i} style={{ marginBottom: 26 }}>
+          <p
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontWeight: 400,
+              fontSize: 28,
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+              margin: "0 0 10px",
+              color: C.ink,
+            }}
+          >
+            {l.headline}
+          </p>
+          <p style={{ fontSize: 14, lineHeight: 1.55, color: C.inkSoft, margin: 0, maxWidth: 420 }}>
+            {l.sub}
+          </p>
+        </div>
+      ))}
+      <TrustNote>Based on regional market data</TrustNote>
+      <div style={{ height: 28 }} />
+      <Cta onClick={onNext}>Continue</Cta>
+    </div>
+  );
+}
+
+
+
 function ZipScreen({
   d,
   set,
