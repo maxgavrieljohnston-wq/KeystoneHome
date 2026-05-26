@@ -304,6 +304,12 @@ export const INTROS = {
     title: "Where you're buying, and what you're buying.",
     body: "Your location sets the local price benchmark. The home style shifts the monthly cost. A timeline turns it into a real plan.",
   },
+  introMoveIn: {
+    chapter: "Interlude",
+    kicker: "A quiet moment",
+    title: "Picture move-in day.",
+    body: "You unlock the front door. Boxes everywhere. Nothing's fully set up yet — but it's yours.\n\nNow let's build the fastest realistic path to get there.",
+  },
   introRisk: {
     chapter: "Chapter IV",
     kicker: "Compounding — the eighth wonder of the world",
