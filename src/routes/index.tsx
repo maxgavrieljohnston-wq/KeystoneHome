@@ -89,7 +89,9 @@ const FLOW = [
   "age",
   "employment",
   "finances",
+  "insightIncome",
   "credit",
+  "insightCredit",
   "partnerInfo",
   "partnerAge",
   "partnerEmployment",
@@ -97,11 +99,10 @@ const FLOW = [
   "partnerCredit",
   "factDemo",
   "zip",
-  "homeStyle",
-  "homeFeatures",
+  "homePicture",
   "downGoal",
-  // "advancedAssumptions" removed — backend now derives these from the user's metro.
   "timeline",
+  "introMoveIn",
   "introRisk",
   "risk0",
   "risk1",
@@ -116,10 +117,11 @@ const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
   "partner",
-  "age", "employment", "finances", "credit",
+  "age", "employment", "finances", "insightIncome", "credit", "insightCredit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "factDemo",
-  "zip", "homeStyle", "homeFeatures", "downGoal", "timeline",
+  "zip", "homePicture", "downGoal", "timeline",
+  "introMoveIn",
   "introRisk",
   "risk0", "risk1", "risk2", "risk3",
 ];
@@ -155,8 +157,8 @@ type Data = {
   outdoorSpace: string | null;
   parking: string | null;
   homeLayout: string | null;
-  lifestyle: Record<string, "nice" | "must">;
-  neighborhood: Record<string, "nice" | "must">;
+  lifestyle: string[];
+  neighborhood: string[];
   timelineYears: number;
   timelineBucket: string | null;
   downGoalPct: number | null;
@@ -195,8 +197,8 @@ const INITIAL: Data = {
   outdoorSpace: null,
   parking: null,
   homeLayout: null,
-  lifestyle: {},
-  neighborhood: {},
+  lifestyle: [],
+  neighborhood: [],
   timelineYears: 3,
   timelineBucket: null,
   downGoalPct: null,
@@ -204,19 +206,30 @@ const INITIAL: Data = {
   
 };
 
-// Feature-adjusted price multiplier — same math used live on "Picture the place".
+// Feature-adjusted price multiplier — same math used live on "Picture your place".
 function computeFeatureMult(d: Data): number {
   const baseAdj = styleAdjustments(d.homeStyle ? [d.homeStyle] : []);
   let m = baseAdj.priceMult;
   m += Math.max(0, (d.beds ?? 0) - 3) * 0.05;
   m += Math.max(0, (d.baths ?? 0) - 2) * 0.03;
+  // Outdoor/parking inputs were removed from onboarding — multipliers left
+  // behind so legacy plans loaded from the DB still price the same.
   if (d.outdoorSpace === "patio") m += 0.02;
   if (d.outdoorSpace === "yard") m += 0.05;
   if (d.parking === "driveway") m += 0.02;
   if (d.parking === "garage") m += 0.05;
-  const w = (v: "nice" | "must") => (v === "must" ? 0.025 : 0.01);
-  Object.values(d.lifestyle ?? {}).forEach((v) => (m += w(v as "nice" | "must")));
-  Object.values(d.neighborhood ?? {}).forEach((v) => (m += w(v as "nice" | "must")));
+  const tagBump = (raw: unknown) => {
+    if (Array.isArray(raw)) return raw.length * 0.015;
+    if (raw && typeof raw === "object") {
+      return Object.values(raw as Record<string, unknown>).reduce<number>(
+        (a, v) => a + (v === "must" ? 0.025 : v === "nice" ? 0.01 : 0),
+        0,
+      );
+    }
+    return 0;
+  };
+  m += tagBump(d.lifestyle);
+  m += tagBump(d.neighborhood);
   return m;
 }
 
@@ -819,22 +832,115 @@ function ScreenSwitch({
   if (screen === "zip")
     return <ZipScreen d={d} set={set} next={next} />;
 
-  if (screen === "homeStyle")
+  if (screen === "insightIncome") {
+    const hh = (d.income ?? 0) + (d.hasPartner ? d.partnerIncome ?? 0 : 0);
+    const takeHome = (hh * 0.78) / 12;
+    const expenses = (d.expenses ?? 0) + (d.hasPartner ? d.partnerExpenses ?? 0 : 0);
+    const debt = (d.debt ?? 0) + (d.hasPartner ? d.partnerDebt ?? 0 : 0);
+    const headroom = takeHome - expenses - debt;
+    const dtiHealthy = takeHome > 0 && debt / takeHome <= 0.15;
+    const lines: { headline: string; sub: string }[] = [
+      {
+        headline: "You're within range for many first-time buyers in your area.",
+        sub: "Your income lands inside the band most first-time buyers fall into when they start their plan.",
+      },
+    ];
+    if (dtiHealthy) {
+      lines.push({
+        headline: "Your debt load is healthier than average for first-time buyers.",
+        sub: "Lower monthly debt means more of your income can move toward your down payment.",
+      });
+    }
+    if (headroom > 400) {
+      lines.push({
+        headline: "There's real room in your budget to save.",
+        sub: `Roughly ${fmt(Math.floor(headroom / 100) * 100)}/mo of breathing room once essentials and debt are covered.`,
+      });
+    }
+    return <InsightScreen kicker="A quick read" lines={lines} onNext={next} />;
+  }
+
+  if (screen === "insightCredit") {
+    const credit = d.credit ?? 700;
+    const partner = d.hasPartner ? d.partnerCredit : null;
+    const q = partner ? Math.min(credit, partner) : credit;
+    const lines: { headline: string; sub: string }[] = [];
+    if (q >= 740) {
+      lines.push({
+        headline: "Your credit range qualifies for the best mortgage rates.",
+        sub: "Lenders reserve their lowest pricing for borrowers in this band — that's real money saved over 30 years.",
+      });
+    } else if (q >= 670) {
+      lines.push({
+        headline: "Your credit range could qualify for competitive mortgage rates.",
+        sub: "You're well inside the band most lenders treat as low risk.",
+      });
+    } else if (q >= 580) {
+      lines.push({
+        headline: "Your credit is workable — and improvable.",
+        sub: "You can still qualify today. A modest lift over 6–12 months opens better pricing.",
+      });
+    } else {
+      lines.push({
+        headline: "Your plan starts with a credit runway.",
+        sub: "We'll factor a realistic path to a better rate band into your timeline.",
+      });
+    }
+    return <InsightScreen kicker="A quick read" lines={lines} onNext={next} />;
+  }
+
+  if (screen === "homePicture") {
+    const styleOpts = HOME_STYLES.filter((s) =>
+      ["single", "condo", "townhouse", "multi"].includes(s.id),
+    );
+    const lifestyleItems = [
+      { val: "office", label: "Home office" },
+      { val: "dog", label: "Room for a dog" },
+      { val: "kids", label: "Space for kids" },
+      { val: "quiet", label: "Quiet suburb" },
+    ];
+    const neighborhoodItems = [
+      { val: "walk", label: "Walkable area" },
+      { val: "schools", label: "Good schools" },
+      { val: "commute", label: "Near work" },
+      { val: "nightlife", label: "Restaurants & nightlife" },
+      { val: "nature", label: "Parks & nature" },
+    ];
+    const allTags = [...lifestyleItems, ...neighborhoodItems];
+    const selectedTags: string[] = [
+      ...(Array.isArray(d.lifestyle) ? d.lifestyle : []),
+      ...(Array.isArray(d.neighborhood) ? d.neighborhood : []),
+    ];
+    const toggleTag = (val: string) => {
+      const inLifestyle = lifestyleItems.some((i) => i.val === val);
+      const arr = (inLifestyle ? d.lifestyle : d.neighborhood) as string[];
+      const safe = Array.isArray(arr) ? arr : [];
+      const nextArr = safe.includes(val) ? safe.filter((v) => v !== val) : [...safe, val];
+      if (inLifestyle) set("lifestyle", nextArr);
+      else set("neighborhood", nextArr);
+    };
+
+    const Stepper = ({
+      label, value, onChange, min, max, suffix,
+    }: { label: string; value: number; onChange: (n: number) => void; min: number; max: number; suffix?: string }) => (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
+        <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 600, color: C.ink }}>{label}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => onChange(Math.max(min, value - 1))} style={{ width: 34, height: 34, border: `1.5px solid ${C.ink}`, background: "transparent", color: C.ink, fontSize: 18, cursor: "pointer" }}>−</button>
+          <div style={{ minWidth: 48, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 17, color: C.ink }}>{value}{suffix}</div>
+          <button onClick={() => onChange(Math.min(max, value + 1))} style={{ width: 34, height: 34, border: `1.5px solid ${C.ink}`, background: "transparent", color: C.ink, fontSize: 18, cursor: "pointer" }}>+</button>
+        </div>
+      </div>
+    );
+
     return (
       <Question
-        kicker="Style"
-        title="What kind of home?"
-        sub="Pick the one that fits best — it shifts the price and monthly cost."
+        kicker="Your place"
+        title="Picture your place."
+        sub="A few light strokes — type of home, size, and what would make it feel like home."
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
-            marginBottom: 28,
-          }}
-        >
-          {HOME_STYLES.map((s) => {
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 24 }}>
+          {styleOpts.map((s) => {
             const active = d.homeStyle === s.id;
             return (
               <button
@@ -845,40 +951,58 @@ function ScreenSwitch({
                   color: active ? C.cream : C.ink,
                   border: `1.5px solid ${C.ink}`,
                   borderRadius: 0,
-                  padding: "16px 14px",
+                  padding: "14px 12px",
                   cursor: "pointer",
                   textAlign: "left",
-                  transition: "all 0.18s",
                 }}
               >
-                <div
-                  style={{
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontSize: 18,
-                    fontWeight: 600,
-                    marginBottom: 4,
-                  }}
-                >
-                  {s.label}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: active ? "rgba(251,247,240,0.6)" : C.inkMute,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {s.note}
-                </div>
+                <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontWeight: 600 }}>{s.label}</div>
               </button>
             );
           })}
         </div>
-        <Cta onClick={next} disabled={!d.homeStyle}>
-          Continue
-        </Cta>
+
+        <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
+        <Stepper label="Bathrooms" value={d.baths} onChange={(n) => set("baths", n)} min={1} max={5} suffix={d.baths >= 5 ? "+" : ""} />
+
+        <div style={{ marginTop: 22, marginBottom: 10 }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.inkMute }}>
+            What would make it feel like home?
+          </div>
+          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: "italic", fontSize: 13, color: C.inkSoft, marginTop: 4 }}>
+            Pick any that matter. No right answers.
+          </div>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+          {allTags.map((it) => {
+            const active = selectedTags.includes(it.val);
+            return (
+              <button
+                key={it.val}
+                onClick={() => toggleTag(it.val)}
+                style={{
+                  border: `1.5px solid ${C.ink}`,
+                  background: active ? C.ink : "transparent",
+                  color: active ? C.cream : C.ink,
+                  padding: "8px 13px",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  borderRadius: 0,
+                }}
+              >
+                {it.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <TrustNote>Based on regional market data</TrustNote>
+
+        <div style={{ height: 16 }} />
+        <Cta onClick={next} disabled={!d.homeStyle}>Continue</Cta>
       </Question>
     );
+  }
 
   // advancedAssumptions screen removed — backend derives defaults from metro.
 
@@ -1154,273 +1278,7 @@ function ScreenSwitch({
     );
   }
 
-  if (screen === "homeFeatures") {
-    const Stepper = ({
-      label,
-      value,
-      onChange,
-      min,
-      max,
-      suffix,
-    }: {
-      label: string;
-      value: number;
-      onChange: (n: number) => void;
-      min: number;
-      max: number;
-      suffix?: string;
-    }) => (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "14px 0",
-          borderBottom: `1px solid ${C.inkFaint}`,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: 20,
-            fontWeight: 600,
-            color: C.ink,
-          }}
-        >
-          {label}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={() => onChange(Math.max(min, value - 1))}
-            style={{
-              width: 34, height: 34, borderRadius: 0,
-              border: `1.5px solid ${C.ink}`, background: "transparent",
-              color: C.ink, fontSize: 18, cursor: "pointer",
-            }}
-          >−</button>
-          <div
-            style={{
-              minWidth: 48, textAlign: "center",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 17, color: C.ink,
-            }}
-          >
-            {value}{suffix}
-          </div>
-          <button
-            onClick={() => onChange(Math.min(max, value + 1))}
-            style={{
-              width: 34, height: 34, borderRadius: 0,
-              border: `1.5px solid ${C.ink}`, background: "transparent",
-              color: C.ink, fontSize: 18, cursor: "pointer",
-            }}
-          >+</button>
-        </div>
-      </div>
-    );
-
-    const Pills = ({
-      label,
-      options,
-      value,
-      onSelect,
-    }: {
-      label: string;
-      options: { val: string; label: string }[];
-      value: string | null;
-      onSelect: (v: string) => void;
-    }) => (
-      <div style={{ padding: "14px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
-            fontSize: 20, fontWeight: 600, color: C.ink, marginBottom: 10,
-          }}
-        >
-          {label}
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {options.map((o) => {
-            const active = value === o.val;
-            return (
-              <button
-                key={o.val}
-                onClick={() => onSelect(o.val)}
-                style={{
-                  border: `1.5px solid ${C.ink}`,
-                  background: active ? C.ink : "transparent",
-                  color: active ? C.cream : C.ink,
-                  padding: "7px 13px", fontSize: 13, cursor: "pointer", borderRadius: 0,
-                }}
-              >
-                {o.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-
-    // Priority chips: tap to cycle off → nice → must → off
-    const PriorityList = ({
-      items,
-      values,
-      onChange,
-    }: {
-      items: { val: string; label: string }[];
-      values: Record<string, "nice" | "must">;
-      onChange: (next: Record<string, "nice" | "must">) => void;
-    }) => {
-       const cycle = (v: string) => {
-        const next = { ...values };
-        if (next[v]) delete next[v];
-        else next[v] = "nice";
-        onChange(next);
-      };
-      return (
-        <div style={{ padding: "14px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {items.map((it) => {
-              const state = values[it.val];
-              const bg = state === "must" ? C.ember : state === "nice" ? C.ink : "transparent";
-              const fg = state ? C.cream : C.ink;
-              const border = state === "must" ? C.ember : C.ink;
-              return (
-                <button
-                  key={it.val}
-                  onClick={() => cycle(it.val)}
-                  style={{
-                    border: `1.5px solid ${border}`,
-                    background: bg, color: fg,
-                    padding: "8px 13px", fontSize: 13, cursor: "pointer",
-                    borderRadius: 0, display: "inline-flex", alignItems: "center", gap: 6,
-                  }}
-                >
-                  {state === "must" && <span style={{ fontSize: 10, letterSpacing: 1 }}>★</span>}
-                  {it.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    };
-
-    const SectionHeader = ({ title, hint }: { title: string; hint?: string }) => (
-      <div style={{ marginTop: 28, marginBottom: 4 }}>
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 11, letterSpacing: 2, textTransform: "uppercase",
-            color: C.inkMute,
-          }}
-        >
-          {title}
-        </div>
-        {hint && (
-          <div
-            style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontStyle: "italic", fontSize: 14, color: C.inkSoft, marginTop: 4,
-            }}
-          >
-            {hint}
-          </div>
-        )}
-      </div>
-    );
-
-    const showLayout = ["starter", "single", "multi", "fixer"].includes(d.homeStyle ?? "");
-
-    const lifestyleItems = [
-      { val: "kids", label: "Space for kids" },
-      { val: "dog", label: "Room for a dog" },
-      { val: "host", label: "Hosting friends" },
-      { val: "mornings", label: "Quiet mornings outside" },
-      { val: "garden", label: "Gardening" },
-      { val: "lowmaint", label: "Low maintenance" },
-      { val: "office", label: "Home office" },
-    ];
-    const neighborhoodItems = [
-      { val: "walk", label: "Walkable area" },
-      { val: "schools", label: "Good schools" },
-      { val: "commute", label: "Near work" },
-      { val: "transit", label: "Public transit" },
-      { val: "quiet", label: "Quiet suburb" },
-      { val: "nature", label: "Parks & nature" },
-      { val: "nightlife", label: "Restaurants & nightlife" },
-      { val: "family", label: "Near family" },
-    ];
-
-    return (
-      <Question
-        kicker="Features"
-        title="Picture the place."
-        sub="Choose the bedrooms, baths, style, and features you'd like."
-      >
-        <div style={{ marginBottom: 28 }}>
-          <SectionHeader title="Home basics" />
-          <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
-          <Stepper label="Bathrooms" value={d.baths} onChange={(n) => set("baths", n)} min={1} max={5} suffix={d.baths >= 5 ? "+" : ""} />
-          {showLayout && (
-            <Pills
-              label="Style of home"
-              options={[
-                { val: "any", label: "No preference" },
-                { val: "ranch", label: "Ranch / single-story" },
-                { val: "twostory", label: "Two-story" },
-                { val: "split", label: "Split-level" },
-              ]}
-              value={d.homeLayout ?? "any"}
-              onSelect={(v) => set("homeLayout", v)}
-            />
-          )}
-          <Pills
-            label="Outdoor space"
-            options={[
-              { val: "none", label: "Not needed" },
-              { val: "patio", label: "Patio / balcony" },
-              { val: "yard", label: "Yard" },
-            ]}
-            value={d.outdoorSpace ?? "none"}
-            onSelect={(v) => set("outdoorSpace", v)}
-          />
-          <Pills
-            label="Parking"
-            options={[
-              { val: "street", label: "Street is fine" },
-              { val: "driveway", label: "Driveway" },
-              { val: "garage", label: "Garage" },
-            ]}
-            value={d.parking ?? "street"}
-            onSelect={(v) => set("parking", v)}
-          />
-
-          <SectionHeader
-            title="Lifestyle"
-            hint="What would make it feel like home?"
-          />
-          <PriorityList
-            items={lifestyleItems}
-            values={d.lifestyle}
-            onChange={(v) => set("lifestyle", v)}
-          />
-
-          <SectionHeader
-            title="Neighborhood"
-            hint="Where the home sits matters as much as the home itself."
-          />
-          <PriorityList
-            items={neighborhoodItems}
-            values={d.neighborhood}
-            onChange={(v) => set("neighborhood", v)}
-          />
-
-        </div>
-        <Cta onClick={next}>Continue</Cta>
-      </Question>
-    );
-  }
+  // homeFeatures merged into homePicture (above).
 
   if (screen.startsWith("risk")) {
     const idx = Number(screen.replace("risk", ""));
@@ -2980,6 +2838,76 @@ function IntroPage({
   );
 }
 
+function TrustNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 9,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        color: C.inkFaint,
+        marginTop: 8,
+      }}
+    >
+      — {children}
+    </div>
+  );
+}
+
+function InsightScreen({
+  kicker,
+  lines,
+  onNext,
+}: {
+  kicker: string;
+  lines: { headline: string; sub: string }[];
+  onNext: () => void;
+}) {
+  return (
+    <div style={{ paddingTop: 30 }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 20,
+        }}
+      >
+        — {kicker}
+      </div>
+      <div style={{ height: 1, background: C.ink, marginBottom: 28 }} />
+      {lines.map((l, i) => (
+        <div key={i} style={{ marginBottom: 26 }}>
+          <p
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontWeight: 400,
+              fontSize: 28,
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+              margin: "0 0 10px",
+              color: C.ink,
+            }}
+          >
+            {l.headline}
+          </p>
+          <p style={{ fontSize: 14, lineHeight: 1.55, color: C.inkSoft, margin: 0, maxWidth: 420 }}>
+            {l.sub}
+          </p>
+        </div>
+      ))}
+      <TrustNote>Based on regional market data</TrustNote>
+      <div style={{ height: 28 }} />
+      <Cta onClick={onNext}>Continue</Cta>
+    </div>
+  );
+}
+
+
+
 function ZipScreen({
   d,
   set,
@@ -3898,15 +3826,11 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
   if (isPro) return null;
 
   const hasEdge = monthsSooner >= 2;
-  const eyebrow = isPlus ? "Upgrade to Pro" : "Unlock the full plan";
-  const headline = isPlus
-    ? "Hand off the investing. Reach your goal faster."
-    : hasEdge
-      ? `Cut ${monthsSooner} months off your timeline.`
-      : "Own years sooner. Invest your down payment.";
+  const eyebrow = isPlus ? "Keystone Pro" : "Keystone Plus";
+  const headline = "Your plan adapts as life changes.";
   const sub = isPlus
-    ? "Pro adds adaptive strategy, broker matching, and live market intelligence."
-    : "Plus shows you the path. Pro keeps it on track as life changes.";
+    ? "Pro takes the next step: adaptive investing, broker matching, and live market intelligence — built around your plan."
+    : "Rates move, income shifts, life happens. Plus keeps your path honest — adjust assumptions, track progress, and recover from setbacks without starting over.";
 
   return (
     <section
@@ -3942,9 +3866,32 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
       >
         {headline}
       </h3>
-      <p style={{ color: "#d6cfc1", fontSize: 15, lineHeight: 1.5, margin: "12px 0 22px" }}>
+      <p style={{ color: "#d6cfc1", fontSize: 15, lineHeight: 1.5, margin: "12px 0 18px" }}>
         {sub}
       </p>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          color: "#d6cfc1",
+          margin: "0 0 18px",
+        }}
+      >
+        <span>Stay on track</span><span>·</span>
+        <span>Adapt in real time</span><span>·</span>
+        <span>Move faster when you can</span>
+      </div>
+      {hasEdge && (
+        <p style={{ color: C.inkFaint, fontSize: 12, margin: "0 0 16px", fontStyle: "italic", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+          Members on a similar plan move in roughly {monthsSooner} months sooner.
+        </p>
+      )}
+
 
       {/* Social proof strip */}
       <div

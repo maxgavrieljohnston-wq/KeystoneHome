@@ -191,17 +191,26 @@ export function computePlanMetrics(
   let mult = styleAdj.priceMult;
   mult += Math.max(0, num("beds") - 3) * 0.05;
   mult += Math.max(0, num("baths") - 2) * 0.03;
+  // Outdoor/parking inputs were removed from onboarding; tolerate legacy plans
+  // by leaving the multipliers behind a backwards-compat check.
   if (str("outdoorSpace") === "patio") mult += 0.02;
   if (str("outdoorSpace") === "yard") mult += 0.05;
   if (str("parking") === "driveway") mult += 0.02;
   if (str("parking") === "garage") mult += 0.05;
-  const w = (v: unknown) => (v === "must" ? 0.025 : v === "nice" ? 0.01 : 0);
-  Object.values((a.lifestyle as Record<string, unknown>) ?? {}).forEach(
-    (v) => (mult += w(v)),
-  );
-  Object.values((a.neighborhood as Record<string, unknown>) ?? {}).forEach(
-    (v) => (mult += w(v)),
-  );
+  const bumpFromTags = (raw: unknown) => {
+    if (Array.isArray(raw)) {
+      mult += raw.length * 0.015;
+      return;
+    }
+    if (raw && typeof raw === "object") {
+      // Legacy "must"/"nice" record format.
+      Object.values(raw as Record<string, unknown>).forEach((v) => {
+        mult += v === "must" ? 0.025 : v === "nice" ? 0.01 : 0;
+      });
+    }
+  };
+  bumpFromTags(a.lifestyle);
+  bumpFromTags(a.neighborhood);
 
   const overrideRaw = a.targetPriceOverride;
   const targetPriceOverride =
