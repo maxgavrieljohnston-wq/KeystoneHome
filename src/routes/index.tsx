@@ -3826,15 +3826,11 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
   if (isPro) return null;
 
   const hasEdge = monthsSooner >= 2;
-  const eyebrow = isPlus ? "Upgrade to Pro" : "Unlock the full plan";
-  const headline = isPlus
-    ? "Hand off the investing. Reach your goal faster."
-    : hasEdge
-      ? `Cut ${monthsSooner} months off your timeline.`
-      : "Own years sooner. Invest your down payment.";
+  const eyebrow = isPlus ? "Keystone Pro" : "Keystone Plus";
+  const headline = "Your plan adapts as life changes.";
   const sub = isPlus
-    ? "Pro adds adaptive strategy, broker matching, and live market intelligence."
-    : "Plus shows you the path. Pro keeps it on track as life changes.";
+    ? "Pro takes the next step: adaptive investing, broker matching, and live market intelligence — built around your plan."
+    : "Rates move, income shifts, life happens. Plus keeps your path honest — adjust assumptions, track progress, and recover from setbacks without starting over.";
 
   return (
     <section
@@ -3870,9 +3866,32 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
       >
         {headline}
       </h3>
-      <p style={{ color: "#d6cfc1", fontSize: 15, lineHeight: 1.5, margin: "12px 0 22px" }}>
+      <p style={{ color: "#d6cfc1", fontSize: 15, lineHeight: 1.5, margin: "12px 0 18px" }}>
         {sub}
       </p>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          color: "#d6cfc1",
+          margin: "0 0 18px",
+        }}
+      >
+        <span>Stay on track</span><span>·</span>
+        <span>Adapt in real time</span><span>·</span>
+        <span>Move faster when you can</span>
+      </div>
+      {hasEdge && (
+        <p style={{ color: C.inkFaint, fontSize: 12, margin: "0 0 16px", fontStyle: "italic", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+          Members on a similar plan move in roughly {monthsSooner} months sooner.
+        </p>
+      )}
+
 
       {/* Social proof strip */}
       <div
