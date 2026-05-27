@@ -86,7 +86,6 @@ const FLOW = [
   "email",
   "introFinances",
   "partner",
-  "age",
   "employment",
   "finances",
   "insightIncome",
@@ -117,7 +116,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
   "partner",
-  "age", "employment", "finances", "insightIncome", "credit", "insightCredit",
+  "employment", "finances", "insightIncome", "credit", "insightCredit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "factDemo",
   "zip", "homePicture", "downGoal", "timeline",
@@ -125,6 +124,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "introRisk",
   "risk0", "risk1", "risk2", "risk3",
 ];
+
 
 type Data = {
   email: string;
@@ -382,7 +382,7 @@ function KeystoneApp() {
     if (d.hasPartner === true && ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit"].includes(s)) return true;
     // Returning users: don't re-ask for name/email/phone or age — we have it on file.
     if (s === "email" && hasContactOnFile) return true;
-    if (s === "age" && agePrefilled) return true;
+    
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
       const partnerOver = d.hasPartner ? d.partnerAge > 38 : true;
@@ -583,8 +583,8 @@ function ScreenSwitch({
 
   if (screen === "email") return <EmailScreen d={d} set={set} next={next} />;
 
-  if (screen === "age")
-    return <BirthdayScreen d={d} set={set} onNext={next} which="user" />;
+
+
 
   if (screen === "employment")
     return (
