@@ -382,7 +382,7 @@ function KeystoneApp() {
     if (d.hasPartner === true && ["partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit"].includes(s)) return true;
     // Returning users: don't re-ask for name/email/phone or age — we have it on file.
     if (s === "email" && hasContactOnFile) return true;
-    if (s === "age" && agePrefilled) return true;
+    
     if (s === "factDemo") {
       const primaryOver = d.age > 38;
       const partnerOver = d.hasPartner ? d.partnerAge > 38 : true;
