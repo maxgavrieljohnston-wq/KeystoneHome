@@ -3841,7 +3841,318 @@ function Report({ d }: { d: Data }) {
   );
 }
 
+// ── Homebuyer Readiness ──────────────────────────────────────────────────────
+function ReadinessPanel({
+  score,
+  label,
+  creditScore,
+  dtiScore,
+  savingsScore,
+  timelineScore,
+  empStable,
+}: {
+  score: number;
+  label: string;
+  creditScore: number;
+  dtiScore: number;
+  savingsScore: number;
+  timelineScore: number;
+  empStable: boolean;
+}) {
+  const items: { key: string; score: number; help: string; slow: string }[] = [
+    {
+      key: "credit",
+      score: creditScore,
+      help: "Credit in a competitive band",
+      slow: "Credit still has room to grow",
+    },
+    {
+      key: "dti",
+      score: dtiScore,
+      help: "Debt load leaves room to borrow",
+      slow: "Debt-to-income is tight for now",
+    },
+    {
+      key: "savings",
+      score: savingsScore,
+      help: "Strong head start on your down payment",
+      slow: "Savings still building toward your down payment",
+    },
+    {
+      key: "timeline",
+      score: timelineScore,
+      help: "Timeline gives your plan room to work",
+      slow: "Short timeline limits compounding",
+    },
+    {
+      key: "employment",
+      score: empStable ? 85 : 40,
+      help: "Steady income strengthens your application",
+      slow: "Variable income may need extra documentation",
+    },
+  ];
+  const helping = [...items].sort((a, b) => b.score - a.score).slice(0, 3);
+  const slowing = [...items].sort((a, b) => a.score - b.score).slice(0, 3);
+  const tone = score >= 80 ? C.sage : score >= 60 ? C.gold : C.ember;
+
+  return (
+    <Section number="04" title="Homebuyer readiness">
+      <div
+        style={{
+          background: C.cream,
+          border: `1px solid ${C.ink}`,
+          borderRadius: 14,
+          padding: 22,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 6 }}>
+          <span
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 56,
+              fontWeight: 400,
+              lineHeight: 1,
+              color: tone,
+              letterSpacing: "-0.03em",
+            }}
+          >
+            {score}
+          </span>
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.inkMute,
+              }}
+            >
+              Out of 100
+            </div>
+            <div
+              style={{
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 20,
+                color: C.ink,
+              }}
+            >
+              {label}
+            </div>
+          </div>
+        </div>
+        <p style={{ color: C.inkSoft, fontSize: 14, lineHeight: 1.55, margin: "10px 0 18px" }}>
+          This isn't a credit score — it's a snapshot of how close you are to a confident offer.
+        </p>
+
+        <div style={{ display: "grid", gap: 16 }}>
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.sage,
+                marginBottom: 8,
+              }}
+            >
+              Helping you
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, color: C.ink, fontSize: 14, lineHeight: 1.6 }}>
+              {helping.map((i) => (
+                <li key={i.key}>{i.help}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.ember,
+                marginBottom: 8,
+              }}
+            >
+              Slowing you down
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, color: C.ink, fontSize: 14, lineHeight: 1.6 }}>
+              {slowing.map((i) => (
+                <li key={i.key}>{i.slow}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <TrustNote>Typical ranges sourced from national housing data</TrustNote>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+// ── Biggest timeline lever ───────────────────────────────────────────────────
+function BiggestLeverPanel({
+  saved,
+  downPayment,
+  avgPrice,
+  effectiveDownPct,
+  timelineMonths,
+  savedOnlyMonthly,
+  mortgageRate,
+  qualifyingCredit,
+  empRateAdd,
+}: {
+  saved: number;
+  downPayment: number;
+  avgPrice: number;
+  effectiveDownPct: number;
+  timelineMonths: number;
+  savedOnlyMonthly: number;
+  mortgageRate: number;
+  qualifyingCredit: number;
+  empRateAdd: number;
+}) {
+  const monthsTo = (target: number, start: number, monthly: number) => {
+    if (start >= target) return 0;
+    if (monthly <= 0) return timelineMonths;
+    return Math.ceil((target - start) / monthly);
+  };
+  const baseMonths = monthsTo(downPayment, saved, savedOnlyMonthly);
+
+  // Lever 1: +$250/mo
+  const moreSaveMonths = monthsTo(downPayment, saved, savedOnlyMonthly + 250);
+  const leverSave = Math.max(0, baseMonths - moreSaveMonths);
+
+  // Lever 2: Credit +40 → new rate, monthly delta
+  const newCredit = Math.min(820, qualifyingCredit + 40);
+  const newRate =
+    rateFromCredit(newCredit) + empRateAdd + rateAddFromDownPct(effectiveDownPct);
+  const newMortgage = calcMortgage(avgPrice, effectiveDownPct, newRate);
+  const baseMortgage = calcMortgage(avgPrice, effectiveDownPct, mortgageRate);
+  const monthlyMortgageSavings = Math.max(0, Math.round(baseMortgage - newMortgage));
+
+  // Lever 3: price −10%
+  const lowerPrice = avgPrice * 0.9;
+  const lowerDown = Math.round((lowerPrice * effectiveDownPct) / 100);
+  const lowerMortgage = calcMortgage(lowerPrice, effectiveDownPct, mortgageRate);
+  const priceMonthlyDelta = Math.max(0, Math.round(baseMortgage - lowerMortgage));
+  const priceMonthsSooner = Math.max(0, baseMonths - monthsTo(lowerDown, saved, savedOnlyMonthly));
+
+  // Lever 4: down payment 10%
+  const altDown = Math.round((avgPrice * 10) / 100);
+  const altMonths = monthsTo(altDown, saved, savedOnlyMonthly);
+  const downMonthsDelta = baseMonths - altMonths;
+
+  type Lever = { id: string; label: string; impact: number; copy: string };
+  const candidates: Lever[] = [
+    {
+      id: "save",
+      label: "Save $250 more each month",
+      impact: leverSave,
+      copy: `Saving $250 more each month gets you in ${leverSave} months sooner.`,
+    },
+    {
+      id: "credit",
+      label: "Raise credit by 40 points",
+      impact: monthlyMortgageSavings * 6,
+      copy: `Raising your credit by 40 points trims roughly ${fmt(monthlyMortgageSavings)}/mo from your future mortgage.`,
+    },
+    {
+      id: "price",
+      label: "Target 10% lower price",
+      impact: priceMonthsSooner * 2 + priceMonthlyDelta,
+      copy: `A target ${fmt(Math.round(lowerPrice))} home gets you in ${priceMonthsSooner} months sooner and ${fmt(priceMonthlyDelta)}/mo lower.`,
+    },
+    {
+      id: "down",
+      label: "Aim for a 10% down payment",
+      impact: Math.abs(downMonthsDelta),
+      copy:
+        downMonthsDelta > 0
+          ? `A 10% down payment gets you in ${downMonthsDelta} months sooner.`
+          : `Stretching to a larger down payment adds about ${Math.abs(downMonthsDelta)} months.`,
+    },
+  ];
+  const ranked = [...candidates].sort((a, b) => b.impact - a.impact);
+  const top = ranked[0];
+  const others = ranked.slice(1, 3);
+
+  return (
+    <Section number="05" title="Your biggest timeline lever">
+      <div
+        style={{
+          background: C.paper,
+          border: `1px solid ${C.ink}`,
+          borderRadius: 14,
+          padding: 22,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: C.ember,
+            marginBottom: 10,
+          }}
+        >
+          Highest impact
+        </div>
+        <h3
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontWeight: 400,
+            fontSize: 26,
+            lineHeight: 1.15,
+            letterSpacing: "-0.02em",
+            margin: 0,
+            color: C.ink,
+          }}
+        >
+          {top.copy}
+        </h3>
+        <div style={{ marginTop: 18 }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkMute,
+              marginBottom: 8,
+            }}
+          >
+            Other levers
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {others.map((o) => (
+              <span
+                key={o.id}
+                style={{
+                  fontSize: 12,
+                  padding: "6px 10px",
+                  border: `1px solid ${C.ink}`,
+                  borderRadius: 999,
+                  color: C.inkSoft,
+                  background: C.cream,
+                }}
+              >
+                {o.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
 // ── Report paywall ───────────────────────────────────────────────────────────
+
 function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
   const { isPlus, isPro, loading } = useSubscription();
   const gate = useUpgradeGate();
