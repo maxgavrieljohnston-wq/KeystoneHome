@@ -583,8 +583,8 @@ function ScreenSwitch({
 
   if (screen === "email") return <EmailScreen d={d} set={set} next={next} />;
 
-  if (screen === "age")
-    return <BirthdayScreen d={d} set={set} onNext={next} which="user" />;
+
+
 
   if (screen === "employment")
     return (
