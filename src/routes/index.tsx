@@ -3793,7 +3793,30 @@ function Report({ d }: { d: Data }) {
         );
       })()}
 
+      <ReadinessPanel
+        score={readiness}
+        label={readinessLabel}
+        creditScore={creditScoreNorm}
+        dtiScore={dtiScore}
+        savingsScore={savingsScore}
+        timelineScore={timelineScore}
+        empStable={empAdjReady.incomeFactor >= 1}
+      />
+
+      <BiggestLeverPanel
+        saved={d.saved}
+        downPayment={downPayment}
+        avgPrice={avgPrice}
+        effectiveDownPct={effectiveDownPct}
+        timelineMonths={months}
+        savedOnlyMonthly={savedOnlyMonthly}
+        mortgageRate={mortgageRate}
+        qualifyingCredit={qualifyingCredit}
+        empRateAdd={empAdjReady.rateAdd}
+      />
+
       <ReportPaywall monthsSooner={paywallMonthsSooner} />
+      
       
 
       {/* Footer */}
