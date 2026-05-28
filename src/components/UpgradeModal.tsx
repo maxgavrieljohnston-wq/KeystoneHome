@@ -84,6 +84,7 @@ export function UpgradeModal({
   const [userId, setUserId] = useState<string | undefined>();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { openCheckout, loading, checkoutElement } = useStripeCheckout();
+  const { proAvailable } = useProAvailable();
 
   useEffect(() => {
     if (!open) return;
