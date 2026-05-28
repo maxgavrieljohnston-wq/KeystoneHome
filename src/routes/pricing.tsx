@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
+import { useProAvailable } from "@/lib/pro-availability";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
