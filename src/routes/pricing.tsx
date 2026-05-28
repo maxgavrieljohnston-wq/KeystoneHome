@@ -312,8 +312,9 @@ function PricingPage() {
                 })()}
 
                 <button
-                  onClick={() => handleSelect(plan)}
-                  disabled={loading || isCurrent}
+                  onClick={proLocked ? undefined : () => handleSelect(plan)}
+                  disabled={loading || isCurrent || proLocked}
+                  aria-disabled={proLocked}
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 12,
@@ -322,17 +323,19 @@ function PricingPage() {
                     padding: "14px 18px",
                     borderRadius: 8,
                     border: "none",
-                    cursor: isCurrent ? "default" : "pointer",
+                    cursor: proLocked || isCurrent ? "not-allowed" : "pointer",
                     background: plan.highlight ? C.paper : C.ink,
                     color: plan.highlight ? C.ink : C.paper,
-                    opacity: loading || isCurrent ? 0.6 : 1,
+                    opacity: loading || isCurrent || proLocked ? 0.55 : 1,
                   }}
                 >
-                  {isCurrent
-                    ? "Current plan"
-                    : loading
-                      ? "Opening…"
-                      : `Choose ${plan.name}`}
+                  {proLocked
+                    ? "Coming Soon"
+                    : isCurrent
+                      ? "Current plan"
+                      : loading
+                        ? "Opening…"
+                        : `Choose ${plan.name}`}
                 </button>
               </div>
             );
