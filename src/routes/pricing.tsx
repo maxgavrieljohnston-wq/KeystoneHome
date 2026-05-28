@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
+import { useProAvailable } from "@/lib/pro-availability";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -78,6 +79,7 @@ function PricingPage() {
   const [userId, setUserId] = useState<string | undefined>();
   const { openCheckout, loading, checkoutElement } = useStripeCheckout();
   const sub = useSubscription();
+  const { proAvailable } = useProAvailable();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -170,6 +172,8 @@ function PricingPage() {
         >
           {PLANS.map((plan) => {
             const isCurrent = sub.isActive && sub.tier === plan.id;
+            const proLocked = plan.id === "pro" && !proAvailable;
+
 
             return (
               <div
@@ -308,8 +312,9 @@ function PricingPage() {
                 })()}
 
                 <button
-                  onClick={() => handleSelect(plan)}
-                  disabled={loading || isCurrent}
+                  onClick={proLocked ? undefined : () => handleSelect(plan)}
+                  disabled={loading || isCurrent || proLocked}
+                  aria-disabled={proLocked}
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 12,
@@ -318,17 +323,19 @@ function PricingPage() {
                     padding: "14px 18px",
                     borderRadius: 8,
                     border: "none",
-                    cursor: isCurrent ? "default" : "pointer",
+                    cursor: proLocked || isCurrent ? "not-allowed" : "pointer",
                     background: plan.highlight ? C.paper : C.ink,
                     color: plan.highlight ? C.ink : C.paper,
-                    opacity: loading || isCurrent ? 0.6 : 1,
+                    opacity: loading || isCurrent || proLocked ? 0.55 : 1,
                   }}
                 >
-                  {isCurrent
-                    ? "Current plan"
-                    : loading
-                      ? "Opening…"
-                      : `Choose ${plan.name}`}
+                  {proLocked
+                    ? "Coming Soon"
+                    : isCurrent
+                      ? "Current plan"
+                      : loading
+                        ? "Opening…"
+                        : `Choose ${plan.name}`}
                 </button>
               </div>
             );

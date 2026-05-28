@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isProAvailableFor } from "@/lib/pro-availability";
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,
@@ -48,6 +49,13 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }) => {
+    // Hard stop: Pro is coming soon. Only allow-listed test accounts can
+    // start a Pro checkout. UI mirrors this with a disabled "Coming Soon"
+    // button, but we re-check here so direct RPC calls can't bypass it.
+    if (data.priceId.startsWith("pro_") && !isProAvailableFor(data.customerEmail)) {
+      throw new Error("Pro is coming soon.");
+    }
+
     const stripe = createStripeClient(data.environment);
 
     const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
