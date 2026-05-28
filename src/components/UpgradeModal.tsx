@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
 import { trackUpgradeEvent } from "@/lib/upgrade-tracking";
+import { useProAvailable } from "@/lib/pro-availability";
 
 const C = {
   paper: "#f5efe6",
