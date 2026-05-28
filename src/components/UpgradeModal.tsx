@@ -400,26 +400,36 @@ export function UpgradeModal({
                   {tier.urgency}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={() => handlePick(tier)}
-                  disabled={loading}
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 11,
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    padding: "13px 14px",
-                    borderRadius: 8,
-                    border: "none",
-                    cursor: loading ? "default" : "pointer",
-                    background: tier.highlight ? C.paper : C.ink,
-                    color: tier.highlight ? C.ink : C.paper,
-                    opacity: loading ? 0.6 : 1,
-                  }}
-                >
-                  {loading ? "Opening checkout…" : `${tier.cta} →`}
-                </button>
+                {(() => {
+                  const proLocked = isPro && !proAvailable;
+                  return (
+                    <button
+                      type="button"
+                      onClick={proLocked ? undefined : () => handlePick(tier)}
+                      disabled={loading || proLocked}
+                      aria-disabled={proLocked}
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 11,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        padding: "13px 14px",
+                        borderRadius: 8,
+                        border: "none",
+                        cursor: proLocked ? "not-allowed" : loading ? "default" : "pointer",
+                        background: tier.highlight ? C.paper : C.ink,
+                        color: tier.highlight ? C.ink : C.paper,
+                        opacity: proLocked ? 0.55 : loading ? 0.6 : 1,
+                      }}
+                    >
+                      {proLocked
+                        ? "Coming Soon"
+                        : loading
+                          ? "Opening checkout…"
+                          : `${tier.cta} →`}
+                    </button>
+                  );
+                })()}
               </div>
             );
             return (
