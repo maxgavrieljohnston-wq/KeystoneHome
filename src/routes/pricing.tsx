@@ -79,6 +79,7 @@ function PricingPage() {
   const [userId, setUserId] = useState<string | undefined>();
   const { openCheckout, loading, checkoutElement } = useStripeCheckout();
   const sub = useSubscription();
+  const { proAvailable } = useProAvailable();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
