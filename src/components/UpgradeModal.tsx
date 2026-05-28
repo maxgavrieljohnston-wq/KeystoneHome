@@ -397,7 +397,9 @@ export function UpgradeModal({
                     opacity: 0.78,
                   }}
                 >
-                  {tier.urgency}
+                  {isPro && !proAvailable
+                    ? "Pro is launching soon — we'll email you when it's ready."
+                    : tier.urgency}
                 </p>
 
                 {(() => {
