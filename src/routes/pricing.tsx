@@ -172,6 +172,8 @@ function PricingPage() {
         >
           {PLANS.map((plan) => {
             const isCurrent = sub.isActive && sub.tier === plan.id;
+            const proLocked = plan.id === "pro" && !proAvailable;
+
 
             return (
               <div
