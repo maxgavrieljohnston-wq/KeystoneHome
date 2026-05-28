@@ -838,26 +838,78 @@ function ScreenSwitch({
     const expenses = (d.expenses ?? 0) + (d.hasPartner ? d.partnerExpenses ?? 0 : 0);
     const debt = (d.debt ?? 0) + (d.hasPartner ? d.partnerDebt ?? 0 : 0);
     const headroom = takeHome - expenses - debt;
-    const dtiHealthy = takeHome > 0 && debt / takeHome <= 0.15;
-    const lines: { headline: string; sub: string }[] = [
+
+    // Score 0-100 for each candidate insight; show only the strongest.
+    // 1) Income-in-range — based on a $400k reference home; ideal band 15–35% of price.
+    const refPrice = 400000;
+    const lowBand = refPrice * 0.15;
+    const highBand = refPrice * 0.35;
+    let incomeScore = 0;
+    if (hh > 0) {
+      if (hh >= lowBand && hh <= highBand) {
+        const mid = (lowBand + highBand) / 2;
+        incomeScore = 100 - (Math.abs(hh - mid) / (mid - lowBand)) * 30; // 70–100
+      } else if (hh < lowBand) {
+        incomeScore = Math.max(0, (hh / lowBand) * 60);
+      } else {
+        incomeScore = Math.max(40, 70 - ((hh - highBand) / highBand) * 30);
+      }
+    }
+
+    // 2) Debt load — lower ratio = higher score.
+    const dtiRatio = takeHome > 0 ? debt / takeHome : 1;
+    let debtScore = 0;
+    if (takeHome > 0) {
+      if (dtiRatio <= 0.08) debtScore = 100;
+      else if (dtiRatio <= 0.15) debtScore = 85;
+      else if (dtiRatio <= 0.25) debtScore = 55;
+      else debtScore = Math.max(0, 40 - (dtiRatio - 0.25) * 100);
+    }
+
+    // 3) Headroom — concrete monthly breathing room.
+    let headroomScore = 0;
+    if (headroom >= 2000) headroomScore = 100;
+    else if (headroom >= 1000) headroomScore = 80;
+    else if (headroom >= 400) headroomScore = 55;
+    else headroomScore = Math.max(0, (headroom / 400) * 40);
+
+    const candidates = [
       {
+        key: "headroom",
+        priority: 3,
+        score: headroomScore,
+        headline: "There's real room in your budget to save.",
+        sub: `Roughly ${fmt(Math.max(100, Math.floor(headroom / 100) * 100))}/mo of breathing room once essentials and debt are covered.`,
+      },
+      {
+        key: "debt",
+        priority: 2,
+        score: debtScore,
+        headline: "Your debt load is healthier than average for first-time buyers.",
+        sub: "Lower monthly debt means more of your income can move toward your down payment.",
+      },
+      {
+        key: "income",
+        priority: 1,
+        score: incomeScore,
         headline: "You're within range for many first-time buyers in your area.",
         sub: "Your income lands inside the band most first-time buyers fall into when they start their plan.",
       },
     ];
-    if (dtiHealthy) {
-      lines.push({
-        headline: "Your debt load is healthier than average for first-time buyers.",
-        sub: "Lower monthly debt means more of your income can move toward your down payment.",
-      });
-    }
-    if (headroom > 400) {
-      lines.push({
-        headline: "There's real room in your budget to save.",
-        sub: `Roughly ${fmt(Math.floor(headroom / 100) * 100)}/mo of breathing room once essentials and debt are covered.`,
-      });
-    }
-    return <InsightScreen kicker="A quick read" lines={lines} onNext={next} />;
+
+    const FLOOR = 50;
+    const eligible = candidates.filter((c) => c.score >= FLOOR);
+    const pool = eligible.length ? eligible : [candidates[2]]; // fallback: income copy
+    pool.sort((a, b) => b.score - a.score || b.priority - a.priority);
+    const best = pool[0];
+
+    return (
+      <InsightScreen
+        kicker="A quick read"
+        lines={[{ headline: best.headline, sub: best.sub }]}
+        onNext={next}
+      />
+    );
   }
 
   if (screen === "insightCredit") {
