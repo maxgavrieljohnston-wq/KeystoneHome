@@ -4574,7 +4574,7 @@ function InlineUpgradeNudge({
           fontWeight: 600,
         }}
       >
-        Unlock for $5/mo →
+        Unlock for $4.99/mo →
       </button>
       <p
         style={{
