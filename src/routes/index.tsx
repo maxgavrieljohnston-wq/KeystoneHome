@@ -4304,7 +4304,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
               fontWeight: 600,
             }}
           >
-            Start Plus — $5/mo →
+            Start Plus — $4.99/mo →
           </button>
           <p
             style={{
