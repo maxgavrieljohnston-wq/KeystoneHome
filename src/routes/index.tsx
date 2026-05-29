@@ -3265,10 +3265,23 @@ function Report({ d }: { d: Data }) {
   const totalHousing = mortgage + taxIns + pmi + hoa + reserve;
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = totalHousing / monthlyIncome;
+  const backEndRatio =
+    monthlyIncome > 0 ? (combinedDebt + totalHousing) / monthlyIncome : 0;
+  const ratingFor = (r: number, ok: number, stretch: number) =>
+    r <= ok ? "Affordable" : r <= stretch ? "A stretch" : "Difficult";
+  const toneFor = (r: number, ok: number, stretch: number) =>
+    r <= ok ? C.sage : r <= stretch ? C.gold : C.ember;
+  const frontEndVerdictLbl = ratingFor(housingRatio, 0.28, 0.36);
+  const backEndVerdictLbl = ratingFor(backEndRatio, 0.36, 0.43);
+  const rank = { Affordable: 1, "A stretch": 2, Difficult: 3 } as const;
   const verdict =
-    housingRatio <= 0.45 ? "Affordable" : housingRatio <= 0.55 ? "A stretch" : "Difficult";
+    rank[frontEndVerdictLbl] >= rank[backEndVerdictLbl]
+      ? frontEndVerdictLbl
+      : backEndVerdictLbl;
   const verdictTone =
-    housingRatio <= 0.45 ? C.sage : housingRatio <= 0.55 ? C.gold : C.ember;
+    rank[frontEndVerdictLbl] >= rank[backEndVerdictLbl]
+      ? toneFor(housingRatio, 0.28, 0.36)
+      : toneFor(backEndRatio, 0.36, 0.43);
 
   const eFundMin = combinedExpenses * 3;
   const eFundOk = d.saved >= eFundMin;
