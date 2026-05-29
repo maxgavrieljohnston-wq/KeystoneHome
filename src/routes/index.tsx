@@ -2043,7 +2043,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
               textAlign: "center",
             }}
           >
-            Bonus: Pro ($11/mo) adds Auto-Investing.
+            Pro Plan with Auto-Investing Coming Soon
           </p>
         </div>
       </section>
