@@ -85,7 +85,6 @@ const FLOW = [
   "welcome",
   "email",
   "introFinances",
-  "partner",
   "finances",
   "insightIncome",
   "credit",
@@ -113,7 +112,6 @@ type Screen = (typeof FLOW)[number];
 const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
-  "partner",
   "finances", "insightIncome", "credit", "insightCredit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "zip", "downGoal", "factDemo", "timeline",
@@ -175,7 +173,7 @@ const INITIAL: Data = {
   debt: 400,
   credit: null,
   saved: 15000,
-  hasPartner: null,
+  hasPartner: false,
   partnerFirstName: "",
   partnerLastName: "",
   partnerEmail: "",
@@ -645,26 +643,6 @@ function ScreenSwitch({
 
 
 
-  if (screen === "partner")
-    return (
-      <Question
-        kicker="The household"
-        title="Are you buying on your own, or with a partner?"
-        sub="Two incomes — and two credit scores — can change the math entirely. We'll start here so the rest of the questions make sense."
-      >
-        <Choices
-          options={[
-            { val: 1, label: "With a partner", desc: "Combine our finances" },
-            { val: 0, label: "On my own", desc: "Just me on the loan" },
-          ]}
-          value={d.hasPartner === null ? null : d.hasPartner ? 1 : 0}
-          onSelect={(v) => set("hasPartner", v === 1)}
-        />
-        <Cta onClick={next} disabled={d.hasPartner === null}>
-          Continue
-        </Cta>
-      </Question>
-    );
 
   if (screen === "partnerInfo")
     return (
