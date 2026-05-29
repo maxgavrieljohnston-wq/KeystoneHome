@@ -42,8 +42,8 @@ const PLANS: Plan[] = [
   {
     id: "plus",
     name: "Plus",
-    priceId: "plus_monthly",
-    monthly: 5,
+    priceId: "plus_yearly",
+    monthly: 4.99,
     tagline: "The full planner, unlocked.",
     features: PLUS_FEATURES,
     highlightIds: ["accounts", "invest", "action", "assumptions"],
