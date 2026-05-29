@@ -95,6 +95,7 @@ const FLOW = [
   "partnerFinances",
   "partnerCredit",
   "zip",
+  "homePicture",
   "downGoal",
   "factDemo",
   "timeline",
