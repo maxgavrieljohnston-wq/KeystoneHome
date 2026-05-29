@@ -85,7 +85,6 @@ const FLOW = [
   "welcome",
   "email",
   "introFinances",
-  "partner",
   "finances",
   "insightIncome",
   "credit",
