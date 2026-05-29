@@ -26,6 +26,15 @@ export type PlanMetrics = {
   totalHousing: number;
   monthlyIncome: number;
   housingRatio: number;
+  /** Front-end DTI (housing payment / gross income). Lenders prefer ≤ 28%. */
+  frontEndDTI: number;
+  /** Back-end DTI ((housing + other debts) / gross income). Lenders prefer ≤ 36%. */
+  backEndDTI: number;
+  /** Verdict on the front-end (housing) ratio vs the 28%/36% lender preference. */
+  frontEndVerdict: "Affordable" | "A stretch" | "Difficult" | "—";
+  /** Verdict on the back-end (total debt) ratio vs the 36%/43% lender preference. */
+  backEndVerdict: "Affordable" | "A stretch" | "Difficult" | "—";
+  /** Combined verdict — the worse of the two. */
   verdict: "Affordable" | "A stretch" | "Difficult" | "—";
   saved: number;
   timelineYears: number;
@@ -267,14 +276,35 @@ export function computePlanMetrics(
   const combinedIncome = income + (hasPartner ? partnerIncome : 0);
   const monthlyIncome = combinedIncome / 12;
   const housingRatio = monthlyIncome > 0 ? totalHousing / monthlyIncome : 0;
-  const verdict: PlanMetrics["verdict"] =
-    housingRatio === 0
+  const debt = num("debt") + (hasPartner ? num("partnerDebt") : 0);
+  const backEndDTI =
+    monthlyIncome > 0 ? (debt + totalHousing) / monthlyIncome : 0;
+  // Lender conventions: front-end (housing) ≤ 28%, back-end (total debt) ≤ 36%.
+  // "A stretch" stretches to 36% / 43% (QM ceiling), beyond is "Difficult".
+  const ratingFor = (
+    ratio: number,
+    okMax: number,
+    stretchMax: number,
+  ): PlanMetrics["verdict"] =>
+    ratio === 0
       ? "—"
-      : housingRatio <= 0.45
+      : ratio <= okMax
         ? "Affordable"
-        : housingRatio <= 0.55
+        : ratio <= stretchMax
           ? "A stretch"
           : "Difficult";
+  const frontEndVerdict = ratingFor(housingRatio, 0.28, 0.36);
+  const backEndVerdict = ratingFor(backEndDTI, 0.36, 0.43);
+  const verdictRank: Record<PlanMetrics["verdict"], number> = {
+    "—": 0,
+    Affordable: 1,
+    "A stretch": 2,
+    Difficult: 3,
+  };
+  const verdict: PlanMetrics["verdict"] =
+    verdictRank[frontEndVerdict] >= verdictRank[backEndVerdict]
+      ? frontEndVerdict
+      : backEndVerdict;
 
   const saved = num("saved");
   const timelineYears = num("timelineYears", 3);
@@ -297,7 +327,6 @@ export function computePlanMetrics(
   const moving = assumptions?.movingCost != null ? assumptions.movingCost : 1500;
   const cashToClose = downPayment + closing + moving;
 
-  const debt = num("debt") + (hasPartner ? num("partnerDebt") : 0);
   const creditScoreNorm = Math.max(
     0,
     Math.min(100, ((qCredit - 580) / (820 - 580)) * 100),
@@ -306,7 +335,7 @@ export function computePlanMetrics(
   const dti = (debt + totalHousing) / qMonthlyIncome;
   const dtiScore = Math.max(
     0,
-    Math.min(100, (1 - (dti - 0.45) / 0.2) * 100),
+    Math.min(100, (1 - (dti - 0.36) / 0.2) * 100),
   );
   const savingsScore = Math.max(
     0,
@@ -345,6 +374,10 @@ export function computePlanMetrics(
     totalHousing,
     monthlyIncome,
     housingRatio,
+    frontEndDTI: housingRatio,
+    backEndDTI,
+    frontEndVerdict,
+    backEndVerdict,
     verdict,
     saved,
     timelineYears,

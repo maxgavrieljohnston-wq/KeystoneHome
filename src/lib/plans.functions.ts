@@ -513,8 +513,11 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
     kv("HOA", r(m.hoa));
     kv("Maintenance reserve", r(m.reserve));
     kv("TOTAL MONTHLY", r(m.totalHousing));
-    kv("Housing-to-income %", +(m.housingRatio * 100).toFixed(1));
-    kv("Verdict", m.verdict);
+    kv("Front-end DTI % (housing, pref ≤28)", +(m.frontEndDTI * 100).toFixed(1));
+    kv("Front-end DTI verdict", m.frontEndVerdict);
+    kv("Back-end DTI % (total debt, pref ≤36)", +(m.backEndDTI * 100).toFixed(1));
+    kv("Back-end DTI verdict", m.backEndVerdict);
+    kv("Overall verdict", m.verdict);
     kv("Readiness score", m.readiness);
     kv("Readiness label", m.readinessLabel);
     kv("Saved so far", r(m.saved));
