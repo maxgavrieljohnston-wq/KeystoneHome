@@ -3572,7 +3572,7 @@ function Report({ d }: { d: Data }) {
               /mo all-in
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
@@ -3585,7 +3585,7 @@ function Report({ d }: { d: Data }) {
               ◆ {verdict}
             </span>
             <span style={{ fontSize: 12, color: C.inkMute }}>
-              {Math.round(housingRatio * 100)}% of your income · lenders prefer ≤45%
+              Front-end DTI {Math.round(housingRatio * 100)}% (lenders prefer ≤28%) · Back-end DTI {Math.round(backEndRatio * 100)}% (lenders prefer ≤36%)
             </span>
           </div>
         </div>
