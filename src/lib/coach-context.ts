@@ -91,7 +91,10 @@ export function buildPlanDigest(plan: PlanRow | null | undefined): string {
     `- Monthly housing: ${usd(m.totalHousing)} (mortgage ${usd(m.monthlyMortgage)} + taxes/ins ${usd(m.taxIns)}${m.pmi > 0 ? ` + PMI ${usd(m.pmi)}` : ""}${m.hoa > 0 ? ` + HOA ${usd(m.hoa)}` : ""})`,
   );
   lines.push(
-    `- Housing ratio: ${pct(m.housingRatio)} of gross — **${m.verdict}**`,
+    `- Front-end DTI (housing / gross income): ${pct(m.frontEndDTI)} — lenders prefer ≤28% — **${m.frontEndVerdict}**`,
+  );
+  lines.push(
+    `- Back-end DTI (housing + other debts / gross income): ${pct(m.backEndDTI)} — lenders prefer ≤36% — **${m.backEndVerdict}**`,
   );
   lines.push(
     `- Mortgage rate used: ${(m.mortgageRate * 100).toFixed(2)}%`,
