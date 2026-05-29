@@ -216,33 +216,50 @@ function PricingPage() {
                 >
                   {plan.tagline}
                 </p>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                  <span style={{ fontSize: 48, fontWeight: 400, letterSpacing: "-0.02em" }}>
-                    ${plan.monthly}
-                  </span>
-                  <span
+                {plan.id === "pro" ? (
+                  <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 11,
-                      letterSpacing: "0.14em",
+                      fontSize: 13,
+                      letterSpacing: "0.18em",
                       textTransform: "uppercase",
                       color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                      padding: "14px 0 6px",
                     }}
                   >
-                    / month
-                  </span>
-                </div>
-                <p
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 10,
-                    letterSpacing: "0.14em",
-                    color: plan.highlight ? "#d6cfc1" : C.inkMute,
-                    margin: "4px 0 0",
-                  }}
-                >
-                  Billed monthly · cancel anytime
-                </p>
+                    Coming soon
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <span style={{ fontSize: 48, fontWeight: 400, letterSpacing: "-0.02em" }}>
+                        ${plan.monthly}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 11,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                        }}
+                      >
+                        / month
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.14em",
+                        color: plan.highlight ? "#d6cfc1" : C.inkMute,
+                        margin: "4px 0 0",
+                      }}
+                    >
+                      Billed annually at $49.99 · cancel anytime
+                    </p>
+                  </>
+                )}
 
                 {(() => {
                   const { highlighted, rest } = splitFeatures(plan);
