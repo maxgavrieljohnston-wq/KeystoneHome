@@ -99,10 +99,10 @@ export function UpgradeModal({
       {
         id: "plus" as const,
         name: "Plus",
-        priceId: "plus_monthly",
-        monthly: 5,
-        
-        priceFrame: "Less than $0.25 a day",
+        priceId: "plus_yearly",
+        monthly: 4.99,
+
+        priceFrame: "$49.99/yr · billed annually",
         urgency: "Every month you wait is compounding you don't get back.",
         cta: "Start Plus",
         features: PLUS_FEATURES,
@@ -113,8 +113,8 @@ export function UpgradeModal({
         name: "Pro",
         priceId: "pro_monthly",
         monthly: 11,
-        
-        priceFrame: "One month sooner = years of mortgage saved",
+
+        priceFrame: "",
         urgency: "The market won't wait. Neither should your plan.",
         cta: "Start Pro",
         features: [
