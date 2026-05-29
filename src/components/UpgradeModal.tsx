@@ -283,32 +283,50 @@ export function UpgradeModal({
                   </div>
                 )}
                 <div style={{ fontSize: 22, fontWeight: 400 }}>{tier.name}</div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
-                  <span style={{ fontSize: 32, fontWeight: 400 }}>${tier.monthly}</span>
-                  <span
+                {isPro ? (
+                  <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.14em",
+                      fontSize: 12,
+                      letterSpacing: "0.18em",
                       textTransform: "uppercase",
-                      opacity: 0.7,
+                      opacity: 0.75,
+                      marginTop: 8,
+                      padding: "6px 0",
                     }}
                   >
-                    /mo
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 9,
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    opacity: 0.75,
-                    marginTop: 6,
-                  }}
-                >
-                  {tier.priceFrame}
-                </div>
+                    Coming soon
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 4 }}>
+                      <span style={{ fontSize: 32, fontWeight: 400 }}>${tier.monthly}</span>
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 10,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          opacity: 0.7,
+                        }}
+                      >
+                        /mo
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 9,
+                        letterSpacing: "0.16em",
+                        textTransform: "uppercase",
+                        opacity: 0.75,
+                        marginTop: 6,
+                      }}
+                    >
+                      {tier.priceFrame}
+                    </div>
+                  </>
+                )}
 
                 {(() => {
                   const highlightIds = isPro ? PRO_HIGHLIGHT_IDS : PLUS_HIGHLIGHT_IDS;
