@@ -233,7 +233,7 @@ function PricingPage() {
                   <>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                       <span style={{ fontSize: 48, fontWeight: 400, letterSpacing: "-0.02em" }}>
-                        ${plan.monthly}
+                        ${plan.monthly.toFixed(2)}
                       </span>
                       <span
                         style={{
@@ -244,7 +244,7 @@ function PricingPage() {
                           color: plan.highlight ? "#d6cfc1" : C.inkMute,
                         }}
                       >
-                        / month
+                        /mo
                       </span>
                     </div>
                     <p
