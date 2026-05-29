@@ -1125,33 +1125,51 @@ function ScreenSwitch({
     // Per-option rate including LTV adjustment (lenders price by down %).
     const rateFor = (pct: number) => mRate + rateAddFromDownPct(pct);
 
-    // Combined household figures
+    // Combined household figures — mirror computePlanMetrics exactly so this
+    // screen's DTI matches "What it costs to live there" on the results page.
     const hasPartner = d.hasPartner;
     const grossAnnual =
       (d.income ?? 0) + (hasPartner ? d.partnerIncome ?? 0 : 0);
-    // Underwriters discount non-W-2 income (2-yr averaging haircut).
-    const qualifyingAnnual = grossAnnual * empAdj.incomeFactor;
-    const grossMonthly = qualifyingAnnual / 12;
+    const grossMonthly = grossAnnual / 12;
     const monthlyDebts = (d.debt ?? 0) + (hasPartner ? d.partnerDebt ?? 0 : 0);
     const saved = d.saved ?? 0;
 
-    // Lender DTI ceiling — Qualified Mortgage standard, tightened for variable income.
-    const DTI_CAP = empAdj.dtiCap;
-    // Max mortgage payment lender will allow given existing debts.
+    // Derived per-metro assumptions (taxes/insurance) — same source as results.
+    const derived = deriveAssumptions({
+      zip: d.zip,
+      income: d.income,
+      partnerIncome: d.partnerIncome,
+      hasPartner: d.hasPartner,
+    } as Record<string, unknown>);
+    const PMI_PCT = 0.005;
+
+    // Total monthly housing at a given down %, matching plan-metrics.ts.
+    const totalHousingFor = (pct: number) => {
+      const mortgage = calcMortgage(targetPrice, pct, rateFor(pct));
+      const taxIns =
+        (targetPrice * derived.propertyTaxRate) / 12 +
+        (targetPrice * derived.insuranceRate) / 12;
+      const pmi =
+        pct < 20 ? (targetPrice * (1 - pct / 100) * PMI_PCT) / 12 : 0;
+      const hoa = adj.hoa;
+      const reserve = adj.reserve;
+      return mortgage + taxIns + pmi + hoa + reserve;
+    };
+
+    // Lender back-end DTI ceiling (QM standard, 43%).
+    const DTI_CAP = 0.43;
     const maxHousing = Math.max(0, grossMonthly * DTI_CAP - monthlyDebts);
 
-    // Find smallest down % that brings mortgage payment under the DTI cap.
+    // Find smallest down % whose full housing payment fits under the DTI cap.
     const sortedAsc = [...DOWN_BUCKETS].sort((a, b) => a.pct - b.pct);
     const smallestQualifyingPct: number | null =
-      sortedAsc.find(
-        (b) => calcMortgage(targetPrice, b.pct, rateFor(b.pct)) <= maxHousing,
-      )?.pct ?? null;
+      sortedAsc.find((b) => totalHousingFor(b.pct) <= maxHousing)?.pct ?? null;
 
     // Prefer 20% (no PMI, best rates) whenever it qualifies.
     let recommendedPct: number | null = null;
     if (
       smallestQualifyingPct !== null &&
-      calcMortgage(targetPrice, 20, rateFor(20)) <= maxHousing
+      totalHousingFor(20) <= maxHousing
     ) {
       recommendedPct = 20;
     } else {
@@ -1161,13 +1179,11 @@ function ScreenSwitch({
     // If even 20% down isn't enough, solve for the down % that exactly hits the cap.
     let dtiRequiredPct: number | null = null;
     if (recommendedPct === null && maxHousing > 0) {
-      // Binary search between 20% and 95%.
       let lo = 20,
         hi = 95;
       for (let i = 0; i < 40; i++) {
         const mid = (lo + hi) / 2;
-        const m = calcMortgage(targetPrice, mid, rateFor(mid));
-        if (m > maxHousing) lo = mid;
+        if (totalHousingFor(mid) > maxHousing) lo = mid;
         else hi = mid;
       }
       dtiRequiredPct = Math.ceil(hi);
@@ -1179,13 +1195,13 @@ function ScreenSwitch({
     const visibleOpts = computeOfferedDownOpts(d);
 
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
-    const recMonthly = Math.round(calcMortgage(targetPrice, recommendedPct, rateFor(recommendedPct)));
-    const recDTI = grossMonthly > 0 ? (monthlyDebts + recMonthly) / grossMonthly : 0;
+    const recHousing = Math.round(totalHousingFor(recommendedPct));
+    const recDTI = grossMonthly > 0 ? (monthlyDebts + recHousing) / grossMonthly : 0;
     const shortfall = Math.max(0, recDown - saved);
 
     let explanation: string;
     if (dtiRequiredPct !== null) {
-      explanation = `Lenders cap your total debt-to-income at 43%. To bring a mortgage on a ${fmt(targetPrice)} home inside that limit, you need to put down at least ${recommendedPct}% (${fmt(recDown)}) — a smaller down payment wouldn't qualify for this price.`;
+      explanation = `Lenders cap your total debt-to-income at 43% (housing + debts ÷ gross income). To bring the full monthly housing payment on a ${fmt(targetPrice)} home inside that limit, you need to put down at least ${recommendedPct}% (${fmt(recDown)}) — a smaller down payment wouldn't qualify for this price.`;
     } else if (recommendedPct >= 20 && recDown <= saved) {
       explanation = `Putting 20% down means you skip private mortgage insurance entirely — that's typically $100–$300/mo. Lenders also reserve their best interest rates for borrowers at this threshold, which over 30 years can save tens of thousands.`;
     } else if (recommendedPct >= 20) {
@@ -1195,6 +1211,7 @@ function ScreenSwitch({
     } else {
       explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your debt-to-income inside the 43% lender cap (yours would be ${(recDTI * 100).toFixed(0)}%). You're about ${fmt(shortfall)} short of that today — that's the gap your savings plan will close.`;
     }
+
 
     return (
       <Question
