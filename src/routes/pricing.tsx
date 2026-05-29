@@ -367,7 +367,7 @@ function PricingPage() {
             color: C.inkMute,
           }}
         >
-          Both plans renew monthly — cancel anytime.{" "}
+          Plus renews annually — cancel anytime.{" "}
           <Link to="/refunds" style={{ color: C.ink }}>
             Refund policy
           </Link>
