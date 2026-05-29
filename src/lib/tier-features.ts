@@ -21,7 +21,7 @@ export const PLUS_FEATURES: TierFeature[] = [
   {
     id: "action",
     short: "Monthly action plan",
-    long: "Monthly action plan — themed PDF report (Light, Dark, Sepia, Navy, Terracotta) you can download or share via link",
+    long: "Monthly action plan — themed PDF report — you can download or share via link",
   },
   {
     id: "assumptions",
