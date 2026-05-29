@@ -86,7 +86,6 @@ const FLOW = [
   "email",
   "introFinances",
   "partner",
-  "employment",
   "finances",
   "insightIncome",
   "credit",
@@ -116,7 +115,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
   "partner",
-  "employment", "finances", "insightIncome", "credit", "insightCredit",
+  "finances", "insightIncome", "credit", "insightCredit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "factDemo",
   "zip", "homePicture", "downGoal", "timeline",
@@ -586,27 +585,6 @@ function ScreenSwitch({
 
 
 
-  if (screen === "employment")
-    return (
-      <Question
-        kicker="Work"
-        title="How do you earn your income?"
-        sub="Lenders generally want to see 2 years of consistent income — whether that's from a job or tax returns."
-      >
-        <Choices
-          options={EMPLOYMENT_TYPES.map((e) => ({
-            val: e.id,
-            label: e.label,
-            desc: e.desc,
-          }))}
-          value={d.employment}
-          onSelect={(v) => set("employment", v as string)}
-        />
-        <Cta onClick={next} disabled={!d.employment}>
-          Continue
-        </Cta>
-      </Question>
-    );
 
   if (screen === "finances")
     return (
