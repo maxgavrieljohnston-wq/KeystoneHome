@@ -112,7 +112,6 @@ type Screen = (typeof FLOW)[number];
 const PROGRESS_SCREENS: Screen[] = [
   "email",
   "introFinances",
-  "partner",
   "finances", "insightIncome", "credit", "insightCredit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
   "zip", "downGoal", "factDemo", "timeline",
@@ -174,7 +173,7 @@ const INITIAL: Data = {
   debt: 400,
   credit: null,
   saved: 15000,
-  hasPartner: null,
+  hasPartner: false,
   partnerFirstName: "",
   partnerLastName: "",
   partnerEmail: "",
