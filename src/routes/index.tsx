@@ -99,7 +99,6 @@ const FLOW = [
   "factDemo",
   "timeline",
   "introMoveIn",
-  "introRisk",
   "risk0",
   "risk1",
   "risk2",
