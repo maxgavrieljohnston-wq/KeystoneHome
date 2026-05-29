@@ -4330,7 +4330,7 @@ function ReportPaywall({ monthsSooner }: { monthsSooner: number }) {
                 padding: 0,
               }}
             >
-              See Pro — $11/mo →
+              See Pro
             </button>
           </p>
         </>
