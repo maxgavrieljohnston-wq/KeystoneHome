@@ -96,7 +96,6 @@ const FLOW = [
   "partnerFinances",
   "partnerCredit",
   "zip",
-  "homePicture",
   "downGoal",
   "factDemo",
   "timeline",
@@ -117,7 +116,7 @@ const PROGRESS_SCREENS: Screen[] = [
   "partner",
   "finances", "insightIncome", "credit", "insightCredit",
   "partnerInfo", "partnerAge", "partnerEmployment", "partnerFinances", "partnerCredit",
-  "zip", "homePicture", "downGoal", "factDemo", "timeline",
+  "zip", "downGoal", "factDemo", "timeline",
   "introMoveIn",
   "introRisk",
   "risk0", "risk1", "risk2", "risk3",
@@ -918,120 +917,6 @@ function ScreenSwitch({
     return <InsightScreen kicker="A quick read" lines={lines} onNext={next} />;
   }
 
-  if (screen === "homePicture") {
-    const styleOpts = HOME_STYLES.filter((s) =>
-      ["single", "condo", "townhouse", "multi"].includes(s.id),
-    );
-    const lifestyleItems = [
-      { val: "office", label: "Home office" },
-      { val: "dog", label: "Room for a dog" },
-      { val: "kids", label: "Space for kids" },
-      { val: "quiet", label: "Quiet suburb" },
-    ];
-    const neighborhoodItems = [
-      { val: "walk", label: "Walkable area" },
-      { val: "schools", label: "Good schools" },
-      { val: "commute", label: "Near work" },
-      { val: "nightlife", label: "Restaurants & nightlife" },
-      { val: "nature", label: "Parks & nature" },
-    ];
-    const allTags = [...lifestyleItems, ...neighborhoodItems];
-    const selectedTags: string[] = [
-      ...(Array.isArray(d.lifestyle) ? d.lifestyle : []),
-      ...(Array.isArray(d.neighborhood) ? d.neighborhood : []),
-    ];
-    const toggleTag = (val: string) => {
-      const inLifestyle = lifestyleItems.some((i) => i.val === val);
-      const arr = (inLifestyle ? d.lifestyle : d.neighborhood) as string[];
-      const safe = Array.isArray(arr) ? arr : [];
-      const nextArr = safe.includes(val) ? safe.filter((v) => v !== val) : [...safe, val];
-      if (inLifestyle) set("lifestyle", nextArr);
-      else set("neighborhood", nextArr);
-    };
-
-    const Stepper = ({
-      label, value, onChange, min, max, suffix,
-    }: { label: string; value: number; onChange: (n: number) => void; min: number; max: number; suffix?: string }) => (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.inkFaint}` }}>
-        <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 600, color: C.ink }}>{label}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => onChange(Math.max(min, value - 1))} style={{ width: 34, height: 34, border: `1.5px solid ${C.ink}`, background: "transparent", color: C.ink, fontSize: 18, cursor: "pointer" }}>−</button>
-          <div style={{ minWidth: 48, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 17, color: C.ink }}>{value}{suffix}</div>
-          <button onClick={() => onChange(Math.min(max, value + 1))} style={{ width: 34, height: 34, border: `1.5px solid ${C.ink}`, background: "transparent", color: C.ink, fontSize: 18, cursor: "pointer" }}>+</button>
-        </div>
-      </div>
-    );
-
-    return (
-      <Question
-        kicker="Your place"
-        title="Picture your place."
-        sub="A few light strokes — type of home, size, and what would make it feel like home."
-      >
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 24 }}>
-          {styleOpts.map((s) => {
-            const active = d.homeStyle === s.id;
-            return (
-              <button
-                key={s.id}
-                onClick={() => set("homeStyle", s.id)}
-                style={{
-                  background: active ? C.ink : "transparent",
-                  color: active ? C.cream : C.ink,
-                  border: `1.5px solid ${C.ink}`,
-                  borderRadius: 0,
-                  padding: "14px 12px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontWeight: 600 }}>{s.label}</div>
-              </button>
-            );
-          })}
-        </div>
-
-        <Stepper label="Bedrooms" value={d.beds} onChange={(n) => set("beds", n)} min={0} max={6} suffix={d.beds >= 6 ? "+" : ""} />
-        <Stepper label="Bathrooms" value={d.baths} onChange={(n) => set("baths", n)} min={1} max={5} suffix={d.baths >= 5 ? "+" : ""} />
-
-        <div style={{ marginTop: 22, marginBottom: 10 }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.inkMute }}>
-            What would make it feel like home?
-          </div>
-          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: "italic", fontSize: 13, color: C.inkSoft, marginTop: 4 }}>
-            Pick any that matter. No right answers.
-          </div>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-          {allTags.map((it) => {
-            const active = selectedTags.includes(it.val);
-            return (
-              <button
-                key={it.val}
-                onClick={() => toggleTag(it.val)}
-                style={{
-                  border: `1.5px solid ${C.ink}`,
-                  background: active ? C.ink : "transparent",
-                  color: active ? C.cream : C.ink,
-                  padding: "8px 13px",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  borderRadius: 0,
-                }}
-              >
-                {it.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <TrustNote>Based on regional market data</TrustNote>
-
-        <div style={{ height: 16 }} />
-        <Cta onClick={next} disabled={!d.homeStyle}>Continue</Cta>
-      </Question>
-    );
-  }
 
   // advancedAssumptions screen removed — backend derives defaults from metro.
 
@@ -1307,7 +1192,7 @@ function ScreenSwitch({
     );
   }
 
-  // homeFeatures merged into homePicture (above).
+  
 
   if (screen.startsWith("risk")) {
     const idx = Number(screen.replace("risk", ""));

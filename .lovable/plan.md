@@ -1,23 +1,31 @@
 ## Goal
-Remove the user's employment-type screen from the onboarding flow while keeping all downstream calculations intact.
+Remove the "Picture your place" (`homePicture`) screen from the onboarding flow.
 
 ## Why this is safe
-The `employment` field defaults to `null` in `INITIAL`. When `employmentAdjustment(null)` runs, it already falls through to the W-2 default (`incomeFactor: 1.0`, `dtiCap: 0.43`, `rateAdd: 0`). So every mortgage calculation, readiness score, and report that reads `d.employment` will continue to work exactly as before.
+The `homePicture` fields (`homeStyle`, `beds`, `baths`, `lifestyle`, `neighborhood`) all have safe defaults in `INITIAL`:
+- `homeStyle: null` → downstream code uses `styleAdjustments([])` which provides a sensible baseline multiplier.
+- `beds: 2`, `baths: 2` → `computeFeatureMult` applies zero premium for these defaults.
+- `lifestyle: []`, `neighborhood: []` → zero tag bumps.
+
+So timeline, report, and dashboard pricing will still work using a generic home baseline.
 
 ## Changes
 
 ### 1. Remove from flow order
 In `src/routes/index.tsx`:
-- Delete `"employment"` from the `FLOW` array (currently between `"partner"` and `"finances"`).
-- Delete `"employment"` from the `PROGRESS_SCREENS` array.
+- Delete `"homePicture"` from the `FLOW` array (was between `"zip"` and `"downGoal"`).
+- Delete `"homePicture"` from the `PROGRESS_SCREENS` array.
 
 ### 2. Remove the screen JSX
-Delete the entire `if (screen === "employment")` block (lines 589-609) that renders the Question with title `"How do you earn your income?"`.
+Delete the entire `if (screen === "homePicture")` block that renders the "Picture your place." Question with home-style grid, bedroom/bathroom steppers, and lifestyle/neighborhood tag toggles.
 
-### 3. Keep everything else untouched
-- **Keep** `employment` in the `Data` type and `INITIAL` object — downstream code still references it.
-- **Keep** the `EMPLOYMENT_TYPES` import — the partner employment screen (`partnerEmployment`) still needs it.
-- **Keep** the partner employment screen and all calculation/report code — no logic changes needed.
+### 3. Remove stale comment
+Delete the `// homeFeatures merged into homePicture (above).` comment.
+
+### 4. Keep everything else untouched
+- **Keep** `homeStyle`, `beds`, `baths`, `lifestyle`, `neighborhood` in the `Data` type and `INITIAL` — downstream code still references them.
+- **Keep** the `HOME_STYLES` import — it's still used in the report/dashboard for displaying the chosen home style name.
+- **Keep** `computeFeatureMult` and `styleAdjustments` usage — legacy plans and defaults still rely on them.
 
 ## Result
-Users will move directly from the partner question (or intro, if no partner) into the finances screen. The report will still assume W-2-style income treatment, which is the most permissive default.
+Users will move directly from ZIP code entry into the down-payment goal screen. Pricing will use a generic baseline home since no style/features are selected.
