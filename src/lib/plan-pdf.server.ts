@@ -60,9 +60,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   const credit = num("credit", 700);
   const partnerCredit = num("partnerCredit", credit);
   const qCredit = hasPartner ? Math.min(credit, partnerCredit) : credit;
-  const dti = m.monthlyIncome > 0 ? (debt + m.totalHousing) / m.monthlyIncome : 0;
-  const verdictColor =
-    m.verdict === "Affordable" ? sage : m.verdict === "A stretch" ? gold : ember;
+  const dti = m.backEndDTI;
 
   const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 
