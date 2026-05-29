@@ -308,19 +308,7 @@ export const INTROS = {
     chapter: "Interlude",
     kicker: "A quiet moment",
     title: "Picture move-in day.",
-    body: "You unlock the front door. Boxes everywhere. Nothing's fully set up yet — but it's yours.\n\nNow let's build the fastest realistic path to get there.",
-  },
-  introRisk: {
-    chapter: "Chapter IV",
-    kicker: "Compounding — the eighth wonder of the world",
-    title: "Time to put your money to work.",
-    body: "Answer the next four questions and we'll match you with a strategy to grow your down payment faster. There are no right answers — just what feels right to you.",
-  },
-  introPartnerSummary: {
-    chapter: "Interlude",
-    kicker: "Two on the loan",
-    title: "Got it — we'll run the numbers as a household.",
-    body: "From here on, income, debt, and credit are combined. Lenders will qualify you on the lower of the two credit scores, so we'll use that for your rate.",
+    body: "You unlock the front door. Boxes everywhere. Nothing's fully set up yet — but it's yours.\n\nAnswer the next four questions and we'll match you with a strategy to grow your down payment faster. There are no right answers — just what feels right to you.",
   },
 };
 
