@@ -143,9 +143,28 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   y -= 1;
   row("Total per month", money(m.totalHousing), { bold: true });
   row(
-    `vs household income (${money(m.monthlyIncome)}/mo)`,
-    `${Math.round(m.housingRatio * 100)}% — ${m.verdict}`,
-    { color: verdictColor },
+    `Front-end DTI (housing / income, ${money(m.monthlyIncome)}/mo)`,
+    `${Math.round(m.frontEndDTI * 100)}% — lenders prefer ≤28% — ${m.frontEndVerdict}`,
+    {
+      color:
+        m.frontEndVerdict === "Affordable"
+          ? sage
+          : m.frontEndVerdict === "A stretch"
+            ? gold
+            : ember,
+    },
+  );
+  row(
+    "Back-end DTI (housing + other debts / income)",
+    `${Math.round(m.backEndDTI * 100)}% — lenders prefer ≤36% — ${m.backEndVerdict}`,
+    {
+      color:
+        m.backEndVerdict === "Affordable"
+          ? sage
+          : m.backEndVerdict === "A stretch"
+            ? gold
+            : ember,
+    },
   );
   y -= 4;
 
