@@ -2009,8 +2009,20 @@ function Welcome({ onStart }: { onStart: () => void }) {
         >
           <div style={{ ...monoLabel }}>Keystone Plus</div>
           <div style={{ fontFamily: serif, fontSize: 64, lineHeight: 1 }}>
-            $5
+            $4.99
             <span style={{ fontSize: 22, color: "rgba(26,26,26,0.4)" }}>/mo</span>
+          </div>
+          <div
+            style={{
+              fontFamily: mono,
+              fontSize: 11,
+              color: "rgba(26,26,26,0.55)",
+              textAlign: "center",
+              letterSpacing: "0.08em",
+              marginTop: -12,
+            }}
+          >
+            Billed annually at $49.99 — a 15% discount
           </div>
           <Link
             to="/pricing"
