@@ -26,6 +26,15 @@ export type PlanMetrics = {
   totalHousing: number;
   monthlyIncome: number;
   housingRatio: number;
+  /** Front-end DTI (housing payment / gross income). Lenders prefer ≤ 28%. */
+  frontEndDTI: number;
+  /** Back-end DTI ((housing + other debts) / gross income). Lenders prefer ≤ 36%. */
+  backEndDTI: number;
+  /** Verdict on the front-end (housing) ratio vs the 28%/36% lender preference. */
+  frontEndVerdict: "Affordable" | "A stretch" | "Difficult" | "—";
+  /** Verdict on the back-end (total debt) ratio vs the 36%/43% lender preference. */
+  backEndVerdict: "Affordable" | "A stretch" | "Difficult" | "—";
+  /** Combined verdict — the worse of the two. */
   verdict: "Affordable" | "A stretch" | "Difficult" | "—";
   saved: number;
   timelineYears: number;
