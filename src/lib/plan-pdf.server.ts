@@ -278,7 +278,8 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   });
   y -= 18;
   row("Credit (qualifying)", String(qCredit));
-  row("Debt-to-income (with new house)", `${Math.round(dti * 100)}%`);
+  row("Front-end DTI (housing)", `${Math.round(m.frontEndDTI * 100)}% — pref ≤28%`);
+  row("Back-end DTI (total debt)", `${Math.round(dti * 100)}% — pref ≤36%`);
   row("Mortgage rate (est.)", `${(m.mortgageRate * 100).toFixed(2)}%`);
   y -= 6;
 
