@@ -246,10 +246,29 @@ function computeOfferedDownOpts(d: Data): DownOpt[] {
   const mRate = rateFromCredit(qCredit) + empAdj.rateAdd;
   const rateFor = (pct: number) => mRate + rateAddFromDownPct(pct);
 
+  // Mirror the down-payment screen + results page exactly: raw gross income,
+  // total housing payment (P&I + tax/ins + PMI + HOA + reserve), 43% back-end cap.
   const grossAnnual = (d.income ?? 0) + (d.hasPartner ? d.partnerIncome ?? 0 : 0);
-  const grossMonthly = (grossAnnual * empAdj.incomeFactor) / 12;
+  const grossMonthly = grossAnnual / 12;
   const monthlyDebts = (d.debt ?? 0) + (d.hasPartner ? d.partnerDebt ?? 0 : 0);
-  const maxHousing = Math.max(0, grossMonthly * empAdj.dtiCap - monthlyDebts);
+  const DTI_CAP = 0.43;
+  const maxHousing = Math.max(0, grossMonthly * DTI_CAP - monthlyDebts);
+
+  const derived = deriveAssumptions({
+    zip: d.zip,
+    income: d.income,
+    partnerIncome: d.partnerIncome,
+    hasPartner: d.hasPartner,
+  } as Record<string, unknown>);
+  const PMI_PCT = 0.005;
+  const totalHousingFor = (pct: number) => {
+    const mortgage = calcMortgage(targetPrice, pct, rateFor(pct));
+    const taxIns =
+      (targetPrice * derived.propertyTaxRate) / 12 +
+      (targetPrice * derived.insuranceRate) / 12;
+    const pmi = pct < 20 ? (targetPrice * (1 - pct / 100) * PMI_PCT) / 12 : 0;
+    return mortgage + taxIns + pmi + adj.hoa + adj.reserve;
+  };
 
   const baseOpts: DownOpt[] = DOWN_BUCKETS.map((b) => ({
     pct: b.pct,
@@ -259,14 +278,13 @@ function computeOfferedDownOpts(d: Data): DownOpt[] {
   }));
 
   const anyQualifies = baseOpts.some(
-    (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
+    (o) => totalHousingFor(o.pct) <= maxHousing,
   );
   if (!anyQualifies && maxHousing > 0) {
     let lo = 20, hi = 95;
     for (let i = 0; i < 40; i++) {
       const mid = (lo + hi) / 2;
-      const m = calcMortgage(targetPrice, mid, rateFor(mid));
-      if (m > maxHousing) lo = mid;
+      if (totalHousingFor(mid) > maxHousing) lo = mid;
       else hi = mid;
     }
     const dtiRequiredPct = Math.ceil(hi);
@@ -281,11 +299,12 @@ function computeOfferedDownOpts(d: Data): DownOpt[] {
   }
 
   const qualifying = baseOpts.filter(
-    (o) => calcMortgage(targetPrice, o.pct, rateFor(o.pct)) <= maxHousing,
+    (o) => totalHousingFor(o.pct) <= maxHousing,
   );
   const visible = qualifying.length > 0 ? qualifying : baseOpts;
   return visible.sort((a, b) => a.pct - b.pct);
 }
+
 
 // ── Root component ───────────────────────────────────────────────────────────
 function KeystoneApp() {
