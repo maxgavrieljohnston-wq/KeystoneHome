@@ -1215,7 +1215,8 @@ function ScreenSwitch({
 
     const recDown = Math.round(targetPrice * (recommendedPct / 100));
     const recHousing = Math.round(totalHousingFor(recommendedPct));
-    const recDTI = grossMonthly > 0 ? (monthlyDebts + recHousing) / grossMonthly : 0;
+    const recFrontDTI = grossMonthly > 0 ? recHousing / grossMonthly : 0;
+    const recBackDTI = grossMonthly > 0 ? (monthlyDebts + recHousing) / grossMonthly : 0;
     const shortfall = Math.max(0, recDown - saved);
 
     let explanation: string;
@@ -1226,9 +1227,9 @@ function ScreenSwitch({
     } else if (recommendedPct >= 20) {
       explanation = `Putting 20% down means you skip private mortgage insurance entirely — that's typically $100–$300/mo. Lenders also reserve their best interest rates for borrowers at this threshold, which over 30 years can save tens of thousands.`;
     } else if (recDown <= saved) {
-      explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your debt-to-income inside the 43% lender cap (yours would be ${(recDTI * 100).toFixed(0)}%) — and it fits within your current savings of ${fmt(saved)}, leaving more cash on hand after closing.`;
+      explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your back-end DTI inside the 43% lender cap — yours would be ${(recBackDTI * 100).toFixed(0)}% back-end (front-end ${(recFrontDTI * 100).toFixed(0)}%) — and it fits within your current savings of ${fmt(saved)}, leaving more cash on hand after closing.`;
     } else {
-      explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your debt-to-income inside the 43% lender cap (yours would be ${(recDTI * 100).toFixed(0)}%). You're about ${fmt(shortfall)} short of that today — that's the gap your savings plan will close.`;
+      explanation = `${recommendedPct}% (${fmt(recDown)}) is the smallest down payment that keeps your back-end DTI inside the 43% lender cap — yours would be ${(recBackDTI * 100).toFixed(0)}% back-end (front-end ${(recFrontDTI * 100).toFixed(0)}%). You're about ${fmt(shortfall)} short of that today — that's the gap your savings plan will close.`;
     }
 
 
@@ -1301,6 +1302,21 @@ function ScreenSwitch({
           value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
           onSelect={(v) => set("downGoalPct", parseFloat(v as string))}
         />
+        {grossMonthly > 0 && (
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkMute,
+              marginTop: 20,
+              lineHeight: 1.5,
+            }}
+          >
+            Front-end DTI {(recFrontDTI * 100).toFixed(0)}% (lenders prefer ≤28%) · Back-end DTI {(recBackDTI * 100).toFixed(0)}% (lenders prefer ≤36%)
+          </div>
+        )}
         <div
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -1308,7 +1324,7 @@ function ScreenSwitch({
             fontSize: 14,
             lineHeight: 1.5,
             color: C.inkSoft,
-            marginTop: 20,
+            marginTop: 12,
             marginBottom: 8,
           }}
         >
