@@ -3922,53 +3922,101 @@ function ReadinessPanel({
   score,
   label,
   creditScore,
+  creditValue,
   dtiScore,
+  dtiPct,
   savingsScore,
+  saved,
+  downPayment,
   timelineScore,
+  timelineYears,
   empStable,
 }: {
   score: number;
   label: string;
   creditScore: number;
+  creditValue: number;
   dtiScore: number;
+  dtiPct: number;
   savingsScore: number;
+  saved: number;
+  downPayment: number;
   timelineScore: number;
+  timelineYears: number;
   empStable: boolean;
 }) {
-  const items: { key: string; score: number; help: string; slow: string }[] = [
-    {
-      key: "credit",
-      score: creditScore,
-      help: "Credit in a competitive band",
-      slow: "Credit still has room to grow",
-    },
-    {
-      key: "dti",
-      score: dtiScore,
-      help: "Debt load leaves room to borrow",
-      slow: "Debt-to-income is tight for now",
-    },
-    {
-      key: "savings",
-      score: savingsScore,
-      help: "Strong head start on your down payment",
-      slow: "Savings still building toward your down payment",
-    },
-    {
-      key: "timeline",
-      score: timelineScore,
-      help: "Timeline gives your plan room to work",
-      slow: "Short timeline limits compounding",
-    },
-    {
-      key: "employment",
-      score: empStable ? 85 : 40,
-      help: "Steady income strengthens your application",
-      slow: "Variable income may need extra documentation",
-    },
-  ];
-  const helping = [...items].sort((a, b) => b.score - a.score).slice(0, 3);
-  const slowing = [...items].sort((a, b) => a.score - b.score).slice(0, 3);
+  type Tier = "strong" | "mid" | "weak";
+  const tierTone = (t: Tier) => (t === "strong" ? C.sage : t === "mid" ? C.gold : C.ember);
+
+  // Credit
+  const creditTier: Tier =
+    creditValue >= 740 ? "strong" : creditValue >= 680 ? "mid" : "weak";
+  const creditChip =
+    creditTier === "strong" ? "Strong" : creditTier === "mid" ? "Fair" : "Low";
+  const creditLine =
+    creditTier === "strong"
+      ? `${creditValue} — top tier for rate pricing`
+      : creditTier === "mid"
+        ? `${creditValue} — qualifies, but rates step up below 740`
+        : `${creditValue} — under 680, expect higher rates and stricter terms`;
+
+  // DTI (back-end, matches Section 2)
+  const dtiPctRounded = Math.round(dtiPct * 100);
+  const dtiTier: Tier =
+    dtiPct <= 0.36 ? "strong" : dtiPct <= 0.43 ? "mid" : "weak";
+  const dtiChip =
+    dtiTier === "strong" ? "Healthy" : dtiTier === "mid" ? "Tight" : "Over cap";
+  const dtiLine =
+    dtiTier === "strong"
+      ? `${dtiPctRounded}% back-end — well inside the 43% lender cap`
+      : dtiTier === "mid"
+        ? `${dtiPctRounded}% back-end — inside the 43% cap with little room`
+        : `${dtiPctRounded}% back-end — above the 43% lender cap`;
+
+  // Savings
+  const savedPct =
+    downPayment > 0 ? Math.min(100, Math.round((saved / downPayment) * 100)) : 100;
+  const gap = Math.max(0, downPayment - saved);
+  const savingsTier: Tier =
+    saved >= downPayment ? "strong" : savedPct >= 50 ? "mid" : "weak";
+  const savingsChip =
+    saved >= downPayment ? "Funded" : savedPct >= 50 ? "On track" : "Building";
+  const savingsLine =
+    saved >= downPayment
+      ? `${fmt(saved)} saved — fully funded`
+      : savedPct >= 50
+        ? `${fmt(saved)} saved — ${savedPct}% of your ${fmt(downPayment)} target`
+        : `${fmt(saved)} saved — ${savedPct}% of your ${fmt(downPayment)} target, ${fmt(gap)} to go`;
+
+  // Timeline
+  const yrs = timelineYears;
+  const timelineTier: Tier = yrs >= 3 ? "strong" : yrs >= 1 ? "mid" : "weak";
+  const timelineChip =
+    timelineTier === "strong" ? "Healthy" : timelineTier === "mid" ? "Workable" : "Short";
+  const yrLabel = `${yrs} ${yrs === 1 ? "yr" : "yrs"}`;
+  const timelineLine =
+    timelineTier === "strong"
+      ? `${yrLabel} — enough runway for compounding`
+      : timelineTier === "mid"
+        ? `${yrLabel} — workable, but compounding is limited`
+        : `${yrLabel} — short runway, plan leans on cash savings`;
+
+  // Employment
+  const empTier: Tier = empStable ? "strong" : "mid";
+  const empChip = empStable ? "Stable" : "Variable";
+  const empLine = empStable
+    ? "Steady income — straightforward to document"
+    : "Variable income — expect extra documentation (2 yrs of returns)";
+  const empScore = empStable ? 85 : 40;
+
+  const rows = [
+    { key: "credit",     label: "Credit",         pct: creditScore,  tier: creditTier,   chip: creditChip,   line: creditLine },
+    { key: "dti",        label: "Debt-to-income", pct: dtiScore,     tier: dtiTier,      chip: dtiChip,      line: dtiLine },
+    { key: "savings",    label: "Down payment",   pct: savingsScore, tier: savingsTier,  chip: savingsChip,  line: savingsLine },
+    { key: "timeline",   label: "Timeline",       pct: timelineScore,tier: timelineTier, chip: timelineChip, line: timelineLine },
+    { key: "employment", label: "Employment",     pct: empScore,     tier: empTier,      chip: empChip,      line: empLine },
+  ].sort((a, b) => a.pct - b.pct); // weakest first
+
   const tone = score >= 80 ? C.sage : score >= 60 ? C.gold : C.ember;
 
   return (
@@ -4018,49 +4066,90 @@ function ReadinessPanel({
           </div>
         </div>
         <p style={{ color: C.inkSoft, fontSize: 14, lineHeight: 1.55, margin: "10px 0 18px" }}>
-          This isn't a credit score — it's a snapshot of how close you are to a confident offer.
+          A snapshot of how close you are to a confident offer — not a credit score.
         </p>
 
-        <div style={{ display: "grid", gap: 16 }}>
-          <div>
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: C.sage,
-                marginBottom: 8,
-              }}
-            >
-              Helping you
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 18, color: C.ink, fontSize: 14, lineHeight: 1.6 }}>
-              {helping.map((i) => (
-                <li key={i.key}>{i.help}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: C.ember,
-                marginBottom: 8,
-              }}
-            >
-              Slowing you down
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 18, color: C.ink, fontSize: 14, lineHeight: 1.6 }}>
-              {slowing.map((i) => (
-                <li key={i.key}>{i.slow}</li>
-              ))}
-            </ul>
-          </div>
+        <div
+          style={{
+            borderTop: `1px solid ${C.ink}20`,
+            display: "grid",
+            gap: 0,
+          }}
+        >
+          {rows.map((r) => {
+            const rowTone = tierTone(r.tier);
+            return (
+              <div
+                key={r.key}
+                style={{
+                  padding: "14px 0",
+                  borderBottom: `1px solid ${C.ink}15`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginBottom: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: C.inkMute,
+                    }}
+                  >
+                    {r.label}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: rowTone,
+                    }}
+                  >
+                    {r.chip}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    height: 4,
+                    width: "100%",
+                    background: `${C.ink}12`,
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${Math.max(2, Math.min(100, r.pct))}%`,
+                      background: rowTone,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    color: C.ink,
+                    fontSize: 14,
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {r.line}
+                </div>
+              </div>
+            );
+          })}
         </div>
+
         <div style={{ marginTop: 14 }}>
           <TrustNote>Typical ranges sourced from national housing data</TrustNote>
         </div>
@@ -4068,6 +4157,7 @@ function ReadinessPanel({
     </Section>
   );
 }
+
 
 // ── Report paywall ───────────────────────────────────────────────────────────
 
