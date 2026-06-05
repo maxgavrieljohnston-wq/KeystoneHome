@@ -1302,6 +1302,21 @@ function ScreenSwitch({
           value={d.downGoalPct !== null ? String(d.downGoalPct) : null}
           onSelect={(v) => set("downGoalPct", parseFloat(v as string))}
         />
+        {grossMonthly > 0 && (
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: C.inkMute,
+              marginTop: 20,
+              lineHeight: 1.5,
+            }}
+          >
+            Front-end DTI {(recFrontDTI * 100).toFixed(0)}% (lenders prefer ≤28%) · Back-end DTI {(recBackDTI * 100).toFixed(0)}% (lenders prefer ≤36%)
+          </div>
+        )}
         <div
           style={{
             fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -1309,7 +1324,7 @@ function ScreenSwitch({
             fontSize: 14,
             lineHeight: 1.5,
             color: C.inkSoft,
-            marginTop: 20,
+            marginTop: 12,
             marginBottom: 8,
           }}
         >
