@@ -3888,8 +3888,7 @@ function Report({ d }: { d: Data }) {
         empStable={empAdjReady.incomeFactor >= 1}
       />
 
-      
-      
+      <ReportPaywall monthsSooner={paywallMonthsSooner} />
 
       {/* Footer */}
       <div
