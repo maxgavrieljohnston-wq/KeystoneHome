@@ -3882,9 +3882,14 @@ function Report({ d }: { d: Data }) {
         score={readiness}
         label={readinessLabel}
         creditScore={creditScoreNorm}
+        creditValue={qualifyingCredit}
         dtiScore={dtiScore}
+        dtiPct={backEndRatio}
         savingsScore={savingsScore}
+        saved={d.saved}
+        downPayment={downPayment}
         timelineScore={timelineScore}
+        timelineYears={d.timelineYears}
         empStable={empAdjReady.incomeFactor >= 1}
       />
 
