@@ -1058,7 +1058,7 @@ function ScreenSwitch({
     // Constrain slider so years range from 15 (min monthly) down to 1 (max monthly), $100 increments.
     const fifteenYearMonthly = Math.max(100, Math.ceil(remaining / 15 / 12 / 100) * 100);
     const oneYearMonthly = Math.max(fifteenYearMonthly, Math.ceil(remaining / 12 / 100) * 100);
-    const minMonthly = Math.min(fifteenYearMonthly, Math.max(100, Math.floor(maxSave / 100) * 100));
+    const minMonthly = 100;
     const sliderMax = Math.max(minMonthly, Math.min(oneYearMonthly, maxSave));
     const stored = d.timelineBucket?.startsWith("$")
       ? parseInt(d.timelineBucket.slice(1), 10) || minMonthly
