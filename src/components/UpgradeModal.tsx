@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { PLUS_FEATURES, PRO_FEATURES, type TierFeature } from "@/lib/tier-features";
@@ -80,6 +81,7 @@ export function UpgradeModal({
   featureName: string;
   openedFrom?: string;
 }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -138,6 +140,16 @@ export function UpgradeModal({
     // Fall back to modal_{tier} if opened programmatically with no source.
     const source = openedFrom || `modal_${tier.id}`;
     trackUpgradeEvent({ event_type: "checkout_open", source, tier: tier.id, email });
+
+    // Anonymous users must go through the canonical signup flow
+    // (email -> 8-digit code -> password) before checkout. login.tsx
+    // auto-opens the matching checkout after signup using ?plan=.
+    if (!userId) {
+      onClose();
+      navigate({ to: "/login", search: { signup: true, plan: tier.id } as any });
+      return;
+    }
+
     await openCheckout({
       priceId: tier.priceId,
       customerEmail: email,
