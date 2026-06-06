@@ -4,7 +4,6 @@ import {
   Sliders,
   Home,
   PiggyBank,
-  AlertTriangle,
   Handshake,
   CalendarCheck,
 } from "lucide-react";
@@ -17,7 +16,6 @@ export const FEATURE_KEYS = [
   "assumptions",
   "picture",
   "accounts",
-  "risk",
   "broker",
 ] as const;
 
@@ -33,6 +31,5 @@ export const FEATURE_META: Record<
   assumptions: { label: "Assumptions", short: "Tune", icon: Sliders },
   picture: { label: "Picture your place", short: "Picture", icon: Home },
   accounts: { label: "Recommended accounts", short: "Accounts", icon: PiggyBank },
-  risk: { label: "Risk scenarios", short: "Risk", icon: AlertTriangle },
   broker: { label: "Broker waitlist", short: "Broker", icon: Handshake },
 };
