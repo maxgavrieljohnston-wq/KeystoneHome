@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getStripeEnvironment } from "@/lib/stripe";
+
 
 async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
   const { data, error } = await supabaseAdmin.rpc("has_active_subscription", {
