@@ -1,32 +1,17 @@
-## Problem
+## Plan
 
-On `/dashboard`, when a signed-in user with no plans clicks **Start your plan**, the page appears to refresh to itself.
+1. **Stop the dashboard CTA from reopening the same empty dashboard loop**
+   - Update the empty-dashboard button so it intentionally starts the new-plan flow at `/?new=1`.
+   - Keep the existing signed-in dashboard protection intact.
 
-## Root cause
+2. **Make the homepage accessible again**
+   - Adjust the home page’s signed-in redirect logic so users can view the main homepage instead of always being forced back to `/dashboard`.
+   - Preserve the explicit new-plan flow so `/?new=1` still opens the intake wizard.
 
-The button is a `<Link to="/">` (in `src/routes/dashboard.tsx`, line 81-94). The home route (`src/routes/index.tsx`, lines 322-332) has a redirect: if a session exists and `?new=1` is not in the URL, it immediately navigates back to `/dashboard`. So the flow is:
+3. **Add a clear dashboard escape path if needed**
+   - If the dashboard has no plans, provide a second link for the main homepage so “Start your plan” and “homepage” are not the same action.
 
-`/dashboard` → click → `/` → auto-redirect → `/dashboard` (looks like a refresh).
+## Technical details
 
-The intake wizard on `/` is explicitly gated behind `?new=1` to avoid this exact loop for everyone else.
-
-## Fix
-
-In `src/routes/dashboard.tsx`, change the empty-state CTA from:
-
-```tsx
-<Link to="/">Start your plan</Link>
-```
-
-to:
-
-```tsx
-<Link to="/" search={{ new: 1 }}>Start your plan</Link>
-```
-
-That's the same convention already used elsewhere in the app for "start a new plan" entry points and satisfies the `isNewPlanFlow` check on the home route, so the wizard runs instead of bouncing.
-
-## Scope
-
-- One-line change in `src/routes/dashboard.tsx`.
-- No backend, no styling, no other routes affected.
+- The loop is caused by `/dashboard` showing an empty state, while `/` redirects signed-in users back to `/dashboard` unless the URL includes `new=1`.
+- I’ll make a minimal route/CTA change in `src/routes/dashboard.tsx` and `src/routes/index.tsx` only, with no backend or payment changes.

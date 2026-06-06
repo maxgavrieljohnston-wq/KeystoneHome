@@ -319,17 +319,10 @@ function KeystoneApp() {
   const search = Route.useSearch();
   const isNewPlanFlow = search.new === true;
 
-  // Signed-in users normally land on the dashboard. When they explicitly start
-  // a new plan (?new=1) we skip the redirect so the wizard runs.
-  useEffect(() => {
-    if (isNewPlanFlow) return;
-    let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      if (data.session) navigate({ to: "/dashboard", replace: true });
-    });
-    return () => { cancelled = true; };
-  }, [navigate, isNewPlanFlow]);
+  // Signed-in users may freely view the homepage. The intake wizard only
+  // auto-runs when explicitly requested via ?new=1; otherwise the welcome
+  // landing renders so users can navigate to the dashboard or start a plan.
+
 
   useEffect(() => {
     if (typeof document !== "undefined") {
