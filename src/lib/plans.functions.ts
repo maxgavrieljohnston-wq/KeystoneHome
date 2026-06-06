@@ -144,6 +144,16 @@ async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
   return Boolean(data);
 }
 
+// Entitlement should not depend on which Stripe environment the user paid in.
+// A subscriber on sandbox OR live unlocks Plus/Pro features everywhere.
+async function userHasAnyActiveSub(userId: string) {
+  const [sandbox, live] = await Promise.all([
+    userHasActiveSub(userId, "sandbox"),
+    userHasActiveSub(userId, "live"),
+  ]);
+  return sandbox || live;
+}
+
 export const renamePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
