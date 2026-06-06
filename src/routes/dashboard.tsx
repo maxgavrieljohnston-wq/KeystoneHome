@@ -80,6 +80,7 @@ function DashboardPage() {
         </p>
         <Link
           to="/"
+          search={{ new: 1 }}
           style={{
             background: C.ink,
             color: C.paper,
