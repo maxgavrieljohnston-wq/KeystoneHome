@@ -38,7 +38,7 @@ export const HOMEOWNERSHIP_FACTS: Fact[] = [
     sub: "Small thing. Feels big.",
   },
   {
-    headline: "First-time buyers today average 35 years old.",
+    headline: "First-time buyers today average 38 years old.",
     sub: "There's no 'late' — there's only the plan you start now.",
   },
   {
