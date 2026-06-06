@@ -23,8 +23,7 @@ type Field = {
     | "insuranceAnnual"
     | "closingCostPct"
     | "movingCost"
-    | "mortgageRatePct"
-    | "expectedReturnPct";
+    | "mortgageRatePct";
   label: string;
   suffix: string;
   step: number;
@@ -72,13 +71,6 @@ const FIELDS: Field[] = [
     step: 0.05,
     // Leave blank → backend uses credit-based rate. Show 0 placeholder hint via empty.
     derivedFor: () => 0,
-  },
-  {
-    key: "expectedReturnPct",
-    label: "Expected investment return",
-    suffix: "%",
-    step: 0.1,
-    derivedFor: () => 7,
   },
 ];
 
