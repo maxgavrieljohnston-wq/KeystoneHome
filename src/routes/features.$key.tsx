@@ -13,7 +13,7 @@ import { InvestVsSavePanel } from "@/components/dashboard/InvestVsSavePanel";
 import { AssumptionsPanel } from "@/components/dashboard/AssumptionsPanel";
 import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
-import { RiskScenariosPanel } from "@/components/dashboard/RiskScenariosPanel";
+
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
 import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
@@ -162,16 +162,6 @@ function FeaturePage() {
           locked={!isPlus}
           onLockedClick={onLockedClick}
           timelineYears={metrics.timelineYears}
-        />
-      );
-      break;
-    case "risk":
-      panel = (
-        <RiskScenariosPanel
-          answers={selected.answers}
-          assumptions={selected.assumptions}
-          locked={!isPlus}
-          onLockedClick={onLockedClick}
         />
       );
       break;
