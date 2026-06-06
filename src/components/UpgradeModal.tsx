@@ -81,6 +81,7 @@ export function UpgradeModal({
   featureName: string;
   openedFrom?: string;
 }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string | undefined>();
   const [userId, setUserId] = useState<string | undefined>();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
