@@ -276,7 +276,7 @@ function DashboardActions({ planId }: { planId: string }) {
       URL.revokeObjectURL(url);
     } catch (e) {
       console.warn("[pdf]", e);
-      alert("Couldn't generate your PDF. (PDF export requires a paid plan.)");
+      alert("Couldn't generate your PDF — please try again or contact support.");
     } finally {
       setDownloading(false);
     }
