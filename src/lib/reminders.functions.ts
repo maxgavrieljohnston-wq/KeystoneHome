@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getStripeEnvironment } from "@/lib/stripe";
+
 
 async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
   const { data, error } = await supabaseAdmin.rpc("has_active_subscription", {
@@ -40,10 +40,13 @@ export const setReminderPrefs = createServerFn({ method: "POST" })
     z.object({ enabled: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const env = getStripeEnvironment();
     if (data.enabled) {
-      const allowed = await userHasActiveSub(context.userId, env);
-      if (!allowed) throw new Response("Upgrade required", { status: 403 });
+      // Accept active sub in either Stripe environment (sandbox or live).
+      const [sandboxOk, liveOk] = await Promise.all([
+        userHasActiveSub(context.userId, "sandbox"),
+        userHasActiveSub(context.userId, "live"),
+      ]);
+      if (!sandboxOk && !liveOk) throw new Response("Upgrade required", { status: 403 });
     }
 
     const next = data.enabled

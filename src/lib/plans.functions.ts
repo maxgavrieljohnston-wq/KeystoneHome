@@ -144,6 +144,16 @@ async function userHasActiveSub(userId: string, env: "sandbox" | "live") {
   return Boolean(data);
 }
 
+// Entitlement should not depend on which Stripe environment the user paid in.
+// A subscriber on sandbox OR live unlocks Plus/Pro features everywhere.
+async function userHasAnyActiveSub(userId: string) {
+  const [sandbox, live] = await Promise.all([
+    userHasActiveSub(userId, "sandbox"),
+    userHasActiveSub(userId, "live"),
+  ]);
+  return sandbox || live;
+}
+
 export const renamePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -263,7 +273,7 @@ export const exportPlanPdf = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // Verify entitlement (Plus or Pro)
-    const allowed = await userHasActiveSub(context.userId, data.environment);
+    const allowed = await userHasAnyActiveSub(context.userId);
     if (!allowed) {
       throw new Response("Upgrade required", { status: 403 });
     }
@@ -349,7 +359,7 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => updateMetaSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const allowed = await userHasActiveSub(context.userId, data.environment);
+    const allowed = await userHasAnyActiveSub(context.userId);
     if (!allowed) throw new Response("Upgrade required", { status: 403 });
 
     const patch: Record<string, unknown> = {};
@@ -405,7 +415,7 @@ export const togglePlanShare = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const allowed = await userHasActiveSub(context.userId, data.environment);
+    const allowed = await userHasAnyActiveSub(context.userId);
     if (!allowed) throw new Response("Upgrade required", { status: 403 });
 
     const { data: existing, error: fetchErr } = await supabaseAdmin
@@ -457,7 +467,7 @@ export const exportPlanCsv = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const allowed = await userHasActiveSub(context.userId, data.environment);
+    const allowed = await userHasAnyActiveSub(context.userId);
     if (!allowed) throw new Response("Upgrade required", { status: 403 });
 
     const { data: plan, error } = await supabaseAdmin

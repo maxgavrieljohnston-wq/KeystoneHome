@@ -776,8 +776,12 @@ export const applyCoachAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
-    const allowed = await userHasActiveSub(userId, data.environment);
-    if (!allowed) throw new Response("Upgrade required", { status: 403 });
+    // Accept active sub in either Stripe environment (sandbox or live).
+    const [sandboxOk, liveOk] = await Promise.all([
+      userHasActiveSub(userId, "sandbox"),
+      userHasActiveSub(userId, "live"),
+    ]);
+    if (!sandboxOk && !liveOk) throw new Response("Upgrade required", { status: 403 });
 
     const { data: action, error: readErr } = await supabaseAdmin
       .from("coach_message_actions")
