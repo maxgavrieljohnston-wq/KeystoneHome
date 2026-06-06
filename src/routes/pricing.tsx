@@ -92,7 +92,7 @@ function PricingPage() {
     if (!userId) {
       navigate({
         to: "/login",
-        search: { signup: true, plan: plan.id, billing: "monthly" },
+        search: { signup: true, plan: plan.id },
       });
       return;
     }

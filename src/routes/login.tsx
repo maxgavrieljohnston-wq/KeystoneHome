@@ -211,14 +211,24 @@ function LoginPage() {
 
     if (err) {
       setError(friendlyError(err.message));
-    } else if (search.plan && search.billing) {
-      const priceId = `${search.plan}_${search.billing}`;
-      const { data: u } = await supabase.auth.getUser();
-      await openCheckout({
-        priceId,
-        customerEmail: u.user?.email ?? email.trim(),
-        userId: u.user?.id,
-      });
+    } else if (search.plan) {
+      // Canonical price per plan — Plus is yearly-only ($49.99/yr),
+      // Pro is monthly ($11/mo). The `billing` search param is ignored
+      // (kept in validateSearch for backward compatibility with old links).
+      const priceId =
+        search.plan === "plus" ? "plus_yearly" :
+        search.plan === "pro" ? "pro_monthly" :
+        null;
+      if (priceId) {
+        const { data: u } = await supabase.auth.getUser();
+        await openCheckout({
+          priceId,
+          customerEmail: u.user?.email ?? email.trim(),
+          userId: u.user?.id,
+        });
+      } else {
+        navigate({ to: "/dashboard" });
+      }
     } else {
       navigate({ to: "/dashboard" });
     }
