@@ -140,6 +140,16 @@ export function UpgradeModal({
     // Fall back to modal_{tier} if opened programmatically with no source.
     const source = openedFrom || `modal_${tier.id}`;
     trackUpgradeEvent({ event_type: "checkout_open", source, tier: tier.id, email });
+
+    // Anonymous users must go through the canonical signup flow
+    // (email -> 8-digit code -> password) before checkout. login.tsx
+    // auto-opens the matching checkout after signup using ?plan=.
+    if (!userId) {
+      onClose();
+      navigate({ to: "/login", search: { signup: true, plan: tier.id } as any });
+      return;
+    }
+
     await openCheckout({
       priceId: tier.priceId,
       customerEmail: email,
