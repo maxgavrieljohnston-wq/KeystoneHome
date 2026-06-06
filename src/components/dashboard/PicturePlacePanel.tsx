@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { InvestSection } from "./InvestVsSavePanel";
 import { updatePlanMeta } from "@/lib/plans.functions";
 import { computePlanMetrics } from "@/lib/plan-metrics";
-import { HOME_STYLES, getPriceByZip } from "@/lib/keystone";
+import { HOME_STYLES } from "@/lib/keystone";
+import { US_STATES, priceByState } from "@/data/states";
 
 const C = {
   ink: "#1a1a1a",
@@ -96,7 +97,7 @@ export function PicturePlacePanel({
   const liveAnswers = useMemo<Record<string, unknown>>(() => {
     const next = { ...answers };
     next.zip = zip;
-    if (zip.length >= 3) next.zipData = getPriceByZip(zip);
+    if (zip) next.zipData = priceByState(zip);
     next.homeStyle = homeStyle || null;
     next.homeLayout = homeLayout === "any" ? null : homeLayout;
     next.beds = beds;
@@ -226,16 +227,21 @@ export function PicturePlacePanel({
       </div>
 
       {/* Location & basics */}
-      <Field label="ZIP code">
-        <input
-          type="text"
-          inputMode="numeric"
+      <Field label="State">
+        <select
           value={zip}
-          maxLength={5}
-          onChange={(e) => setZip(e.target.value.replace(/[^\d]/g, "").slice(0, 5))}
-          placeholder="e.g. 60607"
-          style={inputStyle}
-        />
+          onChange={(e) => setZip(e.target.value)}
+          style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}
+        >
+          <option value="">Select a state…</option>
+          {[...US_STATES]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+        </select>
       </Field>
 
       <Field label="Home style">
