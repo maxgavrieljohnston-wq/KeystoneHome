@@ -209,12 +209,16 @@ function DashboardPage() {
 
         <DashboardActions planId={selected.id} />
 
-        <PlanView plan={planForView} kicker="— Your plan, dialed in" />
-
-        <SavingsProgressPanel
-          currentSavings={selected.current_savings ?? 0}
-          answers={selected.answers}
-          assumptions={selected.assumptions}
+        <PlanView
+          plan={planForView}
+          kicker="— Your plan, dialed in"
+          footer={
+            <SavingsProgressPanel
+              currentSavings={selected.current_savings ?? 0}
+              answers={selected.answers}
+              assumptions={selected.assumptions}
+            />
+          }
         />
 
         {/* Feature icon bar */}
