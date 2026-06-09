@@ -161,6 +161,52 @@ export function InvestVsSavePanel({
         slider to see how a different monthly changes your timeline.
       </p>
 
+      {/* Cash-only baseline at current slider monthly */}
+      {(() => {
+        const cashMonths = monthsToGoal(metrics.saved, metrics.downPayment, monthly, 0);
+        return (
+          <div
+            style={{
+              padding: "16px 18px",
+              border: `1px solid ${C.inkFaint}`,
+              borderRadius: 10,
+              background: C.paper,
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: C.inkMute,
+                marginBottom: 6,
+              }}
+            >
+              — Cash only, no compounding
+            </div>
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 500,
+                letterSpacing: "-0.01em",
+                color: C.ink,
+                fontVariantNumeric: "tabular-nums",
+                lineHeight: 1.15,
+              }}
+            >
+              {isFinite(cashMonths) ? `${fmtMonths(cashMonths)} to goal` : "Won't reach"}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 13, color: C.inkSoft, lineHeight: 1.5 }}>
+              Saving {fmt(monthly)}/mo straight to your goal.
+            </div>
+          </div>
+        );
+      })()}
+
+
+
       {/* Headline: months to goal at slider value */}
       <div
         style={{
