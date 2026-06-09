@@ -193,6 +193,52 @@ export function AssumptionsPanel({
       </p>
 
       <div style={{ display: "grid", gap: 16 }}>
+        <label style={{ display: "block" }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: C.inkMute,
+              marginBottom: 6,
+            }}
+          >
+            Down payment
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 8,
+              borderBottom: `1px solid ${C.ink}`,
+              paddingBottom: 6,
+            }}
+          >
+            <input
+              type="number"
+              step={0.5}
+              min={0}
+              max={100}
+              value={Number.isFinite(downPct) ? downPct : ""}
+              placeholder={String(initialDownPct)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDownPct(v === "" ? 0 : Number(v));
+              }}
+              style={{
+                flex: 1,
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: 20,
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                color: C.ink,
+              }}
+            />
+            <span style={{ fontSize: 12, color: C.inkMute }}>%</span>
+          </div>
+        </label>
         {FIELDS.map((f) => {
           const derived = f.derivedFor({ answers, targetPrice });
           const placeholder =
