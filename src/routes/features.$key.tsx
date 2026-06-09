@@ -109,21 +109,8 @@ function FeaturePage() {
 
   let panel: React.ReactNode = null;
   switch (key as FeatureKey) {
-    case "plan":
-      panel = (
-        <MonthlyActionPlan
-          planId={selected.id}
-          planCreatedAt={selected.created_at}
-          answers={selected.answers}
-          assumptions={selected.assumptions}
-          currentSavings={selected.current_savings}
-          targetMoveIn={selected.target_move_in}
-          shareEnabled={selected.share_enabled}
-          remindersEnabled={extrasQ.data?.remindersEnabled ?? false}
-          lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
-          initialProgress={selected.action_plan_progress ?? null}
-        />
-      );
+    case "dashboard":
+      // handled via redirect in beforeLoad
       break;
     case "portfolio":
       panel = (
