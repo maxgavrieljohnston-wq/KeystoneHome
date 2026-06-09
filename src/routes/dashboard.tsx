@@ -8,6 +8,7 @@ import { getMyPlans, getDashboardExtras, revertPlanToInitial, exportPlanPdf } fr
 import { getStripeEnvironment } from "@/lib/stripe";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
+import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { PlanView, type PlanViewPlan } from "./p.$slug";
 
 const C = {
@@ -221,8 +222,23 @@ function DashboardPage() {
           }
         />
 
+        <div style={{ marginTop: 32 }}>
+          <MonthlyActionPlan
+            planId={selected.id}
+            planCreatedAt={selected.created_at}
+            answers={selected.answers}
+            assumptions={selected.assumptions}
+            currentSavings={selected.current_savings}
+            targetMoveIn={selected.target_move_in}
+            shareEnabled={selected.share_enabled}
+            remindersEnabled={extrasQ.data?.remindersEnabled ?? false}
+            lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
+            initialProgress={(selected.action_plan_progress ?? null) as any}
+          />
+        </div>
+
         {/* Feature icon bar */}
-        <FeatureIconBar selectedPlanId={selectedId} />
+        <FeatureIconBar selectedPlanId={selectedId} activeKey="dashboard" />
       </div>
     </div>
   );

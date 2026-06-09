@@ -1,9 +1,8 @@
-import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -15,7 +14,6 @@ import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
-import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FEATURE_KEYS, FEATURE_META, type FeatureKey } from "@/lib/dashboard-features";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
@@ -46,6 +44,12 @@ export const Route = createFileRoute("/features/$key")({
         search: search as { planId?: string },
       });
     }
+    if (params.key === "plan" || params.key === "dashboard") {
+      throw redirect({
+        to: "/dashboard",
+        search: search as { planId?: string },
+      });
+    }
     if (!FEATURE_KEYS.includes(params.key as FeatureKey)) {
       throw redirect({ to: "/dashboard" });
     }
@@ -68,7 +72,7 @@ export const Route = createFileRoute("/features/$key")({
 function FeaturePage() {
   const { key } = Route.useParams();
   const { planId: selectedId } = Route.useSearch();
-  const navigate = useNavigate();
+  // navigation handled via icon bar / Link components
   const sub = useSubscription();
   const gate = useUpgradeGate();
 
@@ -105,21 +109,8 @@ function FeaturePage() {
 
   let panel: React.ReactNode = null;
   switch (key as FeatureKey) {
-    case "plan":
-      panel = (
-        <MonthlyActionPlan
-          planId={selected.id}
-          planCreatedAt={selected.created_at}
-          answers={selected.answers}
-          assumptions={selected.assumptions}
-          currentSavings={selected.current_savings}
-          targetMoveIn={selected.target_move_in}
-          shareEnabled={selected.share_enabled}
-          remindersEnabled={extrasQ.data?.remindersEnabled ?? false}
-          lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
-          initialProgress={selected.action_plan_progress ?? null}
-        />
-      );
+    case "dashboard":
+      // handled via redirect in beforeLoad
       break;
     case "portfolio":
       panel = (
@@ -199,29 +190,6 @@ function FeaturePage() {
       }}
     >
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 64px" }}>
-        <button
-          onClick={() =>
-            navigate({
-              to: "/dashboard",
-              search: selectedId ? { planId: selectedId } : {},
-            })
-          }
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            background: "transparent",
-            border: "none",
-            color: C.inkMute,
-            cursor: "pointer",
-            fontSize: 13,
-            padding: 0,
-            marginBottom: 20,
-            fontFamily: "'Inter', system-ui, sans-serif",
-          }}
-        >
-          <ArrowLeft size={14} /> Back to dashboard
-        </button>
         <div
           style={{
             fontFamily: "'JetBrains Mono', monospace",

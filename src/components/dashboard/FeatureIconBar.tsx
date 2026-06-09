@@ -47,12 +47,21 @@ export function FeatureIconBar({
           const meta = FEATURE_META[key];
           const Icon = meta.icon;
           const isActive = activeKey === key;
+          const linkProps =
+            key === "dashboard"
+              ? ({
+                  to: "/dashboard",
+                  search: selectedPlanId ? { planId: selectedPlanId } : {},
+                } as const)
+              : ({
+                  to: "/features/$key",
+                  params: { key },
+                  search: selectedPlanId ? { planId: selectedPlanId } : {},
+                } as const);
           return (
             <Link
               key={key}
-              to="/features/$key"
-              params={{ key }}
-              search={selectedPlanId ? { planId: selectedPlanId } : {}}
+              {...(linkProps as any)}
               style={{
                 display: "flex",
                 flexDirection: "column",
