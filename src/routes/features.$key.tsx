@@ -190,29 +190,6 @@ function FeaturePage() {
       }}
     >
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 64px" }}>
-        <button
-          onClick={() =>
-            navigate({
-              to: "/dashboard",
-              search: selectedId ? { planId: selectedId } : {},
-            })
-          }
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            background: "transparent",
-            border: "none",
-            color: C.inkMute,
-            cursor: "pointer",
-            fontSize: 13,
-            padding: 0,
-            marginBottom: 20,
-            fontFamily: "'Inter', system-ui, sans-serif",
-          }}
-        >
-          <ArrowLeft size={14} /> Back to dashboard
-        </button>
         <div
           style={{
             fontFamily: "'JetBrains Mono', monospace",
