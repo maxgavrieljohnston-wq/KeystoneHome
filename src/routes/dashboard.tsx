@@ -233,7 +233,7 @@ function DashboardPage() {
             shareEnabled={selected.share_enabled}
             remindersEnabled={extrasQ.data?.remindersEnabled ?? false}
             lenderDocCount={extrasQ.data?.lenderDocCount ?? 0}
-            initialProgress={selected.action_plan_progress ?? null}
+            initialProgress={(selected.action_plan_progress ?? null) as any}
           />
         </div>
 
