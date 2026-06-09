@@ -112,16 +112,18 @@ export function AssumptionsPanel({
   }, [planId, assumptions, answers]);
 
   // Optimistically patch the cached plan so every panel recomputes immediately.
-  const patchCache = (nextAssumptions: Record<string, number>) => {
+  const patchCache = (nextAssumptions: Record<string, number>, nextDownPct?: number) => {
     qc.setQueryData(["my-plans"], (prev: unknown) => {
       if (!prev || typeof prev !== "object") return prev;
       const obj = prev as { plans?: unknown };
       if (!Array.isArray(obj.plans)) return prev;
-      const nextPlans = obj.plans.map((p) =>
-        p && typeof p === "object" && (p as { id?: string }).id === planId
-          ? { ...p, assumptions: nextAssumptions }
-          : p,
-      );
+      const nextPlans = obj.plans.map((p) => {
+        if (!p || typeof p !== "object" || (p as { id?: string }).id !== planId) return p;
+        const cur = p as { answers?: Record<string, unknown> };
+        const nextAnswers =
+          nextDownPct != null ? { ...(cur.answers ?? {}), downGoalPct: nextDownPct } : cur.answers;
+        return { ...cur, assumptions: nextAssumptions, answers: nextAnswers };
+      });
       return { ...obj, plans: nextPlans };
     });
   };
