@@ -142,7 +142,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   row("Total per month", money(m.totalHousing), { bold: true });
   row(
     `Front-end DTI (housing / income, ${money(m.monthlyIncome)}/mo)`,
-    `${Math.round(m.frontEndDTI * 100)}% — lenders prefer ≤28% — ${m.frontEndVerdict}`,
+    `${Math.round(m.frontEndDTI * 100)}% — lenders prefer <=28% — ${m.frontEndVerdict}`,
     {
       color:
         m.frontEndVerdict === "Affordable"
@@ -154,7 +154,7 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   );
   row(
     "Back-end DTI (housing + other debts / income)",
-    `${Math.round(m.backEndDTI * 100)}% — lenders prefer ≤36% — ${m.backEndVerdict}`,
+    `${Math.round(m.backEndDTI * 100)}% — lenders prefer <=36% — ${m.backEndVerdict}`,
     {
       color:
         m.backEndVerdict === "Affordable"
@@ -278,8 +278,8 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
   });
   y -= 18;
   row("Credit (qualifying)", String(qCredit));
-  row("Front-end DTI (housing)", `${Math.round(m.frontEndDTI * 100)}% — pref ≤28%`);
-  row("Back-end DTI (total debt)", `${Math.round(dti * 100)}% — pref ≤36%`);
+  row("Front-end DTI (housing)", `${Math.round(m.frontEndDTI * 100)}% — pref <=28%`);
+  row("Back-end DTI (total debt)", `${Math.round(dti * 100)}% — pref <=36%`);
   row("Mortgage rate (est.)", `${(m.mortgageRate * 100).toFixed(2)}%`);
   y -= 6;
 
@@ -291,12 +291,12 @@ export async function buildPlanPdfBytes(plan: PlanPdfInput): Promise<{
     const allowedHousing = m.monthlyIncome * targetRatio;
     const scale = m.totalHousing > 0 ? allowedHousing / m.totalHousing : 1;
     const suggestedPrice = Math.max(50000, Math.round((m.targetPrice * scale) / 5000) * 5000);
-    steps.push(`Front-end DTI is ${Math.round(m.frontEndDTI * 100)}% — lenders prefer ≤28%. Consider a target closer to ${money(suggestedPrice)} to bring housing under 28% of income.`);
+    steps.push(`Front-end DTI is ${Math.round(m.frontEndDTI * 100)}% — lenders prefer <=28%. Consider a target closer to ${money(suggestedPrice)} to bring housing under 28% of income.`);
   }
   if (dti > 0.36 && m.monthlyIncome > 0) {
     const targetDti = 0.36;
     const reduceBy = Math.max(0, debt + m.totalHousing - m.monthlyIncome * targetDti);
-    steps.push(`Back-end DTI is ${Math.round(dti * 100)}% — lenders prefer ≤36%. Pay down about ${money(reduceBy)}/mo of other debt to bring total obligations under 36% and unlock better rates.`);
+    steps.push(`Back-end DTI is ${Math.round(dti * 100)}% — lenders prefer <=36%. Pay down about ${money(reduceBy)}/mo of other debt to bring total obligations under 36% and unlock better rates.`);
   }
   if (qCredit < 680) {
     steps.push(`Raise your ${hasPartner ? "qualifying " : ""}credit score above 680 — it's the single biggest lever on your mortgage rate.`);
