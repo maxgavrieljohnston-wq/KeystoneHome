@@ -55,13 +55,20 @@ export function InvestVsSavePanel({
   );
 
   const derivedRate = metrics.expectedReturnRate || 0.07;
-  // Derive capacity from current income/expenses/debt so the baseline updates
-  // live as the user edits the Finance panel. Falls back to the stored
-  // monthlySavings answer when income data is missing.
+  // Baseline reflects the saved allocation, not live income edits. Prefer the
+  // persisted investMonthly, then the saved monthlySavings answer, then fall
+  // back to capacity only for brand-new plans with neither value set.
   const capacity = useMemo(() => computeSavingsCapacity(answers), [answers]);
+  const persistedInvest = (assumptions?.investMonthly as number | undefined) ?? null;
+  const answeredMonthly = Number(
+    (answers as Record<string, unknown>)?.monthlySavings ?? 0,
+  );
   const statedMonthly = Math.max(
     50,
-    Math.round(capacity.capacity || metrics.monthlySavings || 0),
+    Math.round(
+      persistedInvest ??
+        (answeredMonthly > 0 ? answeredMonthly : capacity.capacity || metrics.monthlySavings || 0),
+    ),
   );
 
   // Local overrides (manual-save pattern)
