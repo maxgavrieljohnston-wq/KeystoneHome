@@ -392,10 +392,19 @@ export const updatePlanMeta = createServerFn({ method: "POST" })
         if (v === null) delete merged[k];
         else if (v !== undefined) merged[k] = v;
       }
-      // If zip changed, refresh zipData so downstream metrics use the right metro.
-      if (typeof data.answersPatch.zip === "string" && data.answersPatch.zip.length >= 3) {
-        const { getPriceByZip } = await import("@/lib/keystone");
-        merged.zipData = getPriceByZip(data.answersPatch.zip);
+      // Keep zipData in sync with whatever shape `zip` takes: 2-letter state
+      // code (Picture-your-place panel) or a full ZIP code (legacy onboarding).
+      if (typeof data.answersPatch.zip === "string") {
+        const z = data.answersPatch.zip.trim();
+        if (z === "") {
+          delete merged.zipData;
+        } else if (/^[A-Za-z]{2}$/.test(z)) {
+          const { priceByState } = await import("@/data/states");
+          merged.zipData = priceByState(z.toUpperCase());
+        } else if (z.length >= 3) {
+          const { getPriceByZip } = await import("@/lib/keystone");
+          merged.zipData = getPriceByZip(z);
+        }
       }
       patch.answers = merged;
     }
