@@ -139,28 +139,27 @@ function FeaturePage() {
         />
       );
       break;
-    case "assumptions":
+    case "home":
       panel = (
-        <AssumptionsPanel
-          planId={selected.id}
-          answers={selected.answers}
-          targetPrice={metrics.targetPrice}
-          assumptions={selected.assumptions ?? {}}
-          isPlus={isPlus}
-          locked={!isPlus}
-          onLockedClick={onLockedClick}
-        />
-      );
-      break;
-    case "picture":
-      panel = (
-        <PicturePlacePanel
-          planId={selected.id}
-          answers={selected.answers}
-          assumptions={selected.assumptions}
-          locked={!isPlus}
-          onLockedClick={onLockedClick}
-        />
+        <>
+          <PicturePlacePanel
+            planId={selected.id}
+            answers={selected.answers}
+            assumptions={selected.assumptions}
+            locked={!isPlus}
+            onLockedClick={onLockedClick}
+          />
+          <div style={{ height: 24 }} />
+          <AssumptionsPanel
+            planId={selected.id}
+            answers={selected.answers}
+            targetPrice={metrics.targetPrice}
+            assumptions={selected.assumptions ?? {}}
+            isPlus={isPlus}
+            locked={!isPlus}
+            onLockedClick={onLockedClick}
+          />
+        </>
       );
       break;
     case "accounts":
