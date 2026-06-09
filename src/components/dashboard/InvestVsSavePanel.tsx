@@ -55,13 +55,20 @@ export function InvestVsSavePanel({
   );
 
   const derivedRate = metrics.expectedReturnRate || 0.07;
-  // Derive capacity from current income/expenses/debt so the baseline updates
-  // live as the user edits the Finance panel. Falls back to the stored
-  // monthlySavings answer when income data is missing.
+  // Baseline reflects the saved allocation, not live income edits. Prefer the
+  // persisted investMonthly, then the saved monthlySavings answer, then fall
+  // back to capacity only for brand-new plans with neither value set.
   const capacity = useMemo(() => computeSavingsCapacity(answers), [answers]);
+  const persistedInvest = (assumptions?.investMonthly as number | undefined) ?? null;
+  const answeredMonthly = Number(
+    (answers as Record<string, unknown>)?.monthlySavings ?? 0,
+  );
   const statedMonthly = Math.max(
     50,
-    Math.round(capacity.capacity || metrics.monthlySavings || 0),
+    Math.round(
+      persistedInvest ??
+        (answeredMonthly > 0 ? answeredMonthly : capacity.capacity || metrics.monthlySavings || 0),
+    ),
   );
 
   // Local overrides (manual-save pattern)
@@ -70,13 +77,12 @@ export function InvestVsSavePanel({
     setSelectedRate(derivedRate);
   }, [derivedRate]);
 
-  // Slider defaults to persisted investMonthly, else user's stated monthly.
-  const persistedMonthly = (assumptions?.investMonthly as number | undefined) ?? null;
-  const [monthly, setMonthly] = useState<number>(persistedMonthly ?? statedMonthly);
+  // Slider defaults to the same saved baseline as the headline.
+  const [monthly, setMonthly] = useState<number>(statedMonthly);
 
   useEffect(() => {
-    setMonthly(persistedMonthly ?? statedMonthly);
-  }, [persistedMonthly, statedMonthly]);
+    setMonthly(statedMonthly);
+  }, [statedMonthly]);
 
   // Baseline: time to goal at their CURRENT stated monthly + selected rate.
   const baselineMonths = useMemo(
@@ -112,7 +118,7 @@ export function InvestVsSavePanel({
   const [saving, setSaving] = useState(false);
   const dirty =
     Boolean(planId && isPlus && !locked) &&
-    (Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly) ||
+    (Math.round(monthly) !== Math.round(statedMonthly) ||
       Math.abs(selectedRate - derivedRate) >= 0.0001);
 
   const handleSave = async () => {
@@ -258,25 +264,6 @@ export function InvestVsSavePanel({
           }}
         >
           <span>{fmt(50)}</span>
-          <button
-            type="button"
-            onClick={() => setMonthly(statedMonthly)}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              fontFamily: "inherit",
-              fontSize: "inherit",
-              letterSpacing: "inherit",
-              textTransform: "inherit",
-              color: C.ember,
-              cursor: "pointer",
-              textDecoration: "underline",
-              textUnderlineOffset: 2,
-            }}
-          >
-            Reset to your {fmt(statedMonthly)}
-          </button>
           <span>{fmt(sliderMax)}</span>
         </div>
         {planId && isPlus && (
@@ -327,6 +314,7 @@ export function InvestVsSavePanel({
               <RateRow
                 key={s.label}
                 label={isSelected ? `${s.label} · your profile` : s.label}
+                rate={s.rate}
                 months={months}
                 accent={isSelected ? C.ember : C.inkSoft}
                 primary={isSelected}
@@ -357,6 +345,7 @@ export function InvestVsSavePanel({
 
 function RateRow({
   label,
+  rate,
   months,
   accent,
   primary = false,
@@ -364,6 +353,7 @@ function RateRow({
   clickable = false,
 }: {
   label: string;
+  rate: number;
   months: number;
   accent: string;
   primary?: boolean;
@@ -383,7 +373,20 @@ function RateRow({
         background: primary ? `${accent}0d` : "transparent",
       }}
     >
-      <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+          }}
+        >
+          {(rate * 100).toFixed(1)}% / yr
+        </div>
+      </div>
       <div
         style={{
           fontSize: 18,
