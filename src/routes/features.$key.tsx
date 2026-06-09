@@ -1,9 +1,8 @@
-import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras } from "@/lib/plans.functions";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -15,7 +14,6 @@ import { PicturePlacePanel } from "@/components/dashboard/PicturePlacePanel";
 import { RecommendedAccountsPanel } from "@/components/dashboard/RecommendedAccountsPanel";
 
 import { BrokerWaitlistPanel } from "@/components/dashboard/BrokerWaitlistPanel";
-import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FEATURE_KEYS, FEATURE_META, type FeatureKey } from "@/lib/dashboard-features";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
