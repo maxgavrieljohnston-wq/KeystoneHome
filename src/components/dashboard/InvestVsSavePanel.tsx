@@ -264,25 +264,6 @@ export function InvestVsSavePanel({
           }}
         >
           <span>{fmt(50)}</span>
-          <button
-            type="button"
-            onClick={() => setMonthly(statedMonthly)}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              fontFamily: "inherit",
-              fontSize: "inherit",
-              letterSpacing: "inherit",
-              textTransform: "inherit",
-              color: C.ember,
-              cursor: "pointer",
-              textDecoration: "underline",
-              textUnderlineOffset: 2,
-            }}
-          >
-            Reset to your {fmt(statedMonthly)}
-          </button>
           <span>{fmt(sliderMax)}</span>
         </div>
         {planId && isPlus && (
