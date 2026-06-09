@@ -118,7 +118,7 @@ export function InvestVsSavePanel({
   const [saving, setSaving] = useState(false);
   const dirty =
     Boolean(planId && isPlus && !locked) &&
-    (Math.round(monthly) !== Math.round(persistedMonthly ?? statedMonthly) ||
+    (Math.round(monthly) !== Math.round(statedMonthly) ||
       Math.abs(selectedRate - derivedRate) >= 0.0001);
 
   const handleSave = async () => {
