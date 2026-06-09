@@ -6,7 +6,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras, revertPlanToInitial, exportPlanPdf } from "@/lib/plans.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
-
+import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
 import { PlanView, type PlanViewPlan } from "./p.$slug";
 
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/dashboard")({
 type PlanRow = {
   id: string;
   title: string | null;
+  theme: string | null;
   answers: Record<string, unknown>;
   assumptions: Record<string, number> | null;
   current_savings: number | null;
@@ -52,7 +53,6 @@ type PlanRow = {
 function DashboardPage() {
   const navigate = useNavigate();
   const { planId: selectedId } = Route.useSearch();
-  
 
   const plansFn = useServerFn(getMyPlans);
   const extrasFn = useServerFn(getDashboardExtras);
@@ -99,11 +99,9 @@ function DashboardPage() {
 
   if (!selected) return <Centered>No plan selected.</Centered>;
 
-  const firstName = (selected.title || "").split(" ")[0] || "there";
-
   const planForView: PlanViewPlan = {
     title: selected.title,
-    theme: null,
+    theme: selected.theme,
     answers: selected.answers,
     assumptions: selected.assumptions,
     current_savings: selected.current_savings,
@@ -124,7 +122,7 @@ function DashboardPage() {
         style={{
           maxWidth: 960,
           margin: "0 auto",
-          padding: "32px 24px 24px",
+          padding: "32px 24px 64px",
         }}
       >
         {/* Header */}
@@ -184,7 +182,7 @@ function DashboardPage() {
                   margin: 0,
                 }}
               >
-                {selected.title || `Welcome back${firstName !== "there" ? `, ${firstName}` : ""}`}
+                {selected.title || "Your homebuying plan"}
               </h1>
             )}
           </div>
@@ -210,11 +208,16 @@ function DashboardPage() {
         </header>
 
         <DashboardActions planId={selected.id} />
-      </div>
 
-      <PlanView plan={planForView} kicker="— Your plan, dialed in" />
+        <PlanView plan={planForView} kicker="— Your plan, dialed in" />
 
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 64px" }}>
+        <SavingsProgressPanel
+          currentSavings={selected.current_savings ?? 0}
+          answers={selected.answers}
+          assumptions={selected.assumptions}
+        />
+
+        {/* Feature icon bar */}
         <FeatureIconBar selectedPlanId={selectedId} />
       </div>
     </div>
@@ -306,7 +309,137 @@ function DashboardActions({ planId }: { planId: string }) {
   );
 }
 
+function fmtCurrency(n: number): string {
+  if (!isFinite(n)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
 
+function SavingsProgressPanel({
+  currentSavings,
+  answers,
+  assumptions,
+}: {
+  currentSavings: number;
+  answers: Record<string, unknown>;
+  assumptions: Record<string, number> | null;
+}) {
+  const metrics = computePlanMetrics(answers, assumptions);
+  const goal = metrics.downPayment || 0;
+  const saved = Math.max(0, currentSavings);
+  const pct = goal > 0 ? Math.min(100, (saved / goal) * 100) : 0;
+  const remaining = Math.max(0, goal - saved);
+
+  return (
+    <div style={{ maxWidth: 640, margin: "40px auto 0" }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 10,
+        }}
+      >
+        Savings progress
+      </div>
+      <div
+        style={{
+          border: `1.5px solid ${C.ink}`,
+          borderRadius: 10,
+          padding: "20px 22px",
+          background: "transparent",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          color: C.ink,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            gap: 16,
+            marginBottom: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: C.inkMute,
+                marginBottom: 4,
+              }}
+            >
+              Saved so far
+            </div>
+            <div style={{ fontSize: 32, lineHeight: 1.1, letterSpacing: "-0.01em" }}>
+              {fmtCurrency(saved)}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: C.inkMute,
+                marginBottom: 4,
+              }}
+            >
+              Down payment goal
+            </div>
+            <div style={{ fontSize: 24, lineHeight: 1.1, letterSpacing: "-0.01em" }}>
+              {fmtCurrency(goal)}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            height: 4,
+            background: `${C.inkFaint}55`,
+            borderRadius: 2,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${pct}%`,
+              background: C.ember,
+              transition: "width 0.6s ease",
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+          }}
+        >
+          <span>{pct.toFixed(0)}% of goal</span>
+          <span>{fmtCurrency(remaining)} to go</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -327,4 +460,3 @@ function Centered({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
