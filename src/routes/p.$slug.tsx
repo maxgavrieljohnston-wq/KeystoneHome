@@ -1,16 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getSharedPlan } from "@/lib/plans.functions";
-import {
-  HOME_STYLES,
-  styleAdjustments,
-  calcMortgage,
-  calcRequiredMonthly,
-  rateFromCredit,
-  rateAddFromDownPct,
-  combinedEmploymentAdjustment,
-  getPriceByZip,
-  fmt,
-} from "@/lib/keystone";
+import { HOME_STYLES, getPriceByZip, fmt } from "@/lib/keystone";
+import { computePlanMetrics } from "@/lib/plan-metrics";
 import { monthsToGoal } from "@/lib/invest-projection";
 
 const fmtMonths = (m: number): string => {
