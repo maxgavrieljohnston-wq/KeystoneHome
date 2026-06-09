@@ -1,34 +1,22 @@
-## Problem
+## Add Down payment % field to "Tune the inputs"
 
-The "Target price" (and the rest of the numbers) shown on the dashboard sheet and the public shared plan come from inline math in `src/routes/p.$slug.tsx` (`PlanView`). Picture Your Place uses `computePlanMetrics` from `src/lib/plan-metrics.ts`. The two paths drift:
-
-- `PlanView` does **not** read `answers.targetPriceOverride`, so any override set elsewhere is ignored on the dashboard.
-- Small formula differences (PMI/tax/insurance/HOA defaults, rate derivation via `deriveAssumptions`) produce slightly different numbers even without an override.
-
-Result: the price on Picture Your Place doesn't match the price on the dashboard.
-
-## Fix
-
-Make `PlanView` the single source of truth's consumer — render from `computePlanMetrics(plan.answers, plan.assumptions)` instead of its own inline calculation.
+Down payment % lives on `answers.downGoalPct` (not in `assumptions`), and `computePlanMetrics` floors it by the home style's `minDown`. So this is a separate control from the other override fields in `AssumptionsPanel`.
 
 ### Changes (one file)
 
-`src/routes/p.$slug.tsx`:
+`src/components/dashboard/AssumptionsPanel.tsx`:
 
-1. Import `computePlanMetrics` from `@/lib/plan-metrics`.
-2. Replace the inline math block (lines ~83–137) with:
-   - Keep `theme`, `a`, `styleName`, `zipData.city` derivation (still needed for the title/header).
-   - Compute `const m = computePlanMetrics(a, plan.assumptions as any);`
-   - Use `m.targetPrice`, `m.downPct`, `m.downPayment`, `m.monthlyMortgage`, `m.taxIns`, `m.pmi`, `m.hoa`, `m.reserve`, `m.totalHousing`, `m.closing`, `m.moving`, `m.cashToClose`, `m.saved`, `m.timelineYears`, `m.monthlyToSave`, `m.monthlyInvested` in the JSX where the locals were previously referenced.
-3. Drop now-unused imports (`styleAdjustments`, `calcMortgage`, `calcRequiredMonthly`, `rateFromCredit`, `rateAddFromDownPct`, `combinedEmploymentAdjustment`, `getPriceByZip`) — keep `HOME_STYLES` for the title fallback.
+1. Render a "Down payment" field at the top of the inputs grid, styled like the existing fields (label, big serif number input, `%` suffix).
+2. Local state `downPct` initialized from `answers.downGoalPct` (fallback 9). Re-sync in the existing `useEffect` that runs on `planId` change.
+3. On **Save overrides**: in addition to the current `assumptions` patch, send `answersPatch: { downGoalPct: downPct }` via `updateMeta`. Optimistically patch the cached plan's `answers.downGoalPct` so every panel recomputes immediately (same pattern as `patchCache`, but on `answers`).
+4. On **Reset to defaults**: also clear the override by sending `answersPatch: { downGoalPct: 9 }` (the project default) and reset local state.
+5. Input accepts `0–100`, `step=0.5`. Placeholder shows the current effective `downGoalPct`.
 
 ### Out of scope
 
-- No changes to `PicturePlacePanel`, dashboard layout, or server functions.
-- No schema / migration changes.
-- Saved override behavior already works in `computePlanMetrics`; nothing else needs to change.
+- No server function changes — `updatePlanMeta` already accepts `answersPatch.downGoalPct`.
+- No change to the style-based `minDown` floor; if the user picks a value below it, `computePlanMetrics` still raises it. We can show a small hint later if needed.
 
-## Verification
+### Verification
 
-- Open Picture Your Place, change beds/baths/state, Save. Return to the dashboard — Target price, down payment, monthly housing, and cash-to-close should match exactly.
-- Open a shared plan link — numbers should still render (now sourced from `computePlanMetrics`).
+- Change Down payment % → Save → dashboard "Down payment" stat and monthly housing update to match. Reload page — value persists.

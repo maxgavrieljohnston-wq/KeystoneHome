@@ -98,6 +98,8 @@ export function AssumptionsPanel({
   const initial: Record<string, number | undefined> = {};
   for (const f of FIELDS) initial[f.key] = assumptions?.[f.key];
   const [vals, setVals] = useState(initial);
+  const initialDownPct = typeof answers.downGoalPct === "number" ? (answers.downGoalPct as number) : 9;
+  const [downPct, setDownPct] = useState<number>(initialDownPct);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
@@ -106,19 +108,22 @@ export function AssumptionsPanel({
     const next: Record<string, number | undefined> = {};
     for (const f of FIELDS) next[f.key] = assumptions?.[f.key];
     setVals(next);
-  }, [planId, assumptions]);
+    setDownPct(typeof answers.downGoalPct === "number" ? (answers.downGoalPct as number) : 9);
+  }, [planId, assumptions, answers]);
 
   // Optimistically patch the cached plan so every panel recomputes immediately.
-  const patchCache = (nextAssumptions: Record<string, number>) => {
+  const patchCache = (nextAssumptions: Record<string, number>, nextDownPct?: number) => {
     qc.setQueryData(["my-plans"], (prev: unknown) => {
       if (!prev || typeof prev !== "object") return prev;
       const obj = prev as { plans?: unknown };
       if (!Array.isArray(obj.plans)) return prev;
-      const nextPlans = obj.plans.map((p) =>
-        p && typeof p === "object" && (p as { id?: string }).id === planId
-          ? { ...p, assumptions: nextAssumptions }
-          : p,
-      );
+      const nextPlans = obj.plans.map((p) => {
+        if (!p || typeof p !== "object" || (p as { id?: string }).id !== planId) return p;
+        const cur = p as { answers?: Record<string, unknown> };
+        const nextAnswers =
+          nextDownPct != null ? { ...(cur.answers ?? {}), downGoalPct: nextDownPct } : cur.answers;
+        return { ...cur, assumptions: nextAssumptions, answers: nextAnswers };
+      });
       return { ...obj, plans: nextPlans };
     });
   };
@@ -137,8 +142,9 @@ export function AssumptionsPanel({
           next[f.key] = v;
         }
       }
-      patchCache(next);
-      await updateMeta({ data: { planId, assumptions: next } });
+      const safeDownPct = Math.max(0, Math.min(100, Number(downPct) || 0));
+      patchCache(next, safeDownPct);
+      await updateMeta({ data: { planId, assumptions: next, answersPatch: { downGoalPct: safeDownPct } } });
       qc.invalidateQueries({ queryKey: ["my-plans"] });
       setSavedAt(Date.now());
     } catch (e) {
@@ -156,12 +162,13 @@ export function AssumptionsPanel({
     try {
       const next: Record<string, number> = { ...(assumptions ?? {}) };
       for (const f of FIELDS) delete next[f.key];
-      patchCache(next);
-      await updateMeta({ data: { planId, assumptions: next } });
+      patchCache(next, 9);
+      await updateMeta({ data: { planId, assumptions: next, answersPatch: { downGoalPct: 9 } } });
       qc.invalidateQueries({ queryKey: ["my-plans"] });
       const cleared: Record<string, number | undefined> = {};
       for (const f of FIELDS) cleared[f.key] = undefined;
       setVals(cleared);
+      setDownPct(9);
       setSavedAt(Date.now());
     } catch (e) {
       console.warn("[assumptions] reset failed", e);
@@ -186,6 +193,52 @@ export function AssumptionsPanel({
       </p>
 
       <div style={{ display: "grid", gap: 16 }}>
+        <label style={{ display: "block" }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: C.inkMute,
+              marginBottom: 6,
+            }}
+          >
+            Down payment
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 8,
+              borderBottom: `1px solid ${C.ink}`,
+              paddingBottom: 6,
+            }}
+          >
+            <input
+              type="number"
+              step={0.5}
+              min={0}
+              max={100}
+              value={Number.isFinite(downPct) ? downPct : ""}
+              placeholder={String(initialDownPct)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDownPct(v === "" ? 0 : Number(v));
+              }}
+              style={{
+                flex: 1,
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: 20,
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                color: C.ink,
+              }}
+            />
+            <span style={{ fontSize: 12, color: C.inkMute }}>%</span>
+          </div>
+        </label>
         {FIELDS.map((f) => {
           const derived = f.derivedFor({ answers, targetPrice });
           const placeholder =
