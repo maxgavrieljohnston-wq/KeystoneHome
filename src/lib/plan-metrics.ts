@@ -184,11 +184,14 @@ export function computePlanMetrics(
 
   const zip = str("zip") ?? "";
   const zipDataRaw = a.zipData as { city?: string; avg?: number } | undefined;
+  const isStateCode = /^[A-Za-z]{2}$/.test(zip);
   const zipData =
     zipDataRaw && typeof zipDataRaw.avg === "number"
       ? { city: zipDataRaw.city ?? "your area", avg: zipDataRaw.avg }
       : zip
-        ? getPriceByZip(zip)
+        ? isStateCode
+          ? priceByState(zip)
+          : getPriceByZip(zip)
         : { city: "your area", avg: 400000 };
 
   const homeStyleId = str("homeStyle");
