@@ -1,7 +1,6 @@
 import {
   Pencil,
   TrendingUp,
-  Sliders,
   Home,
   PiggyBank,
   Handshake,
@@ -13,8 +12,7 @@ export const FEATURE_KEYS = [
   "plan",
   "editable",
   "invest",
-  "assumptions",
-  "picture",
+  "home",
   "accounts",
   "broker",
 ] as const;
@@ -28,8 +26,7 @@ export const FEATURE_META: Record<
   plan: { label: "Your monthly action plan", short: "Plan", icon: CalendarCheck },
   editable: { label: "Current finances", short: "Finances", icon: Pencil },
   invest: { label: "Invest vs save", short: "Invest", icon: TrendingUp },
-  assumptions: { label: "Assumptions", short: "Tune", icon: Sliders },
-  picture: { label: "Picture your place", short: "Picture", icon: Home },
+  home: { label: "Your home", short: "Home", icon: Home },
   accounts: { label: "Recommended accounts", short: "Accounts", icon: PiggyBank },
   broker: { label: "Broker waitlist", short: "Broker", icon: Handshake },
 };
