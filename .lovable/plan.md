@@ -1,18 +1,9 @@
-## Add a "Without investing" panel to Invest vs Save
+Move the existing "Without investing" cash-only panel in `InvestVsSavePanel.tsx` so it sits directly beneath the "You're contributing..." descriptive paragraph and above the dark headline box. Also relabel the panel eyebrow from "— Without investing" to "Cash only, no compounding".
 
-In `src/components/dashboard/InvestVsSavePanel.tsx`, insert a new panel directly above the existing "Strategy comparison" section (after the slider block, before the `borderTop` strategy block).
+### Changes
+1. **Reorder JSX** — Cut the `/* Without investing */` block (currently after the slider) and paste it immediately after the `<p>` tag on line 162, before the `/* Headline */` block on line 165.
+2. **Relabel eyebrow** — Change the eyebrow text inside the moved block from `"— Without investing"` to `"Cash only, no compounding"`.
+3. **Remove old location** — Ensure the block no longer renders below the slider / above the strategy comparison section.
 
-### Behavior
-
-- Uses the current slider `monthly` value (dynamic — updates as the user drags).
-- Computes time to goal at 0% return using existing `monthsToGoal(metrics.saved, metrics.downPayment, monthly, 0)`.
-- Displays just the timeline (no comparison delta), formatted with `fmtMonths`.
-- Subtle copy explaining this is the cash-only path (no compounding).
-
-### Visual
-
-A bordered card matching the existing panel aesthetic (`C.inkFaint` border, paper-tone background, small mono eyebrow "— Without investing", larger ink timeline number). Uses existing color tokens; no new dependencies.
-
-### Scope
-
-Single file edit. No changes to math libs, server functions, or persistence.
+### Why
+This keeps the cash-only baseline closer to the user's current plan summary (the paragraph + the panel), making the contrast between compounding and non-compounding more immediate before they start adjusting the slider.
