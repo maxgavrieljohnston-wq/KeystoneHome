@@ -98,6 +98,8 @@ export function AssumptionsPanel({
   const initial: Record<string, number | undefined> = {};
   for (const f of FIELDS) initial[f.key] = assumptions?.[f.key];
   const [vals, setVals] = useState(initial);
+  const initialDownPct = typeof answers.downGoalPct === "number" ? (answers.downGoalPct as number) : 9;
+  const [downPct, setDownPct] = useState<number>(initialDownPct);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
@@ -106,7 +108,8 @@ export function AssumptionsPanel({
     const next: Record<string, number | undefined> = {};
     for (const f of FIELDS) next[f.key] = assumptions?.[f.key];
     setVals(next);
-  }, [planId, assumptions]);
+    setDownPct(typeof answers.downGoalPct === "number" ? (answers.downGoalPct as number) : 9);
+  }, [planId, assumptions, answers]);
 
   // Optimistically patch the cached plan so every panel recomputes immediately.
   const patchCache = (nextAssumptions: Record<string, number>) => {
