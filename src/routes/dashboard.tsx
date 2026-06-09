@@ -8,6 +8,7 @@ import { getMyPlans, getDashboardExtras, revertPlanToInitial, exportPlanPdf } fr
 import { getStripeEnvironment } from "@/lib/stripe";
 import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
+import { MonthlyActionPlan } from "@/components/dashboard/MonthlyActionPlan";
 import { PlanView, type PlanViewPlan } from "./p.$slug";
 
 const C = {
