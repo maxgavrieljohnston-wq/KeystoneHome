@@ -1,16 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getSharedPlan } from "@/lib/plans.functions";
-import {
-  HOME_STYLES,
-  styleAdjustments,
-  calcMortgage,
-  calcRequiredMonthly,
-  rateFromCredit,
-  rateAddFromDownPct,
-  combinedEmploymentAdjustment,
-  getPriceByZip,
-  fmt,
-} from "@/lib/keystone";
+import { HOME_STYLES, getPriceByZip, fmt } from "@/lib/keystone";
+import { computePlanMetrics } from "@/lib/plan-metrics";
 import { monthsToGoal } from "@/lib/invest-projection";
 
 const fmtMonths = (m: number): string => {
@@ -86,7 +77,6 @@ export function PlanView({
   const num = (k: string, fb = 0) =>
     typeof a[k] === "number" && isFinite(a[k] as number) ? (a[k] as number) : fb;
   const str = (k: string) => (typeof a[k] === "string" ? (a[k] as string) : null);
-  const bool = (k: string) => a[k] === true;
 
   const zip = str("zip") ?? "";
   const zipDataRaw = a.zipData as { city?: string; avg?: number } | undefined;
@@ -96,45 +86,22 @@ export function PlanView({
 
   const styleId = str("homeStyle");
   const styleName = HOME_STYLES.find((s) => s.id === styleId)?.label ?? "Home";
-  const styleAdj = styleAdjustments(styleId ? [styleId] : []);
-  let mult = styleAdj.priceMult;
-  mult += Math.max(0, num("beds") - 3) * 0.05;
-  mult += Math.max(0, num("baths") - 2) * 0.03;
-  const targetPrice = Math.round(zipData.avg * mult);
-  const downGoalPct = num("downGoalPct", 9);
-  const effectiveDownPct = Math.max(downGoalPct, styleAdj.minDown);
-  const downPayment = Math.round((targetPrice * effectiveDownPct) / 100);
 
-  const credit = num("credit", 700);
-  const partnerCredit = num("partnerCredit", credit);
-  const hasPartner = bool("hasPartner");
-  const qCredit = hasPartner ? Math.min(credit, partnerCredit) : credit;
-  const empAdj = combinedEmploymentAdjustment(
-    str("employment"),
-    hasPartner ? str("partnerEmployment") : null,
-  );
-  const baseRate = rateFromCredit(qCredit) + empAdj.rateAdd + rateAddFromDownPct(effectiveDownPct);
-  const mortgageRate = ov.mortgageRatePct != null ? ov.mortgageRatePct / 100 : baseRate;
-  const mortgage = calcMortgage(targetPrice, effectiveDownPct, mortgageRate);
-  const taxIns = ov.propertyTaxPct != null
-    ? (targetPrice * ov.propertyTaxPct / 100) / 12 + (ov.insuranceAnnual ?? 1500) / 12
-    : (targetPrice * 0.018) / 12;
-  const pmi = effectiveDownPct < 20
-    ? (targetPrice * (1 - effectiveDownPct / 100) * (ov.pmiPct ?? 0.5) / 100) / 12
-    : 0;
-  const hoa = ov.hoaMonthly ?? styleAdj.hoa;
-  const totalHousing = mortgage + taxIns + pmi + hoa + styleAdj.reserve;
+  const m = computePlanMetrics(a, plan.assumptions ?? null);
+  const targetPrice = m.targetPrice;
+  const effectiveDownPct = m.downPct;
+  const downPayment = m.downPayment;
+  const mortgage = m.monthlyMortgage;
+  const taxIns = m.taxIns;
+  const pmi = m.pmi;
+  const hoa = m.hoa;
+  const reserve = m.reserve;
+  const totalHousing = m.totalHousing;
+  const totalCash = m.cashToClose;
+  const saved = m.saved;
+  const returnRate = m.expectedReturnRate;
+  const savedOnly = m.monthlyToSave;
 
-  const closing = Math.round(targetPrice * (ov.closingCostPct ?? 3) / 100);
-  const moving = ov.movingCost ?? 1500;
-  const totalCash = downPayment + closing + moving;
-
-  const saved = (plan.current_savings as number | null) ?? num("saved");
-  const timelineYears = num("timelineYears", 3);
-  const months = timelineYears * 12;
-  const returnRate = ov.expectedReturnPct != null ? ov.expectedReturnPct / 100 : 0.07;
-  const savedOnly = calcRequiredMonthly(saved, downPayment, months, 0);
-  const invested = calcRequiredMonthly(saved, downPayment, months, returnRate);
 
   return (
     <div
@@ -179,7 +146,7 @@ export function PlanView({
           <Row k="Taxes & insurance" v={fmt(taxIns)} theme={theme} />
           {pmi > 0 && <Row k="PMI" v={fmt(pmi)} theme={theme} />}
           {hoa > 0 && <Row k="HOA" v={fmt(hoa)} theme={theme} />}
-          <Row k="Maintenance reserve" v={fmt(styleAdj.reserve)} theme={theme} />
+          <Row k="Maintenance reserve" v={fmt(reserve)} theme={theme} />
           <Row k="Total" v={fmt(totalHousing)} theme={theme} bold />
         </Section>
 
