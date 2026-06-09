@@ -183,10 +183,61 @@ export function PlanView({
           <Row k="Total" v={fmt(totalHousing)} theme={theme} bold />
         </Section>
 
-        <Section title="Path to deposit" theme={theme}>
-          <Row k="Save only" v={`${fmt(savedOnly)} / mo`} theme={theme} />
-          <Row k={`Invest @ ${(returnRate * 100).toFixed(0)}%`} v={`${fmt(invested)} / mo`} theme={theme} bold />
-        </Section>
+        {(() => {
+          const answeredMonthly = num("monthlySavings");
+          const monthlyRaw =
+            answeredMonthly > 0
+              ? answeredMonthly
+              : (ov.investMonthly as number | undefined) && (ov.investMonthly as number) > 0
+                ? (ov.investMonthly as number)
+                : savedOnly;
+          const monthly = Math.max(50, Math.round(monthlyRaw));
+          const cashMonths = monthsToGoal(saved, downPayment, monthly, 0);
+          const investMonths = monthsToGoal(saved, downPayment, monthly, returnRate);
+          const delta =
+            isFinite(cashMonths) && isFinite(investMonths) ? cashMonths - investMonths : 0;
+          return (
+            <Section title="Path to deposit" theme={theme}>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: theme.inkMute,
+                  padding: "8px 0 4px",
+                }}
+              >
+                at {fmt(monthly)} / mo
+              </div>
+              <Row
+                k="Save only"
+                v={isFinite(cashMonths) ? fmtMonths(cashMonths) : "Won't reach"}
+                theme={theme}
+              />
+              <Row
+                k={`Invest @ ${(returnRate * 100).toFixed(0)}%`}
+                v={isFinite(investMonths) ? fmtMonths(investMonths) : "Won't reach"}
+                theme={theme}
+                bold
+              />
+              {delta > 0 && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: theme.sage ?? "#5a8a5c",
+                  }}
+                >
+                  ↓ {delta} months sooner with investing
+                </div>
+              )}
+            </Section>
+          );
+        })()}
 
         {plan.target_move_in && (
           <Section title="Goal" theme={theme}>
