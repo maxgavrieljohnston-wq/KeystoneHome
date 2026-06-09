@@ -209,12 +209,16 @@ function DashboardPage() {
 
         <DashboardActions planId={selected.id} />
 
-        <PlanView plan={planForView} kicker="— Your plan, dialed in" />
-
-        <SavingsProgressPanel
-          currentSavings={selected.current_savings ?? 0}
-          answers={selected.answers}
-          assumptions={selected.assumptions}
+        <PlanView
+          plan={planForView}
+          kicker="— Your plan, dialed in"
+          footer={
+            <SavingsProgressPanel
+              currentSavings={selected.current_savings ?? 0}
+              answers={selected.answers}
+              assumptions={selected.assumptions}
+            />
+          }
         />
 
         {/* Feature icon bar */}
@@ -334,7 +338,7 @@ function SavingsProgressPanel({
   const remaining = Math.max(0, goal - saved);
 
   return (
-    <div style={{ maxWidth: 640, margin: "40px auto 0" }}>
+    <div style={{ marginTop: 28 }}>
       <div
         style={{
           fontFamily: "'JetBrains Mono', monospace",
@@ -342,7 +346,7 @@ function SavingsProgressPanel({
           letterSpacing: "0.2em",
           textTransform: "uppercase",
           color: C.ember,
-          marginBottom: 10,
+          marginBottom: 8,
         }}
       >
         Savings progress
