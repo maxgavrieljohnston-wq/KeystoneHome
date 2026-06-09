@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras, revertPlanToInitial, exportPlanPdf } from "@/lib/plans.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
 
-import { computePlanMetrics, computeTimeToGoal, formatMonths } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
+import { PlanView, type PlanViewPlan } from "./p.$slug";
 
 const C = {
   paper: "#f5efe6",
