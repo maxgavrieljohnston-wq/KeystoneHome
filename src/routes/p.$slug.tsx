@@ -146,7 +146,7 @@ export function PlanView({
           <Row k="Taxes & insurance" v={fmt(taxIns)} theme={theme} />
           {pmi > 0 && <Row k="PMI" v={fmt(pmi)} theme={theme} />}
           {hoa > 0 && <Row k="HOA" v={fmt(hoa)} theme={theme} />}
-          <Row k="Maintenance reserve" v={fmt(styleAdj.reserve)} theme={theme} />
+          <Row k="Maintenance reserve" v={fmt(reserve)} theme={theme} />
           <Row k="Total" v={fmt(totalHousing)} theme={theme} bold />
         </Section>
 
