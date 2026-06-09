@@ -338,7 +338,7 @@ function SavingsProgressPanel({
   const remaining = Math.max(0, goal - saved);
 
   return (
-    <div style={{ maxWidth: 640, margin: "40px auto 0" }}>
+    <div style={{ marginTop: 28 }}>
       <div
         style={{
           fontFamily: "'JetBrains Mono', monospace",
@@ -346,7 +346,7 @@ function SavingsProgressPanel({
           letterSpacing: "0.2em",
           textTransform: "uppercase",
           color: C.ember,
-          marginBottom: 10,
+          marginBottom: 8,
         }}
       >
         Savings progress
