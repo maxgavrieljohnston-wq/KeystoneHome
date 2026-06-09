@@ -77,13 +77,12 @@ export function InvestVsSavePanel({
     setSelectedRate(derivedRate);
   }, [derivedRate]);
 
-  // Slider defaults to persisted investMonthly, else user's stated monthly.
-  const persistedMonthly = (assumptions?.investMonthly as number | undefined) ?? null;
-  const [monthly, setMonthly] = useState<number>(persistedMonthly ?? statedMonthly);
+  // Slider defaults to the same saved baseline as the headline.
+  const [monthly, setMonthly] = useState<number>(statedMonthly);
 
   useEffect(() => {
-    setMonthly(persistedMonthly ?? statedMonthly);
-  }, [persistedMonthly, statedMonthly]);
+    setMonthly(statedMonthly);
+  }, [statedMonthly]);
 
   // Baseline: time to goal at their CURRENT stated monthly + selected rate.
   const baselineMonths = useMemo(
