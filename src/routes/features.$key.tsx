@@ -31,7 +31,14 @@ const C = {
 export const Route = createFileRoute("/features/$key")({
   validateSearch: (s) =>
     z.object({ planId: z.string().uuid().optional() }).parse(s),
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ params, search }) => {
+    if (params.key === "picture" || params.key === "assumptions") {
+      throw redirect({
+        to: "/features/$key",
+        params: { key: "home" },
+        search: search as { planId?: string },
+      });
+    }
     if (!FEATURE_KEYS.includes(params.key as FeatureKey)) {
       throw redirect({ to: "/dashboard" });
     }
