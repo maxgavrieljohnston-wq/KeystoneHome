@@ -72,7 +72,7 @@ export const Route = createFileRoute("/features/$key")({
 function FeaturePage() {
   const { key } = Route.useParams();
   const { planId: selectedId } = Route.useSearch();
-  const navigate = useNavigate();
+  // navigation handled via icon bar / Link components
   const sub = useSubscription();
   const gate = useUpgradeGate();
 
