@@ -142,8 +142,9 @@ export function AssumptionsPanel({
           next[f.key] = v;
         }
       }
-      patchCache(next);
-      await updateMeta({ data: { planId, assumptions: next } });
+      const safeDownPct = Math.max(0, Math.min(100, Number(downPct) || 0));
+      patchCache(next, safeDownPct);
+      await updateMeta({ data: { planId, assumptions: next, answersPatch: { downGoalPct: safeDownPct } } });
       qc.invalidateQueries({ queryKey: ["my-plans"] });
       setSavedAt(Date.now());
     } catch (e) {
