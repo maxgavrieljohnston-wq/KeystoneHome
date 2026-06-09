@@ -1,22 +1,29 @@
-## Add Down payment % field to "Tune the inputs"
+## Combine Finances + Invest into "Portfolio"
 
-Down payment % lives on `answers.downGoalPct` (not in `assumptions`), and `computePlanMetrics` floors it by the home style's `minDown`. So this is a separate control from the other override fields in `AssumptionsPanel`.
+Right now the feature icon bar has six entries: Plan, Finances (`editable`), Invest, Home, Accounts, Broker. We collapse `editable` and `invest` into one feature, keyed `portfolio`, labeled **Portfolio**.
 
-### Changes (one file)
+### Changes
 
-`src/components/dashboard/AssumptionsPanel.tsx`:
+1. **`src/lib/dashboard-features.ts`**
+   - Replace `editable` and `invest` keys with a single `portfolio` key.
+   - New entry: `portfolio: { label: "Your portfolio", short: "Portfolio", icon: TrendingUp }` (or `PiggyBank` — pick one; I'll use `TrendingUp` since it covers both saving + investing).
+   - `FEATURE_KEYS` becomes: `["plan", "portfolio", "home", "accounts", "broker"]`.
 
-1. Render a "Down payment" field at the top of the inputs grid, styled like the existing fields (label, big serif number input, `%` suffix).
-2. Local state `downPct` initialized from `answers.downGoalPct` (fallback 9). Re-sync in the existing `useEffect` that runs on `planId` change.
-3. On **Save overrides**: in addition to the current `assumptions` patch, send `answersPatch: { downGoalPct: downPct }` via `updateMeta`. Optimistically patch the cached plan's `answers.downGoalPct` so every panel recomputes immediately (same pattern as `patchCache`, but on `answers`).
-4. On **Reset to defaults**: also clear the override by sending `answersPatch: { downGoalPct: 9 }` (the project default) and reset local state.
-5. Input accepts `0–100`, `step=0.5`. Placeholder shows the current effective `downGoalPct`.
+2. **`src/routes/features.$key.tsx`**
+   - In `beforeLoad`, add redirects from the legacy keys `editable` and `invest` → `portfolio` (preserving `planId`), same pattern used today for `picture`/`assumptions` → `home`.
+   - Remove the separate `case "editable"` and `case "invest"` branches; add one `case "portfolio"` that renders **both** panels stacked, with `EditablePlanPanel` first and `InvestVsSavePanel` below it, separated by a 24px spacer (matches the `home` case pattern).
+
+3. **No changes** to `EditablePlanPanel.tsx` or `InvestVsSavePanel.tsx` themselves — they stay as-is and just render together under the new route.
+
+4. **No dashboard.tsx changes needed** unless it hard-codes those keys; if it does, swap to `portfolio` (will verify during implementation).
 
 ### Out of scope
 
-- No server function changes — `updatePlanMeta` already accepts `answersPatch.downGoalPct`.
-- No change to the style-based `minDown` floor; if the user picks a value below it, `computePlanMetrics` still raises it. We can show a small hint later if needed.
+- No visual redesign of either panel — just colocating them under one feature page.
+- No data/server changes.
 
 ### Verification
 
-- Change Down payment % → Save → dashboard "Down payment" stat and monthly housing update to match. Reload page — value persists.
+- `/features/editable?planId=…` and `/features/invest?planId=…` both redirect to `/features/portfolio?planId=…`.
+- Icon bar shows 5 items ending with Portfolio in place of Finances + Invest.
+- Portfolio page renders Finances panel then Invest panel; editing income/etc. still updates the dashboard.

@@ -1,5 +1,4 @@
 import {
-  Pencil,
   TrendingUp,
   Home,
   PiggyBank,
@@ -10,8 +9,7 @@ import type { LucideIcon } from "lucide-react";
 
 export const FEATURE_KEYS = [
   "plan",
-  "editable",
-  "invest",
+  "portfolio",
   "home",
   "accounts",
   "broker",
@@ -24,8 +22,7 @@ export const FEATURE_META: Record<
   { label: string; short: string; icon: LucideIcon }
 > = {
   plan: { label: "Your monthly action plan", short: "Plan", icon: CalendarCheck },
-  editable: { label: "Current finances", short: "Finances", icon: Pencil },
-  invest: { label: "Invest vs save", short: "Invest", icon: TrendingUp },
+  portfolio: { label: "Your portfolio", short: "Portfolio", icon: TrendingUp },
   home: { label: "Your home", short: "Home", icon: Home },
   accounts: { label: "Recommended accounts", short: "Accounts", icon: PiggyBank },
   broker: { label: "Broker waitlist", short: "Broker", icon: Handshake },
