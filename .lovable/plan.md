@@ -1,33 +1,28 @@
-## Reframe "Path to deposit" → months saved by investing
+## Make the Dashboard look like the example plan
 
-The shared/example plan currently shows two required monthly contributions for the same fixed timeline:
+Reuse the exported `PlanView` component from `src/routes/p.$slug.tsx` (already used by `/example`) to render the dashboard body in the same editorial cream-paper layout. Keep the existing chrome: header (plan switcher + log out), the `Download PDF` / `Reset to original plan` buttons, and the feature icon bar.
 
-- Save only: $X / mo
-- Invest @ 7%: $Y / mo (smaller)
+### Single file change: `src/routes/dashboard.tsx`
 
-That buries the win as "a smaller number." Instead, hold the monthly contribution constant and show how much **sooner** investing gets them to the down payment.
-
-### Change (single file: `src/routes/p.$slug.tsx`)
-
-In the `Path to deposit` section (lines ~177–180):
-
-1. Pick a single monthly contribution to compare against. Use, in order: `answers.monthlySavings` → `assumptions.investMonthly` → fall back to `savedOnly` (the current cash-only required monthly). Round to a clean dollar amount.
-2. Compute time-to-goal at that monthly for both rates using `monthsToGoal(saved, downPayment, monthly, rate)` from `@/lib/invest-projection`:
-   - `cashMonths = monthsToGoal(saved, downPayment, monthly, 0)`
-   - `investMonths = monthsToGoal(saved, downPayment, monthly, returnRate)`
-3. Render rows formatted as "X yr Y mo" (reuse the same `fmtMonths` helper used in `InvestVsSavePanel`; lift it into the file or inline a tiny copy):
-   - `Save only` → `cashMonths`
-   - `Invest @ 7%` → `investMonths` (bold, ember-tinted value)
-4. Add a one-line callout under the rows: **"`Δ` months sooner with investing"**, where `Δ = cashMonths − investMonths`. Hide if non-positive or non-finite. Render in the theme's sage/positive color, JetBrains Mono eyebrow style.
-5. Keep the section title `Path to deposit` and the monthly amount shown once as context (e.g., small eyebrow: `at $M/mo`).
-
-### Edge cases
-
-- If either value is `Infinity` (won't reach at that monthly), render `Won't reach` for that row and suppress the delta callout.
-- If `monthly` resolves to 0, fall back to `savedOnly` so rows still render something meaningful.
+1. Import `PlanView`, type `PlanViewPlan` from `./p.$slug`.
+2. In `DashboardPage`, after computing `selected`, build a `PlanViewPlan` object from it:
+   - `title`, `theme`, `answers`, `assumptions`, `current_savings`, `target_move_in`, `created_at` mapped 1:1 from the selected `PlanRow`.
+3. Replace the current body (`Welcome back…` greeting + `NumbersSummary`) with `<PlanView plan={planForView} kicker="— Your plan, dialed in" />`.
+4. Keep above `PlanView`:
+   - The existing header (Dashboard eyebrow + plan selector / title + Log out).
+   - `<DashboardActions planId={selected.id} />` (Download PDF + Reset buttons).
+5. Keep below `PlanView`:
+   - `<FeatureIconBar selectedPlanId={selectedId} />`.
+6. Delete the now-unused `NumbersSummary` and `ComparisonRow` components and the `computePlanMetrics` / `computeTimeToGoal` / `formatMonths` / `fmtCurrency` imports/helpers (only if no longer referenced).
+7. Outer container: keep the existing `maxWidth: 960` wrapper so header + buttons + icon bar stay aligned; `PlanView` provides its own inner `maxWidth: 640` column, which matches the example page's feel.
 
 ### Out of scope
 
-- No changes to the `InvestVsSavePanel` (dashboard) — it already uses this framing.
-- No copy changes to other sections (`Monthly housing`, `Goal`).
-- No schema / server-fn changes.
+- No changes to `PlanView` itself, the example route, or any server functions.
+- No change to the action button styling or behavior.
+- No change to feature icon bar contents or routes.
+- No schema / data changes.
+
+### Visual result
+
+Dashboard top → header with plan name + Log out → Download PDF / Reset buttons → editorial PlanView (Target price hero, Down payment / Cash to close, Monthly housing, Path to deposit with months-sooner callout, Goal) → feature icon bar.
