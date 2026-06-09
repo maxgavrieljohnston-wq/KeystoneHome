@@ -44,6 +44,12 @@ export const Route = createFileRoute("/features/$key")({
         search: search as { planId?: string },
       });
     }
+    if (params.key === "plan" || params.key === "dashboard") {
+      throw redirect({
+        to: "/dashboard",
+        search: search as { planId?: string },
+      });
+    }
     if (!FEATURE_KEYS.includes(params.key as FeatureKey)) {
       throw redirect({ to: "/dashboard" });
     }
