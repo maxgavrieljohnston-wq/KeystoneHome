@@ -99,8 +99,17 @@ function DashboardPage() {
 
   if (!selected) return <Centered>No plan selected.</Centered>;
 
-  const metrics = computePlanMetrics(selected.answers, selected.assumptions);
   const firstName = (selected.title || "").split(" ")[0] || "there";
+
+  const planForView: PlanViewPlan = {
+    title: selected.title,
+    theme: null,
+    answers: selected.answers,
+    assumptions: selected.assumptions,
+    current_savings: selected.current_savings,
+    target_move_in: selected.target_move_in,
+    created_at: selected.created_at,
+  };
 
   return (
     <div
@@ -115,7 +124,7 @@ function DashboardPage() {
         style={{
           maxWidth: 960,
           margin: "0 auto",
-          padding: "32px 24px 64px",
+          padding: "32px 24px 24px",
         }}
       >
         {/* Header */}
@@ -175,7 +184,7 @@ function DashboardPage() {
                   margin: 0,
                 }}
               >
-                {selected.title || "Your homebuying plan"}
+                {selected.title || `Welcome back${firstName !== "there" ? `, ${firstName}` : ""}`}
               </h1>
             )}
           </div>
@@ -200,32 +209,12 @@ function DashboardPage() {
           </button>
         </header>
 
-        {/* Greeting */}
-        <div style={{ marginBottom: 20 }}>
-          <div
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-              fontSize: 24,
-              fontWeight: 500,
-              color: C.ink,
-              marginBottom: 4,
-            }}
-          >
-            Welcome back{firstName !== "there" ? `, ${firstName}` : ""}.
-          </div>
-          <div style={{ fontSize: 14, color: C.inkMute }}>
-            Here are your numbers. Tap an icon below for any feature.
-          </div>
-        </div>
-
         <DashboardActions planId={selected.id} />
+      </div>
 
-        <div style={{ display: "grid", gap: 24 }}>
-          <NumbersSummary metrics={metrics} currentSavings={selected.current_savings} />
-        </div>
+      <PlanView plan={planForView} kicker="— Your plan, dialed in" />
 
-
-        {/* Feature icon bar */}
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 64px" }}>
         <FeatureIconBar selectedPlanId={selectedId} />
       </div>
     </div>
