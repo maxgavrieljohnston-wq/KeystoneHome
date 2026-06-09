@@ -11,6 +11,15 @@ import {
   getPriceByZip,
   fmt,
 } from "@/lib/keystone";
+import { monthsToGoal } from "@/lib/invest-projection";
+
+const fmtMonths = (m: number): string => {
+  if (!isFinite(m) || m <= 0) return "—";
+  if (m < 12) return `${m} mo`;
+  const y = Math.floor(m / 12);
+  const r = m % 12;
+  return r === 0 ? `${y} yr` : `${y} yr ${r} mo`;
+};
 
 export const Route = createFileRoute("/p/$slug")({
   loader: async ({ params }) => {
