@@ -6,9 +6,9 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyPlans, getDashboardExtras, revertPlanToInitial, exportPlanPdf } from "@/lib/plans.functions";
 import { getStripeEnvironment } from "@/lib/stripe";
-
-import { computePlanMetrics, computeTimeToGoal, formatMonths } from "@/lib/plan-metrics";
+import { computePlanMetrics } from "@/lib/plan-metrics";
 import { FeatureIconBar } from "@/components/dashboard/FeatureIconBar";
+import { PlanView, type PlanViewPlan } from "./p.$slug";
 
 const C = {
   paper: "#f5efe6",
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/dashboard")({
 type PlanRow = {
   id: string;
   title: string | null;
+  theme: string | null;
   answers: Record<string, unknown>;
   assumptions: Record<string, number> | null;
   current_savings: number | null;
@@ -52,7 +53,6 @@ type PlanRow = {
 function DashboardPage() {
   const navigate = useNavigate();
   const { planId: selectedId } = Route.useSearch();
-  
 
   const plansFn = useServerFn(getMyPlans);
   const extrasFn = useServerFn(getDashboardExtras);
@@ -99,8 +99,15 @@ function DashboardPage() {
 
   if (!selected) return <Centered>No plan selected.</Centered>;
 
-  const metrics = computePlanMetrics(selected.answers, selected.assumptions);
-  const firstName = (selected.title || "").split(" ")[0] || "there";
+  const planForView: PlanViewPlan = {
+    title: selected.title,
+    theme: selected.theme,
+    answers: selected.answers,
+    assumptions: selected.assumptions,
+    current_savings: selected.current_savings,
+    target_move_in: selected.target_move_in,
+    created_at: selected.created_at,
+  };
 
   return (
     <div
@@ -200,30 +207,15 @@ function DashboardPage() {
           </button>
         </header>
 
-        {/* Greeting */}
-        <div style={{ marginBottom: 20 }}>
-          <div
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-              fontSize: 24,
-              fontWeight: 500,
-              color: C.ink,
-              marginBottom: 4,
-            }}
-          >
-            Welcome back{firstName !== "there" ? `, ${firstName}` : ""}.
-          </div>
-          <div style={{ fontSize: 14, color: C.inkMute }}>
-            Here are your numbers. Tap an icon below for any feature.
-          </div>
-        </div>
-
         <DashboardActions planId={selected.id} />
 
-        <div style={{ display: "grid", gap: 24 }}>
-          <NumbersSummary metrics={metrics} currentSavings={selected.current_savings} />
-        </div>
+        <PlanView plan={planForView} kicker="— Your plan, dialed in" />
 
+        <SavingsProgressPanel
+          currentSavings={selected.current_savings ?? 0}
+          answers={selected.answers}
+          assumptions={selected.assumptions}
+        />
 
         {/* Feature icon bar */}
         <FeatureIconBar selectedPlanId={selectedId} />
@@ -317,7 +309,137 @@ function DashboardActions({ planId }: { planId: string }) {
   );
 }
 
+function fmtCurrency(n: number): string {
+  if (!isFinite(n)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
 
+function SavingsProgressPanel({
+  currentSavings,
+  answers,
+  assumptions,
+}: {
+  currentSavings: number;
+  answers: Record<string, unknown>;
+  assumptions: Record<string, number> | null;
+}) {
+  const metrics = computePlanMetrics(answers, assumptions);
+  const goal = metrics.downPayment || 0;
+  const saved = Math.max(0, currentSavings);
+  const pct = goal > 0 ? Math.min(100, (saved / goal) * 100) : 0;
+  const remaining = Math.max(0, goal - saved);
+
+  return (
+    <div style={{ maxWidth: 640, margin: "40px auto 0" }}>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          letterSpacing: "0.2em",
+          textTransform: "uppercase",
+          color: C.ember,
+          marginBottom: 10,
+        }}
+      >
+        Savings progress
+      </div>
+      <div
+        style={{
+          border: `1.5px solid ${C.ink}`,
+          borderRadius: 10,
+          padding: "20px 22px",
+          background: "transparent",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          color: C.ink,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            gap: 16,
+            marginBottom: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: C.inkMute,
+                marginBottom: 4,
+              }}
+            >
+              Saved so far
+            </div>
+            <div style={{ fontSize: 32, lineHeight: 1.1, letterSpacing: "-0.01em" }}>
+              {fmtCurrency(saved)}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: C.inkMute,
+                marginBottom: 4,
+              }}
+            >
+              Down payment goal
+            </div>
+            <div style={{ fontSize: 24, lineHeight: 1.1, letterSpacing: "-0.01em" }}>
+              {fmtCurrency(goal)}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            height: 4,
+            background: `${C.inkFaint}55`,
+            borderRadius: 2,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${pct}%`,
+              background: C.ember,
+              transition: "width 0.6s ease",
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+          }}
+        >
+          <span>{pct.toFixed(0)}% of goal</span>
+          <span>{fmtCurrency(remaining)} to go</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -335,330 +457,6 @@ function Centered({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-    </div>
-  );
-}
-
-function fmtCurrency(n: number): string {
-  if (!isFinite(n)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function NumbersSummary({
-  metrics,
-  currentSavings,
-}: {
-  metrics: ReturnType<typeof computePlanMetrics>;
-  currentSavings: number | null;
-}) {
-  const saved = currentSavings ?? 0;
-  const pctSaved = metrics.cashToClose > 0 ? Math.min(100, (saved / metrics.cashToClose) * 100) : 0;
-
-  const statedMonthly = metrics.monthlySavings || 0;
-  const returnRate = metrics.expectedReturnRate || 0;
-  const time = computeTimeToGoal({
-    cashToClose: metrics.cashToClose,
-    currentSavings: saved,
-    monthlySavings: statedMonthly,
-    annualReturnRate: returnRate,
-  });
-  const ratePct = (returnRate * 100).toFixed(1);
-
-  const rows = [
-    { label: "Target price", value: fmtCurrency(metrics.targetPrice) },
-    { label: "Down payment", value: fmtCurrency(metrics.downPayment) },
-    { label: "Cash to close", value: fmtCurrency(metrics.cashToClose) },
-    { label: "Monthly housing cost", value: fmtCurrency(metrics.totalHousing) },
-  ];
-
-  return (
-    <div
-      style={{
-        background: "#fff",
-        border: `1.5px solid ${C.ink}`,
-        borderRadius: 12,
-        padding: "28px 24px",
-      }}
-    >
-      <div
-        style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 11,
-          letterSpacing: "0.12em",
-          color: C.inkMute,
-          textTransform: "uppercase",
-          marginBottom: 20,
-        }}
-      >
-        Your numbers
-      </div>
-
-      {/* Savings comparison */}
-      <div style={{ display: "grid", gap: 12, marginBottom: 24 }}>
-        {/* Save-only row */}
-        <ComparisonRow
-          label="Monthly savings"
-          value={fmtCurrency(statedMonthly)}
-          rightLabel="Time to goal (no investing)"
-          rightValue={formatMonths(time.monthsSaveOnly)}
-        />
-        {/* Invested row — highlighted */}
-        <ComparisonRow
-          highlight
-          label={`Same amount invested @ ${ratePct}%`}
-          value={fmtCurrency(statedMonthly)}
-          rightLabel="Time to goal (investing)"
-          rightValue={formatMonths(time.monthsInvested)}
-          footnote={
-            time.timeSavedMonths && time.timeSavedMonths > 0
-              ? `Investing gets you there ${formatMonths(time.timeSavedMonths)} sooner.`
-              : undefined
-          }
-        />
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "20px 16px",
-        }}
-      >
-        {rows.map((r) => (
-          <div key={r.label}>
-            <div
-              style={{
-                fontSize: 11,
-                color: C.inkMute,
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                marginBottom: 4,
-              }}
-            >
-              {r.label}
-            </div>
-            <div
-              style={{
-                fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-                fontSize: 28,
-                fontWeight: 600,
-                color: C.ink,
-                lineHeight: 1.1,
-              }}
-            >
-              {r.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-
-      {/* Readiness + progress */}
-      <div
-        style={{
-          marginTop: 24,
-          paddingTop: 20,
-          borderTop: `1px solid ${C.inkFaint}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: 11,
-              color: C.inkMute,
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              marginBottom: 4,
-            }}
-          >
-            Readiness
-          </div>
-          <div
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-              fontSize: 22,
-              fontWeight: 600,
-              color: C.ink,
-            }}
-          >
-            {metrics.readinessLabel}
-          </div>
-        </div>
-
-        <div style={{ textAlign: "right" }}>
-          <div
-            style={{
-              fontSize: 11,
-              color: C.inkMute,
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              marginBottom: 4,
-            }}
-          >
-            Saved toward goal
-          </div>
-          <div
-            style={{
-              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-              fontSize: 22,
-              fontWeight: 600,
-              color: C.ink,
-            }}
-          >
-            {pctSaved.toFixed(0)}%
-          </div>
-          <div style={{ fontSize: 12, color: C.inkMute, marginTop: 2 }}>
-            {fmtCurrency(saved)} of {fmtCurrency(metrics.cashToClose)}
-          </div>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div
-        style={{
-          marginTop: 12,
-          height: 4,
-          background: "#ebe2d3",
-          borderRadius: 2,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${pctSaved}%`,
-            background: C.ember,
-            borderRadius: 2,
-            transition: "width 0.6s ease",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ComparisonRow({
-  label,
-  value,
-  rightLabel,
-  rightValue,
-  highlight,
-  footnote,
-}: {
-  label: string;
-  value: string;
-  rightLabel: string;
-  rightValue: string;
-  highlight?: boolean;
-  footnote?: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 16,
-        padding: "16px 18px",
-        borderRadius: 10,
-        background: highlight ? "#fff7ef" : "#faf6ee",
-        border: highlight ? `1.5px solid ${C.ember}` : `1px solid ${C.inkFaint}`,
-        position: "relative",
-      }}
-    >
-      {highlight && (
-        <div
-          style={{
-            position: "absolute",
-            top: -10,
-            left: 14,
-            background: C.ember,
-            color: "#fff",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            padding: "3px 8px",
-            borderRadius: 4,
-          }}
-        >
-          Recommended
-        </div>
-      )}
-      <div>
-        <div
-          style={{
-            fontSize: 11,
-            color: C.inkMute,
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            marginBottom: 4,
-          }}
-        >
-          {label}
-        </div>
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-            fontSize: 26,
-            fontWeight: 600,
-            color: C.ink,
-            lineHeight: 1.1,
-          }}
-        >
-          {value}
-        </div>
-      </div>
-      <div style={{ textAlign: "right" }}>
-        <div
-          style={{
-            fontSize: 11,
-            color: C.inkMute,
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            marginBottom: 4,
-          }}
-        >
-          {rightLabel}
-        </div>
-        <div
-          style={{
-            fontFamily: "'Cormorant Garamond', 'Georgia', serif",
-            fontSize: 26,
-            fontWeight: 600,
-            color: highlight ? C.ember : C.ink,
-            lineHeight: 1.1,
-          }}
-        >
-          {rightValue}
-        </div>
-      </div>
-      {footnote && (
-        <div
-          style={{
-            gridColumn: "1 / -1",
-            fontSize: 12,
-            color: C.ember,
-            fontStyle: "italic",
-            marginTop: 4,
-          }}
-        >
-          {footnote}
-        </div>
-      )}
     </div>
   );
 }
