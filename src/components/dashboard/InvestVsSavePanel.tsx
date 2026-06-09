@@ -345,6 +345,7 @@ export function InvestVsSavePanel({
 
 function RateRow({
   label,
+  rate,
   months,
   accent,
   primary = false,
@@ -352,6 +353,7 @@ function RateRow({
   clickable = false,
 }: {
   label: string;
+  rate: number;
   months: number;
   accent: string;
   primary?: boolean;
@@ -371,7 +373,20 @@ function RateRow({
         background: primary ? `${accent}0d` : "transparent",
       }}
     >
-      <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ fontSize: 15, color: C.ink, fontWeight: 500 }}>{label}</div>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: C.inkMute,
+          }}
+        >
+          {(rate * 100).toFixed(1)}% / yr
+        </div>
+      </div>
       <div
         style={{
           fontSize: 18,
