@@ -1,29 +1,34 @@
-## Combine Finances + Invest into "Portfolio"
+## Merge "Plan" into Dashboard
 
-Right now the feature icon bar has six entries: Plan, Finances (`editable`), Invest, Home, Accounts, Broker. We collapse `editable` and `invest` into one feature, keyed `portfolio`, labeled **Portfolio**.
+Currently the icon bar's first item is **Plan** (`/features/plan`, renders `MonthlyActionPlan`), and **Dashboard** is a separate `/dashboard` page (PlanView + savings progress) with no icon. We collapse them: Dashboard becomes one of the icons, and its page also renders the monthly action plan.
 
 ### Changes
 
 1. **`src/lib/dashboard-features.ts`**
-   - Replace `editable` and `invest` keys with a single `portfolio` key.
-   - New entry: `portfolio: { label: "Your portfolio", short: "Portfolio", icon: TrendingUp }` (or `PiggyBank` — pick one; I'll use `TrendingUp` since it covers both saving + investing).
-   - `FEATURE_KEYS` becomes: `["plan", "portfolio", "home", "accounts", "broker"]`.
+   - Rename key `plan` → `dashboard`. Meta: `{ label: "Your dashboard", short: "Dashboard", icon: LayoutDashboard }` (from lucide-react).
+   - `FEATURE_KEYS` becomes `["dashboard", "portfolio", "home", "accounts", "broker"]`.
 
-2. **`src/routes/features.$key.tsx`**
-   - In `beforeLoad`, add redirects from the legacy keys `editable` and `invest` → `portfolio` (preserving `planId`), same pattern used today for `picture`/`assumptions` → `home`.
-   - Remove the separate `case "editable"` and `case "invest"` branches; add one `case "portfolio"` that renders **both** panels stacked, with `EditablePlanPanel` first and `InvestVsSavePanel` below it, separated by a 24px spacer (matches the `home` case pattern).
+2. **`src/components/dashboard/FeatureIconBar.tsx`**
+   - Special-case the `dashboard` key so its `<Link>` goes to `/dashboard` (with `planId` search) instead of `/features/$key`.
+   - Active highlight: pass `activeKey="dashboard"` from the dashboard page so it lights up there.
 
-3. **No changes** to `EditablePlanPanel.tsx` or `InvestVsSavePanel.tsx` themselves — they stay as-is and just render together under the new route.
+3. **`src/routes/dashboard.tsx`**
+   - Below the existing `PlanView` + `SavingsProgressPanel`, render `<MonthlyActionPlan ...>` using the same props the feature page passes today (extras from `getDashboardExtras` are already fetched here).
+   - Pass `activeKey="dashboard"` to `FeatureIconBar`.
 
-4. **No dashboard.tsx changes needed** unless it hard-codes those keys; if it does, swap to `portfolio` (will verify during implementation).
+4. **`src/routes/features.$key.tsx`**
+   - Add redirect: `key === "plan"` → `/dashboard?planId=…`.
+   - Remove the `case "plan"` branch (no longer needed).
+   - Remove the "← Back to dashboard" button block (and the now-unused `ArrowLeft` import and `useNavigate` if not otherwise used).
 
 ### Out of scope
 
-- No visual redesign of either panel — just colocating them under one feature page.
-- No data/server changes.
+- No visual redesign of `MonthlyActionPlan`, `PlanView`, or the savings panel.
+- No changes to the action-plan data model or server functions.
 
 ### Verification
 
-- `/features/editable?planId=…` and `/features/invest?planId=…` both redirect to `/features/portfolio?planId=…`.
-- Icon bar shows 5 items ending with Portfolio in place of Finances + Invest.
-- Portfolio page renders Finances panel then Invest panel; editing income/etc. still updates the dashboard.
+- Icon bar shows 5 icons starting with **Dashboard**, and the Dashboard icon links to `/dashboard`.
+- `/dashboard` shows the existing plan view, savings progress, AND the monthly action plan stacked.
+- `/features/plan?planId=…` redirects to `/dashboard?planId=…`.
+- Other feature pages (`portfolio`, `home`, `accounts`, `broker`) no longer show the "Back to dashboard" link — users navigate via the icon bar at the bottom.
