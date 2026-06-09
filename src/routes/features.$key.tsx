@@ -121,29 +121,28 @@ function FeaturePage() {
         />
       );
       break;
-    case "editable":
+    case "portfolio":
       panel = (
-        <EditablePlanPanel
-          planId={selected.id}
-          planTitle={selected.title}
-          shareSlug={selected.share_slug}
-          shareEnabled={selected.share_enabled}
-          answers={selected.answers}
-          assumptions={selected.assumptions}
-          currentSavings={selected.current_savings}
-        />
-      );
-      break;
-    case "invest":
-      panel = (
-        <InvestVsSavePanel
-          answers={selected.answers}
-          assumptions={selected.assumptions}
-          planId={selected.id}
-          isPlus={isPlus}
-          locked={!isPlus}
-          onLockedClick={onLockedClick}
-        />
+        <>
+          <EditablePlanPanel
+            planId={selected.id}
+            planTitle={selected.title}
+            shareSlug={selected.share_slug}
+            shareEnabled={selected.share_enabled}
+            answers={selected.answers}
+            assumptions={selected.assumptions}
+            currentSavings={selected.current_savings}
+          />
+          <div style={{ height: 24 }} />
+          <InvestVsSavePanel
+            answers={selected.answers}
+            assumptions={selected.assumptions}
+            planId={selected.id}
+            isPlus={isPlus}
+            locked={!isPlus}
+            onLockedClick={onLockedClick}
+          />
+        </>
       );
       break;
     case "home":
