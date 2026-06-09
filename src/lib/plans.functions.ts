@@ -348,8 +348,14 @@ const updateMetaSchema = z.object({
     baths: z.number().min(0).max(20).optional(),
     outdoorSpace: z.string().max(20).nullable().optional(),
     parking: z.string().max(20).nullable().optional(),
-    lifestyle: z.record(z.string().max(40), z.enum(["nice", "must"])).optional(),
-    neighborhood: z.record(z.string().max(40), z.enum(["nice", "must"])).optional(),
+    lifestyle: z.union([
+      z.array(z.string().max(40)).max(50),
+      z.record(z.string().max(40), z.enum(["nice", "must"])),
+    ]).optional(),
+    neighborhood: z.union([
+      z.array(z.string().max(40)).max(50),
+      z.record(z.string().max(40), z.enum(["nice", "must"])),
+    ]).optional(),
     hasPartner: z.boolean().optional(),
   }).strict().optional(),
   environment: z.enum(["sandbox", "live"]).default("live"),
