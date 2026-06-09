@@ -39,6 +39,13 @@ export const Route = createFileRoute("/features/$key")({
         search: search as { planId?: string },
       });
     }
+    if (params.key === "editable" || params.key === "invest") {
+      throw redirect({
+        to: "/features/$key",
+        params: { key: "portfolio" },
+        search: search as { planId?: string },
+      });
+    }
     if (!FEATURE_KEYS.includes(params.key as FeatureKey)) {
       throw redirect({ to: "/dashboard" });
     }
