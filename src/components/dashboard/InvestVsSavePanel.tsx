@@ -314,6 +314,7 @@ export function InvestVsSavePanel({
               <RateRow
                 key={s.label}
                 label={isSelected ? `${s.label} · your profile` : s.label}
+                rate={s.rate}
                 months={months}
                 accent={isSelected ? C.ember : C.inkSoft}
                 primary={isSelected}
