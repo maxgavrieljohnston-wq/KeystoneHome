@@ -162,12 +162,13 @@ export function AssumptionsPanel({
     try {
       const next: Record<string, number> = { ...(assumptions ?? {}) };
       for (const f of FIELDS) delete next[f.key];
-      patchCache(next);
-      await updateMeta({ data: { planId, assumptions: next } });
+      patchCache(next, 9);
+      await updateMeta({ data: { planId, assumptions: next, answersPatch: { downGoalPct: 9 } } });
       qc.invalidateQueries({ queryKey: ["my-plans"] });
       const cleared: Record<string, number | undefined> = {};
       for (const f of FIELDS) cleared[f.key] = undefined;
       setVals(cleared);
+      setDownPct(9);
       setSavedAt(Date.now());
     } catch (e) {
       console.warn("[assumptions] reset failed", e);
