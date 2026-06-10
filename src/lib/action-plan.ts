@@ -271,7 +271,7 @@ export function buildActionPlan(args: {
       id: "thismonth.open_hysa",
       label: "Open a high-yield savings account",
       detail: "See your recommended accounts list.",
-      cta: { label: "View accounts", href: "/accounts" },
+      cta: { label: "View accounts", href: "/features/accounts" },
     });
   }
 
@@ -290,11 +290,11 @@ export function buildActionPlan(args: {
 
   const foundationMilestones: ActionItem[] = [
     { id: "foundation.open_hysa", label: "Open a high-yield savings account",
-      cta: { label: "Accounts", href: "/accounts" } },
+      cta: { label: "Accounts", href: "/features/accounts" } },
     { id: "foundation.auto_transfer", label: "Set up auto-transfer to that HYSA every payday" },
     ...(investedMonthly > 0
       ? [{ id: "foundation.open_brokerage", label: "Open a brokerage or robo-advisor account",
-          cta: { label: "Accounts", href: "/accounts" } } as ActionItem]
+          cta: { label: "Accounts", href: "/features/accounts" } } as ActionItem]
       : []),
     { id: "foundation.credit_baseline", label: "Pull a free credit report and note your baseline",
       cta: { label: "AnnualCreditReport", href: "https://www.annualcreditreport.com/" } },
